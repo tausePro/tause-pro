@@ -124,3 +124,9 @@ Este es un proyecto privado. Para contribuir, contacta al equipo de desarrollo.
 ---
 
 **Desarrollado con ❤️ para el mercado colombiano**
+
+## 🔄 CI/CD Status
+
+- ✅ GitHub Actions configurado
+- ✅ Despliegue automático a app.tause.pro
+- ✅ Tests automáticos en cada push
