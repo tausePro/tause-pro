@@ -1,0 +1,20 @@
+{
+  "name": "magicai/external-chatbot",
+  "description": "External chatbot addon: configure and embed chatbots on external websites.",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "MagicAI\\ExternalChatbot\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "MagicAI\\ExternalChatbot\\ExternalChatbotServiceProvider"
+      ]
+    }
+  }
+}
+
+

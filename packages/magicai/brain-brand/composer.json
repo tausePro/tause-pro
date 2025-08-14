@@ -1,0 +1,20 @@
+{
+  "name": "magicai/brain-brand",
+  "description": "Brain Brand control center addon for MagicAI",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "MagicAI\\BrainBrand\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "MagicAI\\BrainBrand\\BrainBrandServiceProvider"
+      ]
+    }
+  }
+}
+
+

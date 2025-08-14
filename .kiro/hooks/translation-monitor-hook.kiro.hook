@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Translation Monitor",
+  "description": "Monitor changes to files containing user-facing text content (such as .json, .yaml, or other localization files) in the primary language. When changes are detected, automatically identify the new or modified text and generate translations for all configured target languages. Ensure translations maintain proper context and meaning while adhering to locale-specific conventions.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "lang/en.json",
+      "lang/en/*.php",
+      "resources/lang/en.json",
+      "resources/lang/en/*.php"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the changes in the English localization files and generate appropriate translations for all configured target languages. For each modified or new text entry:\n\n1. Identify the context and meaning of the text\n2. Generate translations that maintain the original meaning while following locale-specific conventions\n3. Consider UI constraints (character limits, formatting requirements)\n4. Preserve any placeholders, variables, or special formatting\n5. Create or update corresponding translation files for all target languages (ar, da, de, el, es, et, fa, fr, gr, id, it, nl, pl, pt, pt-br, ro, ru, sv, th, tr, zh-CN, zh-TW)\n6. Ensure consistency with existing translations in the same language\n7. Flag any translations that may need human review due to cultural sensitivity or technical complexity\n\nProvide the translations in the appropriate file format and structure matching the source files."
+  }
+}
