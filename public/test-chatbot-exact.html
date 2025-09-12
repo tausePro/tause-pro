@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatbot Exact HTML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simular las variables CSS del chatbot */
+        :root {
+            --lqd-ext-chat-foot-bg: rgba(0, 0, 0, 0.8);
+        }
+        
+        /* Clases específicas del chatbot */
+        .lqd-ext-chatbot-window-welcome-screen {
+            /* Asegurar que el background se aplique */
+            background-size: cover !important;
+            background-position: top center !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <h1 class="text-2xl font-bold mb-4">Test del HTML Exacto del Chatbot</h1>
+    
+    <div class="w-96 h-96 border-2 border-gray-300 mx-auto">
+        <!-- HTML exacto que genera la vista welcome.blade.php -->
+        <div
+            class="lqd-ext-chatbot-window-welcome-screen relative col-start-1 col-end-1 row-start-1 row-end-1 h-full w-full overflow-hidden bg-cover"
+            style="background-image: url(https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80); background-position: top center;"
+        >
+            <div class="absolute start-0 top-0 h-full w-full bg-gradient-to-t from-[--lqd-ext-chat-foot-bg] from-25% to-transparent to-80%"></div>
+            
+            <div class="relative flex h-full flex-col gap-8 overflow-y-auto px-6 pb-28 pt-6">
+                <div class="text-white text-center">
+                    <h2 class="text-xl font-bold mb-2">¡Hola! 👋 (Actualizado)</h2>
+                    <p class="mb-4">¿En qué podemos ayudarte hoy? (Actualizado)</p>
+                    <button class="bg-white/25 px-4 py-2 rounded-full text-white backdrop-blur-md">
+                        Pregúntame lo que quieras (Actualizado)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <p><strong>Si ves la imagen de fondo aquí, entonces el HTML y CSS están bien.</strong></p>
+        <p class="text-sm text-gray-600 mt-2">
+            URL: <code>https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80</code>
+        </p>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <a href="/chatbot/27aa3dc1-8ed0-4caf-b78f-136aee445de5/frame" 
+           target="_blank" 
+           class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Probar Chatbot Real
+        </a>
+    </div>
+</body>
+</html>
