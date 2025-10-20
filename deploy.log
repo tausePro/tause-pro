@@ -1,0 +1,194 @@
+[0;34m🚀 DESPLIEGUE SEGURO CON BACKUP[0m
+
+[0;34m📡 Verificando conexión...[0m
+OK
+[0;32m✅ Conexión exitosa[0m
+
+[1;33m📦 PASO 1/5: Backup de Base de Datos[0m
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.14.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Oct 13 17:17:18 UTC 2025
+
+  System load:  0.09               Temperature:           -273.1 C
+  Usage of /:   26.5% of 28.02GB   Processes:             125
+  Memory usage: 36%                Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.41.28
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+47 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+3 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+grep: .env: No such file or directory
+grep: .env: No such file or directory
+Creando backup de la base de datos: 
+grep: .env: No such file or directory
+✅ Backup de BD creado en /tmp/
+-rw-rw-r-- 1 ubuntu ubuntu 203 Oct 13 17:17 /tmp/db_backup_20251013_171746.sql
+
+[1;33m📦 PASO 2/5: Backup de Archivos Modificados[0m
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.14.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Oct 13 17:17:18 UTC 2025
+
+  System load:  0.09               Temperature:           -273.1 C
+  Usage of /:   26.5% of 28.02GB   Processes:             125
+  Memory usage: 36%                Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.41.28
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+47 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+3 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+Copiando archivos a backup...
+mkdir: cannot create directory ‘backups’: Permission denied
+mkdir: cannot create directory ‘backups’: Permission denied
+'app/Extensions/Chatbot/System/Models/Chatbot.php' -> 'backups/backup_before_chatbot_features_20251013_121744/Models/'
+Chatbot.php no existe
+'app/Extensions/Chatbot/System/Models/ChatbotCustomer.php' -> 'backups/backup_before_chatbot_features_20251013_121744/Models/'
+ChatbotCustomer.php no existe
+mkdir: cannot create directory ‘backups’: Permission denied
+'app/Extensions/Chatbot/System/Http/Controllers/Api/ChatbotApplicationController.php' -> 'backups/backup_before_chatbot_features_20251013_121744/Controllers/'
+ChatbotApplicationController.php no existe
+'app/Extensions/Chatbot/System/Http/Resources/Api/ChatbotResource.php' -> 'backups/backup_before_chatbot_features_20251013_121744/Resources/'
+ChatbotResource.php no existe
+'app/Extensions/Chatbot/System/ChatbotServiceProvider.php' -> 'backups/backup_before_chatbot_features_20251013_121744/'
+ChatbotServiceProvider.php no existe
+'app/Extensions/Chatbot/extension.json' -> 'backups/backup_before_chatbot_features_20251013_121744/'
+extension.json no existe
+✅ Backup de archivos creado en: /var/www/magicai/backups/backup_before_chatbot_features_20251013_121744
+mkdir: cannot create directory ‘backups’: Permission denied
+ls: cannot access 'backups/backup_before_chatbot_features_20251013_121744/': No such file or directory
+
+[1;33m📦 PASO 3/5: Desplegando Nuevos Archivos[0m
+Copiando migraciones...
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/database/migrations/2025_10_13_120000_add_gdpr_fields_to_chatbots_and_customers.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/database/migrations/2025_10_13_120000_add_gdpr_fields_to_chatbots_and_customers.php to /var/www/magicai/app/Extensions/Chatbot/database/migrations/
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/database/migrations/2025_10_13_130000_create_chatbot_crm_webhooks_table.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/database/migrations/2025_10_13_130000_create_chatbot_crm_webhooks_table.php to /var/www/magicai/app/Extensions/Chatbot/database/migrations/
+Copiando modelos...
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Models/Chatbot.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Models/Chatbot.php to /var/www/magicai/app/Extensions/Chatbot/System/Models/
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Models/ChatbotCustomer.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Models/ChatbotCustomer.php to /var/www/magicai/app/Extensions/Chatbot/System/Models/
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Models/ChatbotCrmWebhook.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Models/ChatbotCrmWebhook.php to /var/www/magicai/app/Extensions/Chatbot/System/Models/
+Copiando controllers...
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Http/Controllers/Api/ChatbotApplicationController.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Http/Controllers/Api/ChatbotApplicationController.php to /var/www/magicai/app/Extensions/Chatbot/System/Http/Controllers/Api/
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Http/Controllers/ChatbotCrmController.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Http/Controllers/ChatbotCrmController.php to /var/www/magicai/app/Extensions/Chatbot/System/Http/Controllers/
+Copiando resources...
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/Http/Resources/Api/ChatbotResource.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/Http/Resources/Api/ChatbotResource.php to /var/www/magicai/app/Extensions/Chatbot/System/Http/Resources/Api/
+Copiando service provider...
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/System/ChatbotServiceProvider.php": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/System/ChatbotServiceProvider.php to /var/www/magicai/app/Extensions/Chatbot/System/
+scp: dest open "/var/www/magicai/app/Extensions/Chatbot/extension.json": Permission denied
+scp: failed to upload file app/Extensions/Chatbot/extension.json to /var/www/magicai/app/Extensions/Chatbot/
+[0;32m✅ Archivos copiados[0m
+
+[1;33m📦 PASO 4/5: Ejecutando Migraciones[0m
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.14.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Oct 13 17:17:18 UTC 2025
+
+  System load:  0.09               Temperature:           -273.1 C
+  Usage of /:   26.5% of 28.02GB   Processes:             125
+  Memory usage: 36%                Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.41.28
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+47 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+3 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+Ejecutando migración GDPR...
+Could not open input file: artisan
+Ejecutando migración CRM...
+Could not open input file: artisan
+✅ Migraciones ejecutadas
+
+[1;33m📦 PASO 5/5: Limpiando Caché y Reiniciando[0m
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.14.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Mon Oct 13 17:17:18 UTC 2025
+
+  System load:  0.09               Temperature:           -273.1 C
+  Usage of /:   26.5% of 28.02GB   Processes:             125
+  Memory usage: 36%                Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.41.28
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+47 updates can be applied immediately.
+To see these additional updates run: apt list --upgradable
+
+3 additional security updates can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+Could not open input file: artisan
+Could not open input file: artisan
+Could not open input file: artisan
+Could not open input file: artisan
+✅ Caché limpiado y servicios reiniciados
+
+[0;32m✅ DESPLIEGUE COMPLETADO EXITOSAMENTE[0m
+
+[0;34m📋 RESUMEN:[0m
+  ✅ Backup de BD creado en servidor: /tmp/db_backup_*.sql
+  ✅ Backup de archivos: /var/www/magicai/backups/backup_before_chatbot_features_20251013_121744
+  ✅ Nuevos archivos desplegados
+  ✅ Migraciones ejecutadas
+  ✅ Caché limpiado
+
+[1;33m🔄 PARA RESTAURAR EN CASO DE PROBLEMAS:[0m
+  ssh -i magicai-tause-key.pem ubuntu@34.207.248.220
+  cd /var/www/magicai
+  # Restaurar archivos:
+  cp -r backups/backup_before_chatbot_features_20251013_121744/* app/Extensions/Chatbot/System/
+  # Restaurar BD:
+  mysql -u USER -p DATABASE < /tmp/db_backup_*.sql
+  # Revertir migraciones:
+  php artisan migrate:rollback --step=2
+
+[0;32m🎉 Todo listo! Verifica: https://app.tause.pro[0m
+

@@ -140,19 +140,6 @@
             </template>
         </div>
 
-        {{-- <x-forms.input
-            class:label="text-heading-foreground"
-            class="capitalize"
-            size="lg"
-            type="select"
-            name="color_mode"
-            label="{{ __('Color Mode') }}"
-        >
-            @foreach (\App\Extensions\Chatbot\Src\Enums\ColorModeEnum::toArray() as $mode)
-                <option value="{{ $mode }}">{{ $mode }}</option>
-            @endforeach
-        </x-forms.input> --}}
-
         <div>
             <label
                 class="mb-5 block w-full cursor-pointer text-xs font-medium text-heading-foreground"
@@ -232,6 +219,278 @@
                 </div>
             </template>
         </div>
+
+        <hr>
+
+        <div>
+            <label class="mb-5 block w-full text-xs font-medium text-heading-foreground">
+                @lang('Header Background')
+            </label>
+
+            <div class="lqd-tabs">
+                <div class="lqd-tabs-triggers mb-3.5 flex gap-2 rounded-lg bg-heading-foreground/5 p-1">
+                    <button
+                        class="active grow justify-center rounded p-1 text-center text-2xs font-medium [&.active]:bg-background [&.active]:text-heading-foreground [&.active]:shadow-lg [&.active]:shadow-black/5"
+                        type="button"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'color' }"
+                        @click.prevent="activeChatbot.header_bg_type = 'color'"
+                    >
+                        @lang('Solid Color')
+                    </button>
+
+                    <button
+                        class="grow justify-center rounded p-1 text-center text-2xs font-medium [&.active]:bg-background [&.active]:text-heading-foreground [&.active]:shadow-lg [&.active]:shadow-black/5"
+                        type="button"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'gradient' }"
+                        @click.prevent="activeChatbot.header_bg_type = 'gradient'"
+                    >
+                        @lang('Gradient')
+                    </button>
+
+                    <button
+                        class="grow justify-center rounded p-1 text-center text-2xs font-medium [&.active]:bg-background [&.active]:text-heading-foreground [&.active]:shadow-lg [&.active]:shadow-black/5"
+                        type="button"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'image' }"
+                        @click.prevent="activeChatbot.header_bg_type = 'image'"
+                    >
+                        @lang('Image')
+                    </button>
+                </div>
+
+                <div class="lqd-tabs-contents">
+                    <div
+                        class="lqd-tab-content active hidden [&.active]:block"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'color' }"
+                    >
+                        <div
+                            class="flex grow items-center gap-2 rounded-input border border-input-border px-2"
+                            x-data="liquidColorPicker({ colorVal: activeChatbot.header_bg_color })"
+                            x-effect="picker && picker.setColor(activeChatbot.header_bg_color)"
+                        >
+                            <span
+                                class="lqd-input-color-wrap !size-[26px] shrink-0 grow-0 rounded-full border-[3px] border-background shadow-md shadow-black/10"
+                                x-ref="colorInputWrap"
+                                :style="{ backgroundColor: colorVal }"
+                            ></span>
+                            <input
+                                class="h-10 grow border-none bg-transparent p-0 text-2xs font-medium focus:outline-none"
+                                type="text"
+                                x-model="activeChatbot.header_bg_color"
+                                x-ref="colorInput"
+                                @change="picker.setColor($event.target.value)"
+                                @keydown.enter.prevent="picker?.setColor($event.target.value);"
+                                @focus="picker.open(); $el.select();"
+                            />
+                        </div>
+                    </div>
+                    <div
+                        class="lqd-tab-content hidden [&.active]:block"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'gradient' }"
+                    >
+                        <div
+                            class="space-y-2"
+                            x-data="gradientPicker({ gradient: activeChatbot.header_bg_gradient })"
+                            x-init="$watch('activeChatbot.id', (value) => {
+                                gradient = activeChatbot.header_bg_gradient ?? '';
+                                parseExistingGradient();
+                                updateGradient();
+                            });"
+                        >
+                            <div class="flex gap-2">
+                                <x-forms.input
+                                    class:container="grow"
+                                    type="select"
+                                    x-model="gradientType"
+                                >
+                                    <option value="linear-gradient">
+                                        {{ __('Linear Gradient') }}
+                                    </option>
+                                    <option value="radial-gradient">
+                                        {{ __('Radial Gradient') }}
+                                    </option>
+                                </x-forms.input>
+
+                                <span class="mx-1 inline-block h-6 w-px shrink-0 self-center bg-foreground/10"></span>
+
+                                <div
+                                    class="relative size-10 shrink-0 select-none"
+                                    :class="{ 'disabled pointer-events-none opacity-50': !gradientType.includes('linear-gradient') }"
+                                >
+                                    <div
+                                        class="absolute inset-0 cursor-grab rounded-full border"
+                                        x-ref="gradientAngleHandler"
+                                        :style="{ transform: `rotate(${gradientAngle}deg)` }"
+                                    >
+                                        <div
+                                            class="absolute left-1/2 top-0 h-full w-2 -translate-x-1/2 before:absolute before:start-0 before:top-1 before:size-2 before:rounded-full before:bg-foreground">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <x-forms.input
+                                    class:container="shrink-0 w-16"
+                                    class="lqd-input-stepper px-2 text-center"
+                                    type="number"
+                                    min="0"
+                                    max="360"
+                                    x-ref="gradientAngleInput"
+                                    x-model="gradientAngle"
+                                    ::disabled="!gradientType.includes('linear-gradient')"
+                                />
+                            </div>
+
+                            <div
+                                class="relative h-10 w-full rounded-xl shadow-sm"
+                                x-ref="gradientPreviewWrap"
+                            >
+                                <div
+                                    class="absolute inset-0 rounded-xl opacity-5"
+                                    style="background-image: linear-gradient(45deg, hsl(var(--foreground)) 25%, transparent 25%, transparent 75%, hsl(var(--foreground)) 75%, hsl(var(--foreground))), linear-gradient(45deg, hsl(var(--foreground)) 25%, transparent 25%, transparent 75%, hsl(var(--foreground)) 75%, hsl(var(--foreground))); background-size: 14px 14px;background-position: 0 0, 21px 21px;"
+                                ></div>
+                                <div
+                                    class="absolute inset-0 cursor-copy rounded-xl border"
+                                    x-ref="gradientPreview"
+                                    :style="{ background: gradient }"
+                                    @click.prevent="handlePreviewClick"
+                                >
+                                    <template
+                                        x-for="(stop, index) in gradientStops"
+                                        :key="index"
+                                    >
+                                        <div
+                                            class="group absolute top-1/2 z-20 flex -translate-y-1/2 flex-col items-center"
+                                            :style="{ left: stop.position + '%', transform: 'translateX(-50%) translateY(-50%)' }"
+                                        >
+                                            <x-button
+                                                class="pointer-events-none absolute -top-7 left-1/2 size-5 shrink-0 -translate-x-1/2 opacity-0 transition focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+                                                size="none"
+                                                variant="danger"
+                                                type="button"
+                                                title="{{ __('Remove Color Stop') }}"
+                                                @click.stop="removeGradientStop(index)"
+                                                x-show="gradientStops.length > 2"
+                                            >
+                                                <x-tabler-x class="size-4" />
+                                            </x-button>
+                                            <div
+                                                class="h-11 w-4 cursor-move rounded-full border-2 border-white shadow-lg transition-all before:absolute before:bottom-full before:left-1/2 before:h-3 before:w-10 before:-translate-x-1/2 after:absolute after:left-1/2 after:top-full after:h-4 after:w-10 after:-translate-x-1/2 hover:ring-4 hover:ring-heading-foreground/25"
+                                                :style="{ backgroundColor: stop.color }"
+                                                @mousedown="startDragStop(index, $event)"
+                                                @click.stop
+                                            ></div>
+                                            <input
+                                                class="lqd-input-stepper pointer-events-none absolute -bottom-10 h-8 w-11 rounded-input border border-input-border bg-background px-2 text-center text-2xs font-medium opacity-0 shadow-lg shadow-black/5 outline-none transition focus-visible:pointer-events-auto focus-visible:border-heading-foreground focus-visible:opacity-100 focus-visible:ring focus-visible:ring-heading-foreground group-hover:pointer-events-auto group-hover:opacity-100"
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                x-model="gradientStops[index].position"
+                                                @click.stop
+                                            >
+                                        </div>
+                                    </template>
+                                    <template x-if="!gradientStops.length">
+                                        <p class="absolute left-1/2 top-1/2 z-2 m-0 -translate-x-1/2 -translate-y-1/2 text-3xs font-medium">
+                                            {{ __('Click to add color stops') }}
+                                        </p>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1 rounded-lg border p-5">
+                                <p class="text-2xs font-medium">
+                                    {{ __('Color Stops') }}
+                                </p>
+
+                                <template
+                                    x-for="(stop, index) in gradientStops"
+                                    :key="index"
+                                >
+                                    <div class="flex gap-1">
+                                        <div
+                                            class="flex grow items-center gap-2 rounded-input border border-input-border px-2"
+                                            x-data="liquidColorPicker({ colorVal: stop.color })"
+                                            x-effect="picker && picker.setColor(stop.color)"
+                                        >
+                                            <span
+                                                class="lqd-input-color-wrap !size-[26px] shrink-0 grow-0 rounded-full border-[3px] border-background shadow-md shadow-black/10"
+                                                x-ref="colorInputWrap"
+                                                :style="{ backgroundColor: colorVal }"
+                                            ></span>
+                                            <input
+                                                class="h-10 grow border-none bg-transparent p-0 text-2xs font-medium focus:outline-none"
+                                                type="text"
+                                                x-model="stop.color"
+                                                x-ref="colorInput"
+                                                @change="picker.setColor($event.target.value)"
+                                                @keydown.enter.prevent="picker?.setColor($event.target.value);"
+                                                @focus="picker.open(); $el.select();"
+                                            />
+                                        </div>
+                                        <x-forms.input
+                                            class:container="shrink-0 w-16"
+                                            class="lqd-input-stepper px-2 text-center"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            x-model="stop.position"
+                                        />
+                                        <x-button
+                                            class="ms-auto size-8 shrink-0 self-center"
+                                            size="none"
+                                            variant="danger"
+                                            type="button"
+                                            title="{{ __('Remove Color Stop') }}"
+                                            @click="removeGradientStop(index)"
+                                            x-show="gradientStops.length > 2"
+                                        >
+                                            <x-tabler-x class="size-4" />
+                                        </x-button>
+                                    </div>
+                                </template>
+
+                                <!-- Add color stop button -->
+                                <x-button
+                                    class="w-full text-2xs"
+                                    type="button"
+                                    variant="success"
+                                    @click="addGradientStopAtEnd()"
+                                >
+                                    <x-tabler-plus class="size-4" />
+                                    {{ __('Add a Color Stop') }}
+                                </x-button>
+                            </div>
+
+                            <input
+                                type="hidden"
+                                name="header_bg_gradient"
+                                x-model="gradient"
+                                x-modelable="activeChatbot.header_bg_gradient"
+                            >
+                        </div>
+                    </div>
+                    <div
+                        class="lqd-tab-content hidden [&.active]:block"
+                        :class="{ 'active': activeChatbot.header_bg_type === 'image' }"
+                    >
+                        <x-forms.input
+                            class:label="text-heading-foreground"
+                            type="file"
+                            name="header_bg_image"
+                            size="lg"
+                            @change="$event.target.files[0] && (activeChatbot.header_bg_image_blob = $event.target.files[0]) && (activeChatbot.header_bg_image = URL.createObjectURL($event.target.files[0]))"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <input
+                type="hidden"
+                name="header_bg_type"
+                x-model="activeChatbot.header_bg_type"
+            >
+        </div>
+
+        <hr>
 
         <div>
             <x-forms.input
@@ -395,19 +654,6 @@
             </template>
         </div>
 
-        {{-- <x-forms.input
-            class="h-[18px] w-[34px] [background-size:0.625rem]"
-            class:label="flex-row-reverse justify-between text-xs font-medium text-heading-foreground"
-            containerClass="[&_.lqd-input-label-txt]:order-1 [&_.lqd-tooltip-container]:me-auto"
-            label="{{ __('Show Avarage Response Time') }}"
-            type="checkbox"
-            switcher
-            name="show_average_response_time"
-            ::checked="activeChatbot.show_average_response_time === 1"
-            x-model.boolean="activeChatbot.show_average_response_time"
-            @change="if ( externalChatbot ) { externalChatbot.toggleWindowState('open'); externalChatbot.toggleView('conversation-messages') }"
-        /> --}}
-
         <div>
             <x-forms.input
                 class="h-[18px] w-[34px] [background-size:0.625rem]"
@@ -543,129 +789,6 @@
                     <p x-text="error"></p>
                 </div>
             </template>
-        </div>
-
-        {{-- Welcome Screen Customization --}}
-        <div class="space-y-5">
-            <label class="mb-5 block w-full cursor-pointer text-xs font-medium text-heading-foreground">
-                @lang('Welcome Screen')
-            </label>
-            
-            {{-- Background Image URL --}}
-            <div>
-                <x-forms.input
-                    class:label="text-heading-foreground"
-                    label="{{ __('Welcome Background Image URL') }}"
-                    name="welcome_background"
-                    type="url"
-                    size="lg"
-                    placeholder="{{ __('https://images.unsplash.com/photo-example...') }}"
-                    x-model="activeChatbot.welcome_background"
-                    @input.throttle.250ms="externalChatbot && externalChatbot.toggleWindowState('open')"
-                />
-                <template
-                    x-for="(error, index) in formErrors.welcome_background"
-                    :key="'error-' + index"
-                >
-                    <div class="mt-2 text-2xs/5 font-medium text-red-500">
-                        <p x-text="error"></p>
-                    </div>
-                </template>
-                <div class="mt-2 rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
-                    <p class="font-medium mb-1">📐 {{ __('Recommended dimensions:') }}</p>
-                    <ul class="space-y-1">
-                        <li>• {{ __('Size: 420x745px (9:16 aspect ratio)') }}</li>
-                        <li>• {{ __('Formats: JPG, PNG, WebP') }}</li>
-                        <li>• {{ __('Max file size: 2MB for best performance') }}</li>
-                        <li>• {{ __('Use vertical/portrait orientation') }}</li>
-                    </ul>
-                    <p class="mt-2 font-medium">🎯 {{ __('Tip: Use Unsplash URLs with') }} <code>w=420&h=745</code></p>
-                </div>
-            </div>
-
-            {{-- Greeting Text --}}
-            <div>
-                <x-forms.input
-                    class:label="text-heading-foreground"
-                    label="{{ __('Greeting Text') }}"
-                    placeholder="{{ __('Hi there 👋🏼') }}"
-                    name="welcome_greeting"
-                    size="lg"
-                    x-model="activeChatbot.welcome_greeting"
-                    @input.throttle.250ms="externalChatbot && externalChatbot.toggleWindowState('open')"
-                />
-                <template
-                    x-for="(error, index) in formErrors.welcome_greeting"
-                    :key="'error-' + index"
-                >
-                    <div class="mt-2 text-2xs/5 font-medium text-red-500">
-                        <p x-text="error"></p>
-                    </div>
-                </template>
-            </div>
-
-            {{-- Subtitle Text --}}
-            <div>
-                <x-forms.input
-                    class:label="text-heading-foreground"
-                    label="{{ __('Subtitle Text') }}"
-                    placeholder="{{ __('How can we help you?') }}"
-                    name="welcome_subtitle"
-                    size="lg"
-                    x-model="activeChatbot.welcome_subtitle"
-                    @input.throttle.250ms="externalChatbot && externalChatbot.toggleWindowState('open')"
-                />
-                <template
-                    x-for="(error, index) in formErrors.welcome_subtitle"
-                    :key="'error-' + index"
-                >
-                    <div class="mt-2 text-2xs/5 font-medium text-red-500">
-                        <p x-text="error"></p>
-                    </div>
-                </template>
-            </div>
-
-            {{-- Button Text --}}
-            <div>
-                <x-forms.input
-                    class:label="text-heading-foreground"
-                    label="{{ __('Button Text') }}"
-                    placeholder="{{ __('Ask me anything.') }}"
-                    name="welcome_button_text"
-                    size="lg"
-                    x-model="activeChatbot.welcome_button_text"
-                    @input.throttle.250ms="externalChatbot && externalChatbot.toggleWindowState('open')"
-                />
-                <template
-                    x-for="(error, index) in formErrors.welcome_button_text"
-                    :key="'error-' + index"
-                >
-                    <div class="mt-2 text-2xs/5 font-medium text-red-500">
-                        <p x-text="error"></p>
-                    </div>
-                </template>
-            </div>
-
-            {{-- Button Subtitle --}}
-            <div>
-                <x-forms.input
-                    class:label="text-heading-foreground"
-                    label="{{ __('Button Subtitle') }}"
-                    placeholder="{{ __('We usually reply in a few hours.') }}"
-                    name="welcome_button_subtitle"
-                    size="lg"
-                    x-model="activeChatbot.welcome_button_subtitle"
-                    @input.throttle.250ms="externalChatbot && externalChatbot.toggleWindowState('open')"
-                />
-                <template
-                    x-for="(error, index) in formErrors.welcome_button_subtitle"
-                    :key="'error-' + index"
-                >
-                    <div class="mt-2 text-2xs/5 font-medium text-red-500">
-                        <p x-text="error"></p>
-                    </div>
-                </template>
-            </div>
         </div>
 
         <div class="">

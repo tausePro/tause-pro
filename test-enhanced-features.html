@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enhanced Chatbot Features</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #764ba2;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .chatbot-iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .instructions {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2196F3;
+            margin: 10px 0;
+        }
+        .feature-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .feature-list h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Enhanced Chatbot Features</h1>
+    
+    <div class="test-section">
+        <h2>📋 Instrucciones de Testing</h2>
+        <div class="instructions">
+            <p><strong>Para testear Quick Replies y Product Cards:</strong></p>
+            <ol>
+                <li>Abre el chatbot embebido en la sección de abajo</li>
+                <li>Envía los mensajes de prueba que se sugieren</li>
+                <li>Observa las respuestas mejoradas con botones y tarjetas</li>
+                <li>Verifica que las funcionalidades funcionen correctamente</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Mensajes de Prueba</h2>
+        <div class="feature-list">
+            <h4>💬 Para activar Quick Replies:</h4>
+            <ul>
+                <li><strong>"Hola"</strong> - Debería mostrar botones de saludo</li>
+                <li><strong>"Necesito ayuda"</strong> - Debería mostrar opciones de ayuda</li>
+                <li><strong>"¿Qué productos tienen?"</strong> - Debería mostrar categorías</li>
+                <li><strong>"¿Cuánto cuesta?"</strong> - Debería mostrar opciones de precios</li>
+            </ul>
+            
+            <h4>🛍️ Para activar Product Cards:</h4>
+            <ul>
+                <li><strong>"Quiero comprar vitaminas"</strong> - Debería mostrar tarjetas de productos</li>
+                <li><strong>"Muéstrame productos de wellness"</strong> - Debería mostrar carousel</li>
+                <li><strong>"¿Tienen suplementos?"</strong> - Debería mostrar productos relacionados</li>
+                <li><strong>"Catálogo de productos"</strong> - Debería mostrar múltiples productos</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Test de Funcionalidades JavaScript</h2>
+        <button class="test-button" onclick="testQuickReplies()">Test Quick Replies</button>
+        <button class="test-button" onclick="testProductCards()">Test Product Cards</button>
+        <button class="test-button" onclick="testTypingIndicator()">Test Typing Indicator</button>
+        <div id="test-results" class="result" style="display: none;">
+            <h4>Resultados del Test:</h4>
+            <div id="test-output"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🤖 Chatbot Embebido (aliviate.com.co)</h2>
+        <p>Chatbot con las nuevas funcionalidades activas:</p>
+        <iframe 
+            src="https://app.tause.pro/chatbot/2/frame" 
+            class="chatbot-iframe"
+            title="Chatbot Test">
+        </iframe>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Analytics Dashboard</h2>
+        <p>Verifica las métricas del chatbot:</p>
+        <a href="https://app.tause.pro/dashboard/chatbot/analytics?chatbot_id=2" target="_blank" class="test-button">
+            📊 Ver Analytics
+        </a>
+    </div>
+
+    <script>
+        // Test functions
+        function testQuickReplies() {
+            const output = document.getElementById('test-output');
+            output.innerHTML = '';
+            
+            // Check if Enhanced Chat Features is loaded
+            if (typeof window.EnhancedChatFeatures !== 'undefined') {
+                output.innerHTML += '<p>✅ Enhanced Chat Features cargado correctamente</p>';
+                
+                // Test quick replies rendering
+                const testReplies = [
+                    { type: 'text', label: '🛍️ Ver productos', value: 'Ver catálogo' },
+                    { type: 'text', label: '❓ Ayuda', value: 'Necesito ayuda' },
+                    { type: 'text', label: '👤 Agente', value: '#humanagent' }
+                ];
+                
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.top = '10px';
+                container.style.right = '10px';
+                container.style.zIndex = '9999';
+                
+                const quickRepliesElement = window.EnhancedChatFeatures.renderQuickReplies(testReplies, (reply) => {
+                    output.innerHTML += `<p>🔘 Quick Reply seleccionado: ${reply.label}</p>`;
+                });
+                
+                container.appendChild(quickRepliesElement);
+                document.body.appendChild(container);
+                
+                output.innerHTML += '<p>✅ Quick Replies renderizados correctamente</p>';
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    document.body.removeChild(container);
+                }, 5000);
+                
+            } else {
+                output.innerHTML += '<p>❌ Enhanced Chat Features no está cargado</p>';
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        }
+        
+        function testProductCards() {
+            const output = document.getElementById('test-output');
+            output.innerHTML = '';
+            
+            if (typeof window.EnhancedChatFeatures !== 'undefined') {
+                output.innerHTML += '<p>✅ Enhanced Chat Features cargado correctamente</p>';
+                
+                // Test product cards rendering
+                const testProducts = {
+                    products: [
+                        {
+                            id: 1,
+                            name: 'Vitamina D3',
+                            description: 'Suplemento de vitamina D3 para la salud ósea',
+                            price: 25.99,
+                            currency: 'USD',
+                            formatted_price: '$25.99',
+                            image: 'https://via.placeholder.com/300x300?text=Vitamina+D3',
+                            category: 'Vitaminas',
+                            in_stock: true,
+                            buttons: [
+                                { type: 'link', label: '🛒 Ver producto', url: '#' },
+                                { type: 'quick_reply', label: '💬 Más info', value: 'info_product_1' }
+                            ]
+                        },
+                        {
+                            id: 2,
+                            name: 'Omega 3',
+                            description: 'Aceite de pescado rico en omega 3',
+                            price: 35.50,
+                            currency: 'USD',
+                            formatted_price: '$35.50',
+                            image: 'https://via.placeholder.com/300x300?text=Omega+3',
+                            category: 'Suplementos',
+                            in_stock: true,
+                            buttons: [
+                                { type: 'link', label: '🛒 Ver producto', url: '#' },
+                                { type: 'quick_reply', label: '💬 Más info', value: 'info_product_2' }
+                            ]
+                        }
+                    ]
+                };
+                
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.top = '10px';
+                container.style.right = '10px';
+                container.style.zIndex = '9999';
+                container.style.maxWidth = '600px';
+                container.style.maxHeight = '400px';
+                container.style.overflow = 'auto';
+                container.style.background = 'white';
+                container.style.border = '2px solid #667eea';
+                container.style.borderRadius = '10px';
+                container.style.padding = '10px';
+                
+                const productCardsElement = window.EnhancedChatFeatures.renderProductCards(testProducts);
+                container.appendChild(productCardsElement);
+                document.body.appendChild(container);
+                
+                output.innerHTML += '<p>✅ Product Cards renderizados correctamente</p>';
+                
+                // Remove after 10 seconds
+                setTimeout(() => {
+                    document.body.removeChild(container);
+                }, 10000);
+                
+            } else {
+                output.innerHTML += '<p>❌ Enhanced Chat Features no está cargado</p>';
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        }
+        
+        function testTypingIndicator() {
+            const output = document.getElementById('test-output');
+            output.innerHTML = '';
+            
+            if (typeof window.EnhancedChatFeatures !== 'undefined') {
+                output.innerHTML += '<p>✅ Enhanced Chat Features cargado correctamente</p>';
+                
+                // Test typing indicator
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.top = '10px';
+                container.style.right = '10px';
+                container.style.zIndex = '9999';
+                
+                const typingIndicator = window.EnhancedChatFeatures.showTypingIndicator();
+                container.appendChild(typingIndicator);
+                document.body.appendChild(container);
+                
+                output.innerHTML += '<p>✅ Typing Indicator mostrado correctamente</p>';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    window.EnhancedChatFeatures.hideTypingIndicator();
+                    document.body.removeChild(container);
+                    output.innerHTML += '<p>✅ Typing Indicator ocultado correctamente</p>';
+                }, 3000);
+                
+            } else {
+                output.innerHTML += '<p>❌ Enhanced Chat Features no está cargado</p>';
+            }
+            
+            document.getElementById('test-results').style.display = 'block';
+        }
+        
+        // Check if Enhanced Chat Features is loaded when page loads
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (typeof window.EnhancedChatFeatures !== 'undefined') {
+                    console.log('✅ Enhanced Chat Features está disponible');
+                } else {
+                    console.log('❌ Enhanced Chat Features no está cargado');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+

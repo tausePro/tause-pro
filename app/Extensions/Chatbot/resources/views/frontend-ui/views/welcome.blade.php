@@ -1,16 +1,10 @@
 @php
-    $bg_image = $is_editor 
-        ? (isset($chatbot) && $chatbot['welcome_background'] ? $chatbot['welcome_background'] : custom_theme_url('/assets/img/external-chatbot/chat-default-bg.jpg'))
-        : ($chatbot['welcome_background'] ?? custom_theme_url('/assets/img/external-chatbot/chat-default-bg.jpg'));
+    $bg_image = custom_theme_url('/assets/img/external-chatbot/chat-default-bg.jpg');
 @endphp
 
 <div
     class="lqd-ext-chatbot-window-welcome-screen relative col-start-1 col-end-1 row-start-1 row-end-1 h-full w-full overflow-hidden bg-cover"
-    @if ($is_editor)
-        :style="`background-image: url(${activeChatbot.welcome_background || '{{ custom_theme_url('/assets/img/external-chatbot/chat-default-bg.jpg') }}'}); background-position: top center;`"
-    @else
-        style="background-image: url({{ $bg_image }}); background-position: top center;"
-    @endif
+    style="background-image: url({{ $bg_image }}); background-position: top center;"
     x-show="currentView === 'welcome'"
     x-transition:enter="transition"
     x-transition:enter-start="opacity-0 translate-x-1"

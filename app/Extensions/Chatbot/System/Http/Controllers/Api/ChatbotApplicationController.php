@@ -1,0 +1,709 @@
+<?php
+
+namespace App\Extensions\Chatbot\System\Http\Controllers\Api;
+
+use App\Extensions\Chatbot\System\Enums\InteractionType;
+use App\Extensions\Chatbot\System\Http\Requests\ChatbotHistoryStoreRequest;
+use App\Extensions\Chatbot\System\Http\Resources\Api\ChatbotConversationResource;
+use App\Extensions\Chatbot\System\Http\Resources\Api\ChatbotHistoryResource;
+use App\Extensions\Chatbot\System\Http\Resources\Api\ChatbotResource;
+use App\Extensions\Chatbot\System\Models\Chatbot;
+use App\Extensions\Chatbot\System\Models\ChatbotConversation;
+use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
+use App\Extensions\Chatbot\System\Models\ChatbotHistory;
+use App\Extensions\Chatbot\System\Models\ChatbotKnowledgeBaseArticle;
+use App\Extensions\Chatbot\System\Services\GeneratorService;
+use App\Extensions\Chatbot\System\Services\ProactiveTriggerService;
+use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
+use App\Helpers\Classes\Helper;
+use App\Helpers\Classes\MarketplaceHelper;
+use App\Helpers\Classes\RateLimiter\RateLimiter;
+use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class ChatbotApplicationController extends Controller
+{
+    public Setting $setting;
+
+    public function __construct(
+        public GeneratorService $service
+    ) {
+        $this->setting = Setting::getCache();
+    }
+
+    public function index(Chatbot $chatbot): ChatbotResource
+    {
+        return ChatbotResource::make($chatbot);
+    }
+
+    public function triggers(Chatbot $chatbot): JsonResponse
+    {
+        $triggerService = app(ProactiveTriggerService::class);
+        $triggers = $triggerService->getActiveTriggers((string) $chatbot->id);
+
+        return response()->json([
+            'triggers' => $triggers,
+        ]);
+    }
+
+    public function enableSound(Chatbot $chatbot, string $sessionId): JsonResponse
+	{
+        $customer = ChatbotCustomer::query()
+            ->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->firstOrFail();
+
+        $customer->update([
+            'enabled_sound' => ! $customer->getAttribute('enabled_sound'),
+        ]);
+
+        return response()->json([
+            'enabled_sound' => $customer->getAttribute('enabled_sound'),
+        ]);
+    }
+
+    public function articles(Request $request, Chatbot $chatbot)
+    {
+        return ChatbotKnowledgeBaseArticle::query()
+            ->whereRaw('JSON_CONTAINS(chatbots, ?)', ['"' . $chatbot->getKey() . '"'])
+            ->select(columns: [
+                'id',
+                'title',
+                'description as excerpt',
+                'is_featured',
+                DB::raw('"#" as link'),
+            ])
+            ->when($request->get('search'), function ($query, $search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            })->get();
+    }
+
+    public function showArticles(Request $request, Chatbot $chatbot, $id)
+    {
+        return ChatbotKnowledgeBaseArticle::query()
+            ->whereRaw('JSON_CONTAINS(chatbots, ?)', ['"' . $chatbot->getKey() . '"'])
+            ->select(columns: [
+                'id',
+                'title',
+                'description as excerpt',
+                'content',
+                'is_featured',
+                DB::raw('"#" as link'),
+            ])
+            ->where('id', $id)
+            ->get();
+    }
+
+    public function storeFile(
+        Request $request,
+        Chatbot $chatbot,
+        string $sessionId,
+        $conversationId = null
+    ): ChatbotHistoryResource {
+        $request->validate([
+            'message'         => 'sometimes|nullable|string',
+            'media'           => 'required|mimes:' . setting('media_allowed_types', 'jpg,png,gif,webp,svg,mp4,avi,mov,wmv,flv,webm,mp3,wav,m4a,pdf,doc,docx,xls,xlsx') . '|max:20480',
+        ]);
+
+        $chatbotConversation = ChatbotConversation::query()
+            ->findOrFail($conversationId);
+
+        $mediaUrl = null;
+        $mediaName = null;
+
+        if ($request->hasFile('media')) {
+            $mediaName = $request->file('media')->getClientOriginalName();
+            $mediaUrl = '/uploads/' . $request->file('media')->store('chatbot-media', 'public');
+        }
+
+        $message = $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: $request['message'] ?: '',
+            role: 'user',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: (bool) $chatbotConversation->getAttribute('connect_agent_at'),
+            mediaUrl: $mediaUrl,
+            mediaName: $mediaName,
+        );
+
+        return ChatbotHistoryResource::make($message)->additional([
+            'collect_email' => false,
+        ]);
+    }
+
+    public function sendEmail(Chatbot $chatbot, string $sessionId, Request $request): ChatbotConversationResource
+    {
+        $request->validate([
+            'email'   => 'required|email',
+            'message' => 'required|string',
+        ]);
+
+        $customer = ChatbotCustomer::query()->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->firstOrFail();
+
+        $customer->update([
+            'email' => $request->get('email'),
+        ]);
+
+        $chatbotConversation = ChatbotConversation::query()
+            ->create([
+                'chatbot_channel' 			      => 'frame',
+                'is_showed_on_history'     => false,
+                'country_code'             => Helper::getRequestCountryCode(),
+                'ip_address'               => Helper::getRequestIp(),
+                'conversation_name'        => 'Anonymous User',
+                'chatbot_id'               => $chatbot->getAttribute('id'),
+                'session_id'               => $sessionId,
+                'chatbot_customer_id'      => $customer?->getKey(),
+                'connect_agent_at'         => now(),
+                'last_activity_at'         => now(),
+                'send_email_at'            => now(),
+            ]);
+
+        $history = $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: 'Customer email: ' . $request->get('email') . "\n\n" . $request->get('message'),
+            role: 'user',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: (bool) $chatbotConversation->getAttribute('connect_agent_at')
+        );
+
+        $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: trans('Your message has been received, and you will get a response shortly.'),
+            role: 'assistant',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: (bool) $chatbotConversation->getAttribute('connect_agent_at')
+        );
+
+        try {
+            ChatbotForPanelEventAbly::dispatch($chatbot, $chatbotConversation, $history);
+        } catch (Exception $e) {
+        }
+
+        return ChatbotConversationResource::make($chatbotConversation);
+
+    }
+
+    public function collectEmail(Chatbot $chatbot, string $sessionId, Request $request): JsonResponse
+    {
+        $request->validate([
+            'email'   => 'required|email',
+        ]);
+
+        $customer = ChatbotCustomer::query()->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->firstOrFail();
+
+        $customer->update([
+            'email' => $request->get('email'),
+        ]);
+
+        return response()->json([
+            'message' => 'Email collected successfully.',
+            'email'   => $customer->email,
+        ]);
+
+    }
+
+    public function saveGdprConsent(Chatbot $chatbot, string $sessionId, Request $request): JsonResponse
+    {
+        $request->validate([
+            'consent' => 'required|boolean',
+        ]);
+
+        $customer = ChatbotCustomer::query()->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->firstOrFail();
+
+        $customer->update([
+            'gdpr_consent'    => $request->get('consent'),
+            'gdpr_consent_at' => $request->get('consent') ? now() : null,
+        ]);
+
+        return response()->json([
+            'message' => 'GDPR consent saved successfully.',
+            'consent' => $customer->gdpr_consent,
+        ]);
+    }
+
+    public function indexSession(Chatbot $chatbot, string $sessionId): ChatbotResource
+    {
+        $conversations = ChatbotConversation::query()
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->where('session_id', $sessionId)
+            ->with('lastMessage')
+            ->get();
+
+        return ChatbotResource::make($chatbot)->additional([
+            'conversations' => ChatbotConversationResource::collection($conversations),
+        ]);
+    }
+
+    public function connectSupport(Request $request, Chatbot $chatbot, string $sessionId)
+    {
+        if (MarketplaceHelper::isRegistered('chatbot-agent')) {
+            $request->validate(['conversation_id' => 'required|integer|exists:ext_chatbot_conversations,id']);
+
+            /** @var ChatbotConversation $conversation */
+            $conversation = ChatbotConversation::find($request->get('conversation_id'));
+
+            if ($chatbot->getAttribute('interaction_type') === InteractionType::SMART_SWITCH) {
+                $conversation->update(['connect_agent_at' => now()]);
+
+                $chatbotHistory = null;
+
+                if ($chatbot->getAttribute('connect_message')) {
+                    $chatbotHistory = $this->insertMessage(
+                        conversation: $conversation,
+                        message: trans($chatbot->getAttribute('connect_message')),
+                        role: 'assistant',
+                        model: $chatbot->getAttribute('ai_model'),
+                        forcePanelEvent: true
+                    );
+                }
+
+                try {
+                    ChatbotForPanelEventAbly::dispatch($chatbot, $conversation, $chatbotHistory);
+                } catch (Exception $e) {
+                    Log::error($e->getMessage());
+                }
+
+                return ChatbotConversationResource::make($conversation)->additional([
+                    'history' => $chatbotHistory ? ChatbotHistoryResource::make($chatbotHistory) : null,
+                ]);
+            }
+
+            abort(404);
+        }
+    }
+
+    public function conversionStore(Chatbot $chatbot, string $sessionId): ChatbotConversationResource
+    {
+        $customer = ChatbotCustomer::query()->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->first();
+
+        $chatbotConversation = ChatbotConversation::query()
+            ->create([
+                'conversation_name'    => $customer->name ?: 'Anonymous User',
+                'chatbot_channel'      => 'frame',
+                'is_showed_on_history' => false,
+                'ip_address'           => Helper::getRequestIp(),
+                'country_code'         => Helper::getRequestCountryCode(),
+                'chatbot_id'           => $chatbot->getAttribute('id'),
+                'session_id'           => $sessionId,
+                'chatbot_customer_id'  => $customer?->getKey(),
+                'connect_agent_at'     => $chatbot->getAttribute('interaction_type') === InteractionType::HUMAN_SUPPORT ? now() : null,
+                'last_activity_at'     => now(),
+            ]);
+
+        $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: $chatbot->getAttribute('welcome_message'),
+            role: 'assistant',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: (bool) $chatbotConversation->getAttribute('connect_agent_at')
+        );
+
+        return ChatbotConversationResource::make($chatbotConversation);
+    }
+
+    public function conversion(Chatbot $chatbot, string $sessionId, ChatbotConversation $chatbotConversation): ChatbotConversationResource
+    {
+        if ($chatbotConversation->getAttribute('chatbot_id') !== $chatbot->getAttribute('id')) {
+            abort(404);
+        }
+
+        if ($chatbotConversation->getAttribute('session_id') !== $sessionId) {
+            abort(404);
+        }
+
+        return ChatbotConversationResource::make($chatbotConversation);
+    }
+
+    public function export(Chatbot $chatbot, string $sessionId, ChatbotConversation $chatbotConversation)
+    {
+        $messages = ChatbotHistory::query()
+            ->where('conversation_id', $chatbotConversation->getAttribute('id'))
+            ->orderBy('id')
+            ->get();
+
+        $content = '';
+
+        foreach ($messages as $message) {
+            $role = strtoupper($message->role); // örn: user / bot
+            $content .= "[{$role}] " . $message->message . PHP_EOL . PHP_EOL;
+        }
+
+        $fileName = "conversation-{$chatbotConversation->id}.txt";
+
+        return response()->make($content, 200, [
+            'Content-Type'        => 'text/plain',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ]);
+    }
+
+    public function messages(Chatbot $chatbot, string $sessionId, ChatbotConversation $chatbotConversation): AnonymousResourceCollection
+    {
+        if ($chatbotConversation->getAttribute('chatbot_id') !== $chatbot->getAttribute('id')) {
+            abort(404);
+        }
+
+        if ($chatbotConversation->getAttribute('session_id') !== $sessionId) {
+            abort(404);
+        }
+
+        $messages = ChatbotHistory::query()
+            ->where('conversation_id', $chatbotConversation->getAttribute('id'))
+            ->orderByDesc('id')
+            ->paginate(perPage: request('per_page', 10));
+
+        return ChatbotHistoryResource::collection($messages);
+    }
+
+    public function storeMessage(ChatbotHistoryStoreRequest $request, Chatbot $chatbot, string $sessionId, ChatbotConversation $chatbotConversation): ChatbotHistoryResource
+    {
+        if ($chatbotConversation->getAttribute('chatbot_id') !== $chatbot->getAttribute('id')) {
+            abort(404);
+        }
+
+        if ($chatbotConversation->getAttribute('session_id') !== $sessionId) {
+            abort(404);
+        }
+
+        $mediaUrl = null;
+        $mediaName = null;
+
+        if ($request->hasFile('media')) {
+            $mediaName = $request->file('media')->getClientOriginalName();
+            $mediaUrl = '/uploads/' . $request->file('media')->store('chatbot-media', 'public');
+        }
+
+        $userMessage = $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: $request->validated('prompt'),
+            role: 'user',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: false,
+            mediaUrl: $mediaUrl,
+            mediaName: $mediaName,
+        );
+
+        if (! $chatbotConversation->getAttribute('is_showed_on_history')) {
+            $chatbotConversation->update(['is_showed_on_history' => true]);
+        }
+
+        if ($chatbotConversation->getAttribute('connect_agent_at')) {
+            return ChatbotHistoryResource::make($userMessage)->additional([
+                'connection'    => 'panel',
+                'collect_email' => false,
+                'needs_human'   => false,
+            ]);
+        }
+
+        $clientIp = Helper::getRequestIp();
+        $rateLimiter = new RateLimiter('chatbot-extension', 100);
+
+        if (Helper::appIsDemo() && ! $rateLimiter->attempt($clientIp)) {
+            $response = 'This feature is disabled in the demo version. You have reached the maximum request limit for today.';
+        } else {
+        $response = $this->service
+            ->setChatbot($chatbot)
+            ->setConversation($chatbotConversation)
+            ->setPrompt(
+                $request->validated('prompt')
+            )
+            ->generate();
+
+        if (empty($response)) {
+            $response = trans('Sorry, I can\'t answer right now.');
+        }
+        }
+
+        $needsHuman = false;
+        $needsHumanDirect = false;
+
+        $originalResponse = $response;
+
+        $messageToUser = $response;
+
+        if ($chatbot->getAttribute('interaction_type') === InteractionType::SMART_SWITCH) {
+            $needsHumanDirect = (bool) preg_match('/\s*\[human-agent-direct\]\s*$/u', $response);
+
+            $response = $needsHumanDirect
+                ? preg_replace('/\s*\[human-agent\]\s*$/u', '', $response)
+                : $response;
+
+            $response = rtrim($response);
+
+            $needsHuman = (bool) preg_match('/\s*\[human-agent\]\s*$/u', $response);
+            $messageToUser = $needsHuman
+                ? preg_replace('/\s*\[human-agent\]\s*$/u', '', $response)
+                : $response;
+            $messageToUser = rtrim($messageToUser);
+
+            if ($needsHumanDirect) {
+                $messageToUser = trans('Connecting you to a human agent…');
+            }
+
+            if ($needsHuman) {
+                $needsHumanDirect = false;
+                $messageToUser = trans('Sorry, I’m not able to help with this. Let me connect you to a human agent.');
+            }
+        }
+
+        $message = $this->insertMessage(
+            conversation: $chatbotConversation,
+            message: $messageToUser,
+            role: 'assistant',
+            model: $chatbot->getAttribute('ai_model'),
+            forcePanelEvent: false
+        );
+
+        $customer = ! $chatbotConversation?->getAttribute('customer')?->getAttribute('email');
+
+        $collectEmail = ChatbotHistory::query()
+            ->where('conversation_id', $chatbotConversation->getAttribute('id'))
+            ->where('role', '!=', 'user')
+            ->count() === 2 && $customer;
+
+        return ChatbotHistoryResource::make($message)->additional([
+            'connection'                          => 'ai',
+            'collect_email'                       => $collectEmail && $chatbot->getAttribute('is_email_collect'),
+            'needs_human'                         => $needsHuman,
+            'needs_human_direct'                  => $needsHumanDirect,
+            'original_response'                   => $originalResponse,
+        ]);
+    }
+
+    protected function insertMessage(
+        ChatbotConversation $conversation,
+        ?string $message,
+        string $role,
+        string $model,
+        bool $forcePanelEvent = false,
+        ?string $mediaUrl = null,
+        ?string $mediaName = null
+    ) {
+        $chatbot = $conversation->getAttribute('chatbot');
+
+        $chatbotHistory = ChatbotHistory::query()->create([
+            'chatbot_id'      => $conversation->getAttribute('chatbot_id'),
+            'conversation_id' => $conversation->getAttribute('id'),
+            'role'            => $role,
+            'model'           => $this->setting->openai_default_model ?: $model,
+            'message'         => $message,
+            'created_at'      => now(),
+            'read_at'         => $conversation->getAttribute('connect_agent_at') ? null : now(),
+            'media_url'       => $mediaUrl,
+            'media_name'      => $mediaName,
+        ]);
+
+        $sendEvent = $conversation->getAttribute('connect_agent_at') && $chatbot->getAttribute('interaction_type') !== InteractionType::AUTOMATIC_RESPONSE && $role === 'user';
+
+        if ($sendEvent || $forcePanelEvent) {
+            $conversation->touch();
+            if (MarketplaceHelper::isRegistered('chatbot-agent')) {
+                ChatbotForPanelEventAbly::dispatch(
+                    $chatbot,
+                    $conversation->load('lastMessage'),
+                    $chatbotHistory
+                );
+            }
+        }
+
+        return $chatbotHistory;
+    }
+
+    /**
+     * Obtener productos del chatbot (para Sales Agent)
+     */
+    public function getProducts(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        if (!$chatbot->sales_agent_enabled || !$chatbot->woocommerce_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sales Agent no está habilitado',
+            ], 403);
+        }
+
+        $query = $chatbot->products()->active()->inStock();
+
+        // Filtros opcionales
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('category')) {
+            $category = $request->input('category');
+            $query->whereJsonContains('categories', ['name' => $category]);
+        }
+
+        $products = $query->latest('last_synced_at')->paginate(12);
+
+        return response()->json([
+            'success' => true,
+            'products' => $products->items(),
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Generar Payment Link para un producto
+     */
+    public function generatePaymentLink(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        if (!$chatbot->wompi_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wompi no está habilitado',
+            ], 403);
+        }
+
+        $request->validate([
+            'product_id' => 'required|exists:ext_chatbot_products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'customer_email' => 'required|email',
+            'customer_name' => 'nullable|string',
+        ]);
+
+        $product = $chatbot->products()->findOrFail($request->product_id);
+
+        if (!$product->in_stock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto agotado',
+            ], 400);
+        }
+
+        $wompiService = app(\App\Extensions\Chatbot\System\Services\WompiService::class);
+
+        $result = $wompiService->generatePaymentLink(
+            $chatbot,
+            $product,
+            [
+                'email' => $request->customer_email,
+                'name' => $request->customer_name,
+            ],
+            $request->quantity ?? 1
+        );
+
+        return response()->json($result);
+    }
+
+    /**
+     * Create order in WooCommerce and generate Wompi payment link
+     */
+    public function createOrder(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        // Verificar permisos
+        if (!$chatbot->sales_agent_enabled || !$chatbot->woocommerce_enabled || !$chatbot->wompi_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sales Agent, WooCommerce o Wompi no están habilitados',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:ext_chatbot_products,id',
+            'quantity' => 'required|integer|min:1',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:50',
+            'department' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'address' => 'required|string|max:500',
+            'address_type' => 'required|string|in:Casa,Apartamento,Oficina',
+            'address_complement' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        // Obtener producto
+        $product = $chatbot->products()->findOrFail($request->product_id);
+
+        // Verificar stock
+        if (!$product->in_stock || ($product->stock_quantity && $product->stock_quantity < $validated['quantity'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto sin stock suficiente',
+            ], 400);
+        }
+
+        // Preparar dirección completa
+        $fullAddress = $validated['address'];
+        if (!empty($validated['address_complement'])) {
+            $fullAddress .= ', ' . $validated['address_complement'];
+        }
+
+        // Crear orden en WooCommerce
+        $wooCommerceService = app(\App\Extensions\Chatbot\System\Services\WooCommerceService::class);
+        $orderResult = $wooCommerceService->createOrder($chatbot, [
+            'product_id' => $product->woocommerce_id,
+            'quantity' => $validated['quantity'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'address' => $fullAddress,
+            'city' => $validated['city'],
+            'state' => $validated['department'],
+            'address_type' => $validated['address_type'],
+            'notes' => $validated['notes'] ?? '',
+        ]);
+
+        if (!$orderResult['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $orderResult['message'],
+            ], 500);
+        }
+
+        // Generar payment link con Wompi
+        $wompiService = app(\App\Extensions\Chatbot\System\Services\WompiService::class);
+        $paymentLinkResult = $wompiService->generatePaymentLink(
+            $chatbot,
+            $product,
+            [
+                'email' => $validated['email'],
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'phone' => $validated['phone'],
+            ],
+            $validated['quantity'],
+            $orderResult['order_id'] ?? null
+        );
+
+        if (!$paymentLinkResult['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar link de pago: ' . $paymentLinkResult['message'],
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'payment_link' => $paymentLinkResult['payment_link'],
+            'order_id' => $orderResult['order_id'],
+            'reference' => $paymentLinkResult['reference'] ?? null,
+        ]);
+    }
+}

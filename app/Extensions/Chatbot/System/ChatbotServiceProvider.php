@@ -8,14 +8,14 @@ use App\Domains\Marketplace\Contracts\ExtensionRegisterKeyProviderInterface;
 use App\Extensions\Chatbot\System\Http\Controllers\Api\ChatbotApplicationController;
 use App\Extensions\Chatbot\System\Http\Controllers\Api\ChatbotFrameController;
 use App\Extensions\Chatbot\System\Http\Controllers\AvatarController;
+use App\Extensions\Chatbot\System\Http\Controllers\ChatbotAnalyticsController;
 use App\Extensions\Chatbot\System\Http\Controllers\ChatbotController;
+use App\Extensions\Chatbot\System\Http\Controllers\ChatbotCrmController;
 use App\Extensions\Chatbot\System\Http\Controllers\ChatbotCustomerController;
+use App\Extensions\Chatbot\System\Http\Controllers\ChatbotEcommerceController;
 use App\Extensions\Chatbot\System\Http\Controllers\ChatbotKnowledgeBaseArticleController;
 use App\Extensions\Chatbot\System\Http\Controllers\ChatbotMultiChannelController;
-use App\Extensions\Chatbot\System\Http\Controllers\ChatbotProductController;
 use App\Extensions\Chatbot\System\Http\Controllers\ChatbotTrainController;
-use App\Extensions\Chatbot\System\Http\Controllers\ChatbotTriggerController;
-use App\Extensions\Chatbot\System\Http\Controllers\TriggerManagementController;
 use App\Extensions\Chatbot\System\Http\Middleware\LanguageMiddleware;
 use App\Helpers\Classes\Helper;
 use App\Http\Middleware\CheckTemplateTypeAndPlan;
@@ -39,18 +39,22 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
             ->registerMigrations()
             ->publishAssets()
             ->registerCommand();
+
     }
 
     public function registerCommand(): static
     {
-        $this->commands([
-            Console\Commands\PublishTriggerAssetsCommand::class,
-        ]);
-
         if (Helper::appIsDemo()) {
             $this->commands([
                 Console\Commands\ClearDemoModeCommand::class,
             ]);
+
+            //            if ($this->app->runningInConsole()) {
+            //                $this->app->booted(function () {
+            //                    $schedule = $this->app->make(Schedule::class);
+            //                    $schedule->command('app:clear-chatbot-demo-mode')->everyMinute();
+            //                });
+            //            }
         }
 
         return $this;
@@ -62,8 +66,6 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
             __DIR__ . '/../resources/assets/js'     => public_path('vendor/chatbot/js'),
             __DIR__ . '/../resources/assets/images' => public_path('vendor/chatbot/images'),
             __DIR__ . '/../resources/assets/icons'  => public_path('vendor/chatbot/icons'),
-            __DIR__ . '/../resources/js'            => public_path('vendor/chatbot/js'),
-            __DIR__ . '/../resources/css'           => public_path('vendor/chatbot/css'),
         ], 'extension');
 
         return $this;
@@ -116,6 +118,7 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                 'controller'     => ChatbotApplicationController::class,
             ], function (Router $router) {
                 $router->get('{chatbot:uuid}', 'index')->name('index');
+                $router->get('{chatbot:uuid}/triggers', 'triggers')->name('triggers');
                 $router->get('{chatbot:uuid}/articles', 'articles')->name('articles');
                 $router->get('{chatbot:uuid}/articles/{id}/show', 'showArticles')->name('articles.show');
                 $router->get('{chatbot:uuid}/session/{sessionId}', 'indexSession')->name('index.session');
@@ -123,21 +126,19 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                 $router->post('{chatbot:uuid}/session/{sessionId}/conversation/connect', 'connectSupport')->name('conversion.connect.support');
                 $router->get('{chatbot:uuid}/session/{sessionId}/conversation/{chatbotConversation}', 'conversion')->name('conversion.show');
                 $router->get('{chatbot:uuid}/session/{sessionId}/conversation/{chatbotConversation}/messages', 'messages')->name('conversion.messages');
+                $router->get('{chatbot:uuid}/session/{sessionId}/conversation/{chatbotConversation}/export', 'export')->name('conversion.export');
                 $router->post('{chatbot:uuid}/session/{sessionId}/conversation/{chatbotConversation}/messages', 'storeMessage')->name('conversion.store.message');
                 $router->post('{chatbot:uuid}/session/{sessionId}/conversation/{chatbotConversation}/file', 'storeFile')->name('conversion.store.file');
                 $router->post('{chatbot:uuid}/session/{sessionId}/send-email', 'sendEmail')->name('send-email.store');
+                $router->any('{chatbot:uuid}/session/{sessionId}/enable-sound', 'enableSound')->name('enable-sound');
                 $router->post('{chatbot:uuid}/session/{sessionId}/collect-email', 'collectEmail')->name('collect.email');
+                $router->post('{chatbot:uuid}/session/{sessionId}/gdpr-consent', 'saveGdprConsent')->name('gdpr.consent');
+                // Sales Agent endpoints
+                $router->get('{chatbot:uuid}/products', 'getProducts')->name('products');
+                $router->post('{chatbot:uuid}/generate-payment-link', 'generatePaymentLink')->name('payment-link');
+                $router->post('{chatbot:uuid}/create-order', 'createOrder')->name('create-order');
             })
-            ->group([
-                'middleware' => ['api'],
-                'prefix'     => 'api/v2/chatbot/triggers',
-                'as'         => 'api.v2.chatbot.triggers.',
-                'controller' => ChatbotTriggerController::class,
-            ], function (Router $router) {
-                $router->get('{chatbotId}/active', 'getActiveTriggers')->name('active');
-                $router->post('evaluate', 'evaluateTrigger')->name('evaluate');
-                $router->post('analytics', 'recordAnalytics')->name('analytics');
-            })
+
             ->group([
                 'middleware' => ['web', 'auth'],
             ], function (Router $route) {
@@ -170,9 +171,44 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                         // conversation
                         $route->get('conversations', 'conversations')->name('conversations');
                         $route->get('conversations-with-paginate', 'conversationsWithPaginate')->name('conversations.with.paginate');
+                        $route->post('conversations/search', 'searchConversation')->name('conversations.search');
+
+                        // triggers
+                        $route->get('{chatbot}/triggers', 'getTriggers')->name('triggers.get');
+                        $route->post('{chatbot}/triggers', 'saveTriggers')->name('triggers.save');
 
                         // ended routes
                         $route->get('{chatbot}/enbed', 'enbed')->name('enbed');
+                    });
+                $route
+                    ->controller(ChatbotAnalyticsController::class)
+                    ->prefix('dashboard/chatbot')
+                    ->name('dashboard.chatbot.')
+                    ->group(function (Router $route) {
+                        $route->get('analytics', 'index')->name('analytics.index');
+                        $route->get('analytics/{chatbotId}/data', 'data')->name('analytics.data');
+                        $route->get('analytics/{chatbotId}/export', 'export')->name('analytics.export');
+                    });
+                $route
+                    ->controller(ChatbotCrmController::class)
+                    ->prefix('dashboard/chatbot/{chatbot}')
+                    ->name('dashboard.chatbot.crm.')
+                    ->group(function (Router $route) {
+                        $route->get('leads/export', 'exportLeads')->name('leads.export');
+                        $route->get('leads/stats', 'getLeadsStats')->name('leads.stats');
+                    });
+                $route
+                    ->controller(ChatbotEcommerceController::class)
+                    ->prefix('dashboard/chatbot/{chatbot}')
+                    ->name('dashboard.chatbot.ecommerce.')
+                    ->group(function (Router $route) {
+                        $route->get('ecommerce', 'index')->name('index');
+                        $route->post('ecommerce/woocommerce', 'saveWooCommerceConfig')->name('woocommerce.save');
+                        $route->post('ecommerce/sync', 'syncProducts')->name('sync');
+                        $route->post('ecommerce/wompi', 'saveWompiConfig')->name('wompi.save');
+                        $route->post('ecommerce/sales-agent', 'saveSalesAgentConfig')->name('sales-agent.save');
+                        $route->post('ecommerce/product/{product}/toggle', 'toggleProduct')->name('product.toggle');
+                        $route->delete('ecommerce/product/{product}', 'deleteProduct')->name('product.delete');
                     });
                 $route
                     ->controller(ChatbotTrainController::class)
@@ -188,67 +224,6 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                         $route->post('file', 'trainFile')->name('file');
                         $route->post('text', 'trainText')->name('text');
                         $route->post('qa', 'trainQa')->name('qa');
-                        $route->post('save-products', 'saveDetectedProducts')->name('save.products');
-                    });
-                $route
-                    ->controller(ChatbotTriggerController::class)
-                    ->prefix('dashboard/chatbot')
-                    ->name('dashboard.chatbot.')
-                    ->group(function (Router $route) {
-                        $route->get('{chatbotId}/triggers', 'index')->name('triggers.index');
-                        $route->post('{chatbotId}/triggers', 'store')->name('triggers.store');
-                        $route->get('{chatbotId}/triggers/analytics', 'getAnalytics')->name('triggers.analytics');
-                        
-                        // Trigger management page
-                        $route->get('{chatbotId}/triggers/management', 'managementPage')->name('triggers.management');
-                        
-                        // Custom triggers management
-                        $route->get('{chatbotId}/triggers/custom', 'getCustomTriggers')->name('triggers.custom.index');
-                        $route->post('{chatbotId}/triggers/custom', 'storeCustomTrigger')->name('triggers.custom.store');
-                        $route->put('{chatbotId}/triggers/custom/{triggerId}', 'updateCustomTrigger')->name('triggers.custom.update');
-                        $route->delete('{chatbotId}/triggers/custom/{triggerId}', 'deleteCustomTrigger')->name('triggers.custom.delete');
-                    });
-                $route
-                    ->controller(TriggerManagementController::class)
-                    ->prefix('dashboard/chatbot/{chatbot}/triggers/management')
-                    ->name('dashboard.chatbot.triggers.management.')
-                    ->group(function (Router $route) {
-                        // Main dashboard
-                        $route->get('/', 'index')->name('index');
-                        
-                        // Data endpoint for DataTable
-                        $route->get('/data', 'getTriggersData')->name('data');
-                        
-                        // Create trigger
-                        $route->get('/create', 'create')->name('create');
-                        $route->post('/create', 'store')->name('store');
-                        
-                        // Edit trigger
-                        $route->get('/{trigger}/edit', 'edit')->name('edit');
-                        $route->put('/{trigger}', 'update')->name('update');
-                        
-                        // Trigger actions
-                        $route->post('/{trigger}/toggle', 'toggleStatus')->name('toggle');
-                        $route->post('/{trigger}/duplicate', 'duplicate')->name('duplicate');
-                        $route->delete('/{trigger}', 'destroy')->name('destroy');
-                        
-                        // Testing and preview
-                        $route->post('/preview', 'preview')->name('preview');
-                        $route->post('/{trigger}/test', 'test')->name('test');
-                        
-                        // Templates
-                        $route->get('/templates', 'getTemplates')->name('templates');
-                        $route->post('/apply-template', 'applyTemplate')->name('apply-template');
-                    });
-                $route
-                    ->controller(ChatbotProductController::class)
-                    ->prefix('dashboard/chatbot')
-                    ->name('dashboard.chatbot.')
-                    ->group(function (Router $route) {
-                        $route->get('products', 'index')->name('products.index');
-                        $route->get('products/stats', 'stats')->name('products.stats');
-                        $route->put('products/{id}', 'update')->name('products.update');
-                        $route->delete('products/{id}', 'destroy')->name('products.destroy');
                     });
                 $route->post('dashboard/chatbot/avatar/upload', AvatarController::class)
                     ->name('dashboard.chatbot.upload.avatar');

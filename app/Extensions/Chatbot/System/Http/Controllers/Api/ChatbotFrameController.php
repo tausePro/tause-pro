@@ -18,20 +18,20 @@ class ChatbotFrameController extends Controller
     {
         $session = $this->getVisitor();
 
-        $customerId = $this->createCustomer($chatbot, $session)->getKey();
+        $customer = $this->createCustomer($chatbot, $session);
+
+        $customerId = $customer->getKey();
 
         $conversations = ChatbotConversation::query()
             ->where('chatbot_id', $chatbot->getAttribute('id'))
             ->where('session_id', $session)
             ->get();
 
+        $chatbot->setAttribute('enabled_sound', $customer->getAttribute('enabled_sound'));
+
         $this->updateChatbotConversation($conversations, $customerId);
 
-        return view('chatbot::frame', [
-            'chatbot' => $chatbot->toArray(),
-            'session' => $session,
-            'conversations' => $conversations
-        ]);
+        return view('chatbot::frame', compact('chatbot', 'session', 'conversations'));
     }
 
     public function updateChatbotConversation(Collection $conversations, $customerId): void
@@ -59,6 +59,7 @@ class ChatbotFrameController extends Controller
             'name'            => 'Anonymous User',
             'ip_address'      => Helper::getRequestIp(),
             'country_code'    => Helper::getRequestCountryCode(),
+            'enabled_sound'   => true,
         ]);
 
         $customer->update([

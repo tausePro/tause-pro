@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chatbot Aliviate - Sales Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+        .instructions ol {
+            line-height: 2;
+        }
+        .keywords {
+            background: rgba(16, 185, 129, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .keywords strong {
+            color: #10b981;
+        }
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 Test Chatbot Aliviate - Sales Agent</h1>
+        
+        <div class="instructions">
+            <h2>📋 Instrucciones de Prueba</h2>
+            <ol>
+                <li>Haz clic en el botón del chatbot (esquina inferior derecha)</li>
+                <li>Inicia una conversación nueva</li>
+                <li>Prueba con keywords:
+                    <div class="keywords">
+                        <strong>Keywords:</strong> 
+                        <code>comprar</code>, 
+                        <code>precio</code>, 
+                        <code>muletas</code>, 
+                        <code>silla</code>, 
+                        <code>rodillera</code>
+                    </div>
+                </li>
+                <li>El AI debería responder y mostrar <strong>product cards visuales</strong></li>
+                <li>Haz clic en "🛒 Comprar" en cualquier producto</li>
+                <li>Completa el flujo de compra (11 pasos)</li>
+                <li>Confirma y obtén el link de pago Wompi</li>
+            </ol>
+        </div>
+
+        <div class="instructions">
+            <h2>🧪 Ejemplos de Mensajes</h2>
+            <ul>
+                <li>"¿Qué muletas tienen disponibles?"</li>
+                <li>"Necesito una silla de ruedas"</li>
+                <li>"Cuánto cuesta la rodillera?"</li>
+                <li>"Quiero comprar muletas"</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- CHATBOT SCRIPT DE ALIVIATE -->
+    <script defer 
+        src="https://app.tause.pro/vendor/chatbot/js/external-chatbot.js" 
+        data-chatbot-uuid="786ce971-da76-4fd6-adbb-262cbee1200d"
+        data-iframe-width="420" 
+        data-iframe-height="745"
+        data-language="en">
+    </script>
+</body>
+</html>
+

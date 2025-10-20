@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Completo del Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        :root {
+            --lqd-ext-chat-primary: #017be5;
+            --lqd-ext-chat-primary-foreground: #fff;
+            --lqd-ext-chat-window-bg: #fff;
+            --lqd-ext-chat-foot-bg: rgba(248, 248, 248, 1);
+        }
+        
+        .lqd-ext-chatbot-window-welcome-screen {
+            background-size: cover !important;
+            background-position: top center !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-6 text-center">Test Completo del Chatbot</h1>
+        
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden" style="height: 600px;">
+            <!-- Simulación exacta del HTML del chatbot -->
+            <div x-data="{ currentView: 'welcome' }" class="h-full">
+                <div
+                    class="lqd-ext-chatbot-window-welcome-screen relative col-start-1 col-end-1 row-start-1 row-end-1 h-full w-full overflow-hidden bg-cover"
+                    style="background-image: url(https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80); background-position: top center;"
+                    x-show="currentView === 'welcome'"
+                >
+                    <div class="absolute start-0 top-0 h-full w-full bg-gradient-to-t from-[--lqd-ext-chat-foot-bg] from-25% to-transparent to-80%"></div>
+
+                    <div class="relative flex h-full flex-col gap-8 overflow-y-auto px-6 pb-28 pt-6">
+                        <!-- Welcome Banner -->
+                        <div class="lqd-ext-chatbot-window-welcome-banner">
+                            <div class="mb-28 flex items-center gap-2.5 text-white">
+                                <h4 class="lqd-ext-chatbot-window-head-title">
+                                    MagicAIBots
+                                </h4>
+                            </div>
+
+                            <p class="mb-4 text-[27px]/none font-bold -tracking-wide text-white">
+                                <span class="block opacity-70">¡Hola! 👋 (Actualizado)</span>
+                                ¿En qué podemos ayudarte hoy? (Actualizado)
+                            </p>
+
+                            <button
+                                class="lqd-ext-chatbot-window-welcome-button relative flex w-full items-center gap-3.5 rounded-full bg-white/25 px-[22px] py-[18px] text-start text-white shadow-2xl backdrop-blur-md transition-all before:pointer-events-none before:absolute before:-inset-px before:z-0 before:rounded-full before:border before:border-white before:opacity-35 before:[mask-image:linear-gradient(to_bottom,black,transparent)] hover:-translate-y-1 hover:bg-white hover:text-black hover:shadow-white/20"
+                            >
+                                <img
+                                    class="size-[38px] shrink-0 rounded-full object-cover object-center"
+                                    src="/uploads/avatars/7LZXu4XThWtyaSlJFM9eYmRG6NkpKoGUZIYLk0R0.png"
+                                    alt="MagicAIBots"
+                                >
+                                <span class="text-xs/5 font-medium">
+                                    Pregúntame lo que quieras (Actualizado)
+                                    <span class="block opacity-50">
+                                        Responderemos pronto (Actualizado)
+                                    </span>
+                                </span>
+
+                                <svg
+                                    class="ms-auto"
+                                    width="18"
+                                    height="15"
+                                    viewBox="0 0 18 15"
+                                    fill="currentColor"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M16.7559 6.29427L16.7503 6.2918L1.73575 0.0642261C1.60947 0.0113681 1.47205 -0.00936218 1.33578 0.00388969C1.19952 0.0171416 1.06867 0.0639623 0.954934 0.140164C0.834768 0.218903 0.736063 0.326281 0.667699 0.452638C0.599335 0.578995 0.563457 0.720366 0.563294 0.864031V4.84688C0.56336 5.04328 0.631939 5.23351 0.75721 5.38477C0.882481 5.53603 1.0566 5.63885 1.24954 5.67552L9.43849 7.1897C9.47067 7.1958 9.49971 7.21294 9.5206 7.23816C9.54149 7.26338 9.55292 7.29511 9.55292 7.32786C9.55292 7.36061 9.54149 7.39234 9.5206 7.41756C9.49971 7.44278 9.47067 7.45992 9.43849 7.46602L1.2499 8.9802C1.057 9.01677 0.882896 9.11946 0.75757 9.27058C0.632243 9.42171 0.56354 9.6118 0.563294 9.80813V13.7917C0.5632 13.9289 0.597168 14.0639 0.662149 14.1848C0.727129 14.3056 0.82109 14.4084 0.935598 14.4839C1.07334 14.5754 1.23499 14.6243 1.40036 14.6245C1.51533 14.6244 1.62912 14.6014 1.73505 14.5567L16.7492 8.36462L16.7559 8.36145C16.958 8.2746 17.1302 8.1304 17.2512 7.94669C17.3722 7.76299 17.4367 7.54784 17.4367 7.32786C17.4367 7.10788 17.3722 6.89273 17.2512 6.70903C17.1302 6.52532 16.958 6.38112 16.7559 6.29427Z"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <h2 class="text-xl font-semibold mb-4">Información de Debug</h2>
+            <div class="bg-gray-50 p-4 rounded-lg text-left max-w-2xl mx-auto">
+                <p><strong>Chatbot ID:</strong> 2</p>
+                <p><strong>UUID:</strong> 27aa3dc1-8ed0-4caf-b78f-136aee445de5</p>
+                <p><strong>Welcome Background:</strong> <code>https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80</code></p>
+                <p><strong>Welcome Greeting:</strong> ¡Hola! 👋 (Actualizado)</p>
+                <p><strong>Welcome Subtitle:</strong> ¿En qué podemos ayudarte hoy? (Actualizado)</p>
+                <p><strong>Button Text:</strong> Pregúntame lo que quieras (Actualizado)</p>
+                <p><strong>Button Subtitle:</strong> Responderemos pronto (Actualizado)</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <a href="/chatbot/27aa3dc1-8ed0-4caf-b78f-136aee445de5/frame" 
+               target="_blank" 
+               class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                🚀 Probar Chatbot Real
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -57,17 +57,12 @@
     </div>
 
     <p class="mb-4 text-[27px]/none font-bold -tracking-wide text-white">
-        @if ($is_editor)
-            <span class="block opacity-70" x-text="activeChatbot.welcome_greeting || '{{ __('Hi there 👋🏼') }}'"></span>
-            <span x-text="activeChatbot.welcome_subtitle || '{{ __('How can we help you?') }}'"></span>
-        @else
-            <span class="block opacity-70">{{ $chatbot['welcome_greeting'] ?? __('Hi there 👋🏼') }}</span>
-            {{ $chatbot['welcome_subtitle'] ?? __('How can we help you?') }}
-        @endif
+        <span class="block opacity-70">{{ __('Hi there 👋🏼') }}</span>
+        {{ __('How can we help you?') }}
     </p>
 
     <button
-        class="lqd-ext-chatbot-window-welcome-button relative flex w-full items-center gap-3.5 rounded-full bg-white/25 px-[22px] py-[18px] text-start text-white shadow-2xl backdrop-blur-md transition-all before:pointer-events-none before:absolute before:-inset-px before:z-0 before:rounded-full before:border before:border-white before:opacity-35 before:[mask-image:linear-gradient(to_bottom,black,transparent)] hover:-translate-y-1 hover:bg-white hover:text-black hover:shadow-white/20"
+        class="lqd-ext-chatbot-window-welcome-button relative flex w-full items-center gap-3.5 rounded-full bg-white/25 p-4 text-start text-white shadow-2xl backdrop-blur-md transition-all before:pointer-events-none before:absolute before:-inset-px before:z-0 before:rounded-full before:border before:border-white before:opacity-35 before:[mask-image:linear-gradient(to_bottom,black,transparent)] hover:-translate-y-1 hover:bg-white hover:text-black hover:shadow-white/20 sm:px-[22px] sm:py-[18px]"
         @click.prevent="startNewConversation"
     >
         <img
@@ -82,15 +77,10 @@
 			{{-- blade-formatter-enable --}}
         >
         <span class="text-xs/5 font-medium">
-            @if ($is_editor)
-                <span x-text="activeChatbot.welcome_button_text || '{{ __('Ask me anything.') }}'"></span>
-                <span class="block opacity-50" x-text="activeChatbot.welcome_button_subtitle || '{{ __('We usually reply in a few hours.') }}'"></span>
-            @else
-                {{ $chatbot['welcome_button_text'] ?? __('Ask me anything.') }}
-                <span class="block opacity-50">
-                    {{ $chatbot['welcome_button_subtitle'] ?? __('We usually reply in a few hours.') }}
-                </span>
-            @endif
+            {{ __('Ask me anything.') }}
+            <span class="block opacity-50">
+                {{ __('We usually reply in a few hours.') }}
+            </span>
         </span>
 
         <svg

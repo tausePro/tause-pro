@@ -3,6 +3,7 @@
 namespace App\Extensions\Chatbot\System\Http\Requests;
 
 use App\Extensions\Chatbot\System\Enums\ColorModeEnum;
+use App\Extensions\Chatbot\System\Enums\HeaderBgEnum;
 use App\Extensions\Chatbot\System\Enums\PositionEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -21,7 +22,7 @@ class ChatbotCustomizeRequest extends FormRequest
             'welcome_message'               => ['required', 'string'],
             'connect_message'               => ['sometimes', 'nullable', 'string'],
             'instructions'                  => ['required', 'string'],
-            'do_not_go_beyond_instructions' => ['required', 'boolean'],
+            'do_not_go_beyond_instructions' => ['sometimes', 'nullable'],
             'language'                      => ['sometimes', 'nullable', 'string'],
             'ai_model'                      => ['required', 'string'],
             'logo'                          => ['sometimes', 'nullable', 'string'],
@@ -34,11 +35,6 @@ class ChatbotCustomizeRequest extends FormRequest
             'show_logo'                     => ['sometimes', 'boolean'],
             'show_date_and_time'            => ['sometimes', 'boolean'],
             'show_average_response_time'    => ['sometimes', 'boolean'],
-            'welcome_background'            => ['sometimes', 'nullable', 'string'],
-            'welcome_greeting'              => ['sometimes', 'nullable', 'string'],
-            'welcome_subtitle'              => ['sometimes', 'nullable', 'string'],
-            'welcome_button_text'           => ['sometimes', 'nullable', 'string'],
-            'welcome_button_subtitle'       => ['sometimes', 'nullable', 'string'],
             'active'                        => ['sometimes', 'boolean'],
             'position'                      => ['string', Rule::enum(PositionEnum::class)],
             'footer_link'                   => ['sometimes', 'nullable', 'string'],
@@ -51,13 +47,36 @@ class ChatbotCustomizeRequest extends FormRequest
             'is_emoji'                      => ['sometimes', 'nullable', 'boolean'],
             'is_articles'                   => ['sometimes', 'nullable', 'boolean'],
             'is_links'                      => ['sometimes', 'nullable', 'boolean'],
+            'header_bg_type'                => ['string', Rule::enum(HeaderBgEnum::class)],
+            'header_bg_color'               => ['sometimes', 'nullable', 'string'],
+            'header_bg_gradient'            => ['sometimes', 'nullable', 'string'],
+            'header_bg_image_blob'          => ['sometimes', 'nullable'],
+            'human_agent_conditions'        => ['sometimes', 'nullable', 'array'],
+            // GDPR
+            'gdpr_enabled'                  => ['sometimes', 'nullable', 'boolean'],
+            'gdpr_message'                  => ['sometimes', 'nullable', 'string'],
+            'gdpr_required'                 => ['sometimes', 'nullable', 'boolean'],
+            // WooCommerce
+            'woocommerce_url'               => ['sometimes', 'nullable', 'url'],
+            'woocommerce_key'               => ['sometimes', 'nullable', 'string'],
+            'woocommerce_secret'            => ['sometimes', 'nullable', 'string'],
+            'woocommerce_enabled'           => ['sometimes', 'nullable', 'boolean'],
+            // Wompi
+            'wompi_public_key'              => ['sometimes', 'nullable', 'string'],
+            'wompi_private_key'             => ['sometimes', 'nullable', 'string'],
+            'wompi_enabled'                 => ['sometimes', 'nullable', 'boolean'],
+            'wompi_environment'             => ['sometimes', 'nullable', 'string', Rule::in(['test', 'production'])],
+            // Sales Agent
+            'sales_agent_enabled'           => ['sometimes', 'nullable', 'boolean'],
+            'sales_agent_keywords'          => ['sometimes', 'nullable', 'array'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'trigger_avatar_size'        => $this->get('trigger_avatar_size') ?? '60px',
+            'active'                        => true,
+            'trigger_avatar_size'           => $this->get('trigger_avatar_size') ?? '60px',
         ]);
     }
 }

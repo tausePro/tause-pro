@@ -1,0 +1,6 @@
+{
+    "name": "Messenger Chatbot",
+    "type": "extension",
+    "version": "1.1.0",
+    "description": "External voice Messenger Chatbot extension for magicai"
+}

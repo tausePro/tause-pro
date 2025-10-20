@@ -1,0 +1,1 @@
+import{e as o,L as t}from"./livewire.esm-CvVQJolS.js";import{f as i,m as a,c as n}from"./clipboard-DLN9kba1.js";window.fetchEventSource=i;window.Alpine=o;o.plugin(a);console.log("chatbotApp yüklendi");document.addEventListener("alpine:init",()=>{o.data("clipboard",e=>n(e))});t.start();document.querySelectorAll("[magic-load]").forEach(function(e){e.removeAttribute("magic-load")});

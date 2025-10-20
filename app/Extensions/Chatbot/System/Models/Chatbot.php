@@ -8,7 +8,6 @@ use App\Extensions\Chatbot\System\Enums\PositionEnum;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -41,12 +40,6 @@ class Chatbot extends Model
         'color_mode',
         'color',
         'show_logo',
-        // welcome customization
-        'welcome_background',
-        'welcome_greeting',
-        'welcome_subtitle',
-        'welcome_button_text',
-        'welcome_button_subtitle',
         'show_date_and_time',
         'show_average_response_time',
         'position',
@@ -62,10 +55,34 @@ class Chatbot extends Model
         'is_emoji',
         'is_articles',
         'is_links',
+        // GDPR
+        'gdpr_enabled',
+        'gdpr_message',
+        'gdpr_required',
+        // WooCommerce
+        'woocommerce_url',
+        'woocommerce_key',
+        'woocommerce_secret',
+        'woocommerce_enabled',
+        'woocommerce_last_sync',
+        // Wompi
+        'wompi_public_key',
+        'wompi_private_key',
+        'wompi_enabled',
+        'wompi_environment',
+        // Sales Agent
+        'sales_agent_enabled',
+        'sales_agent_keywords',
         // links
         'whatsapp_link',
         'telegram_link',
         'watch_product_tour_link',
+        // header bg
+        'header_bg_type',
+        'header_bg_color',
+        'header_bg_gradient',
+        'header_bg_image',
+        'human_agent_conditions',
     ];
 
     protected $casts = [
@@ -79,6 +96,14 @@ class Chatbot extends Model
         'active'                        => 'boolean',
         'user_id'                       => 'integer',
         'is_demo'                       => 'boolean',
+        'gdpr_enabled'                  => 'boolean',
+        'gdpr_required'                 => 'boolean',
+        'woocommerce_enabled'           => 'boolean',
+        'woocommerce_last_sync'         => 'datetime',
+        'wompi_enabled'                 => 'boolean',
+        'sales_agent_enabled'           => 'boolean',
+        'sales_agent_keywords'          => 'json',
+        'human_agent_conditions'        => 'json',
     ];
 
     public function conversations(): HasMany
@@ -120,174 +145,13 @@ class Chatbot extends Model
             ->get();
     }
 
-    /**
-     * Get all products associated with this chatbot.
-     */
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            ChatbotProduct::class,
-            'ext_chatbot_product_pivot',
-            'chatbot_id',
-            'product_id'
-        )->withTimestamps();
-    }
-
-    /**
-     * Get all social content associated with this chatbot.
-     */
-    public function socialContent(): HasMany
-    {
-        return $this->hasMany(ChatbotSocialContent::class, 'chatbot_id', 'id');
-    }
-
-    /**
-     * Get analytics data for this chatbot.
-     */
-    public function analytics(): HasMany
-    {
-        return $this->hasMany(ChatbotAnalytics::class, 'chatbot_id', 'id');
-    }
-
-    /**
-     * Get WhatsApp Business configuration for this chatbot.
-     */
-    public function whatsappBusiness(): HasMany
-    {
-        return $this->hasMany(ChatbotWhatsAppBusiness::class, 'chatbot_id', 'id');
-    }
-
-    /**
-     * Get triggers for this chatbot.
-     */
     public function triggers(): HasMany
     {
         return $this->hasMany(ChatbotTrigger::class, 'chatbot_id', 'id');
     }
 
-    /**
-     * Get knowledge base articles with enhanced relationships.
-     */
-    public function knowledgeBaseArticles(): HasMany
+    public function products(): HasMany
     {
-        return $this->hasMany(ChatbotKnowledgeBaseArticle::class)
-                    ->whereRaw('JSON_CONTAINS(chatbots, ?)', ['"' . $this->getKey() . '"']);
-    }
-
-    /**
-     * Get products that are in stock.
-     */
-    public function availableProducts(): HasMany
-    {
-        return $this->products()->available()->inStock();
-    }
-
-    /**
-     * Get recent social media content.
-     */
-    public function recentSocialContent(): HasMany
-    {
-        return $this->socialContent()->recent();
-    }
-
-    /**
-     * Get analytics for a specific date range.
-     */
-    public function analyticsForPeriod($startDate, $endDate): HasMany
-    {
-        return $this->analytics()->betweenDates($startDate, $endDate);
-    }
-
-    /**
-     * Get active WhatsApp Business account.
-     */
-    public function activeWhatsAppBusiness()
-    {
-        return $this->whatsappBusiness()->active()->configured()->first();
-    }
-
-    /**
-     * Check if chatbot has products configured.
-     */
-    public function hasProducts(): bool
-    {
-        return $this->products()->exists();
-    }
-
-    /**
-     * Check if chatbot has social media integration.
-     */
-    public function hasSocialIntegration(): bool
-    {
-        return $this->socialContent()->exists();
-    }
-
-    /**
-     * Check if chatbot has WhatsApp Business integration.
-     */
-    public function hasWhatsAppBusiness(): bool
-    {
-        return $this->whatsappBusiness()->configured()->exists();
-    }
-
-    /**
-     * Get total number of conversations.
-     */
-    public function getTotalConversationsAttribute(): int
-    {
-        return $this->conversations()->count();
-    }
-
-    /**
-     * Get average user satisfaction.
-     */
-    public function getAverageSatisfactionAttribute(): ?float
-    {
-        return $this->analytics()
-                    ->whereNotNull('user_satisfaction')
-                    ->avg('user_satisfaction');
-    }
-
-    /**
-     * Get conversion rate.
-     */
-    public function getConversionRateAttribute(): float
-    {
-        $total = $this->analytics()->count();
-        $conversions = $this->analytics()->conversions()->count();
-        
-        return $total > 0 ? round(($conversions / $total) * 100, 2) : 0;
-    }
-
-    /**
-     * Get active triggers for this chatbot.
-     */
-    public function activeTriggers(): HasMany
-    {
-        return $this->triggers()->active()->byPriority();
-    }
-
-    /**
-     * Check if chatbot has triggers configured.
-     */
-    public function hasTriggers(): bool
-    {
-        return $this->triggers()->exists();
-    }
-
-    /**
-     * Check if chatbot has active triggers.
-     */
-    public function hasActiveTriggers(): bool
-    {
-        return $this->triggers()->active()->exists();
-    }
-
-    /**
-     * Get trigger by type.
-     */
-    public function getTriggerByType(string $type): ?ChatbotTrigger
-    {
-        return $this->triggers()->byType($type)->active()->first();
+        return $this->hasMany(ChatbotProduct::class, 'chatbot_id', 'id');
     }
 }
