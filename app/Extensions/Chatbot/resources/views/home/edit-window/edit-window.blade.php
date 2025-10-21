@@ -97,8 +97,8 @@
                     @include('chatbot::home.edit-window.edit-steps.edit-step-customize', ['avatars', $avatars])
                     @include('chatbot::home.edit-window.edit-steps.edit-step-train')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-triggers')
-                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-embed')
+                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents')
                     @if (\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels())
                         @include('chatbot::home.edit-window.edit-steps.edit-step-channel')
                     @endif

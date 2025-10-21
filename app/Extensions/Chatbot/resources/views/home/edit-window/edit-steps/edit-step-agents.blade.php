@@ -1,8 +1,8 @@
-{{-- Editing Step 5 - Agents --}}
+{{-- Editing Step 6 - Agents --}}
 <div
     class="col-start-1 col-end-1 row-start-1 row-end-1 transition-all"
-    data-step="5"
-    x-show="editingStep === 5"
+    data-step="6"
+    x-show="editingStep === 6"
     x-transition:enter-start="opacity-0 -translate-x-3"
     x-transition:enter-end="opacity-100 translate-x-0"
     x-transition:leave-start="opacity-100 translate-x-0"
