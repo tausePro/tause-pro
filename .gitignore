@@ -1,1 +1,6 @@
 node_modules
+backups/
+*.zip
+*.tar.gz
+*.rar
+*.7z
