@@ -370,6 +370,26 @@
                         case 'lqd-ext-chatbot-request-styling':
                             this.handleStylingResponse(event);
                             break;
+                        case 'lqd-ext-chatbot-inject-trigger':
+                            this.handleProactiveTrigger(event);
+                            break;
+                    }
+                },
+
+                handleProactiveTrigger(event) {
+                    console.log('[Chatbot] Received proactive trigger via postMessage:', event.data.data);
+                    
+                    const triggerMessage = event.data.data;
+                    
+                    if (this.messages && Array.isArray(this.messages)) {
+                        this.messages.push(triggerMessage);
+                        console.log('[Chatbot] ✅ Trigger message injected into chat');
+                        
+                        setTimeout(() => {
+                            this.scrollMessagesToBottom();
+                        }, 100);
+                    } else {
+                        console.error('[Chatbot] Cannot inject trigger - messages array not found');
                     }
                 },
 
@@ -891,31 +911,58 @@
                     this.scrollMessagesToBottom();
                     
                     @if (!$is_editor)
-                        // ✨ ORQUESTADOR: Activar Sales Agent automáticamente cuando detecte productos
-                        if (window.SalesAgent && window.SalesAgent.enabled && window.SalesAgent.productsLoaded) {
+                        // ✨ ORQUESTADOR: Integrar con Sales Agent Component
+                        if (data.orchestration && data.orchestration.agents_activated && window.SalesAgent) {
                             setTimeout(() => {
-                                console.log('🎯 Orquestador: Evaluando si activar Sales Agent...');
+                                console.log('🎯 Orquestador Backend: Procesando agentes activados...');
                                 
-                                // Obtener el último mensaje assistant
-                                const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
-                                if (assistantMessages.length > 0 && messageToReplace.message) {
-                                    const lastMessageEl = assistantMessages[assistantMessages.length - 1];
+                                // Buscar Sales Agent en los agentes activados
+                                const salesAgent = data.orchestration.agents_activated.find(
+                                    agent => agent.agent_type === 'sales'
+                                );
+                                
+                                if (salesAgent && salesAgent.data && salesAgent.data.show_product_grid && salesAgent.data.products) {
+                                    console.log('✅ Sales Agent activado con', salesAgent.data.total_products, 'productos del backend');
+                                    console.log('   Productos:', salesAgent.data.products);
                                     
-                                    // Verificar si debe mostrar productos
-                                    if (window.SalesAgent.shouldEnhanceResponse(messageToReplace.message)) {
-                                        console.log('✅ Orquestador: Activando Sales Agent - productos detectados!');
-                                        
+                                    // Inyectar productos del backend en el Sales Agent Component
+                                    window.SalesAgent.products = salesAgent.data.products;
+                                    window.SalesAgent.productsLoaded = true;
+                                    
+                                    const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
+                                    if (assistantMessages.length > 0) {
+                                        const lastMessageEl = assistantMessages[assistantMessages.length - 1];
                                         const contentWrap = lastMessageEl.querySelector('.lqd-ext-chatbot-window-conversation-message-content-wrap');
+                                        
                                         if (contentWrap) {
+                                            // Usar el método del Sales Agent Component para renderizar con botones de compra
                                             window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
-                                        } else {
-                                            console.warn('⚠️ Orquestador: No se encontró contentWrap');
+                                            console.log('✅ Productos renderizados con flujo de compra integrado');
+                                            
+                                            // Asegurar que los event listeners estén registrados
+                                            setTimeout(() => {
+                                                const buyButtons = contentWrap.querySelectorAll('.product-buy-btn');
+                                                console.log('🔍 Botones de compra encontrados:', buyButtons.length);
+                                                buyButtons.forEach((btn, idx) => {
+                                                    const productId = parseInt(btn.dataset.productId);
+                                                    console.log(`   Botón ${idx + 1}: Product ID ${productId}`);
+                                                    
+                                                    // Verificar que el producto existe
+                                                    const product = window.SalesAgent.products.find(p => p.id === productId);
+                                                    if (product) {
+                                                        console.log(`   ✅ Producto encontrado: ${product.name}`);
+                                                    } else {
+                                                        console.error(`   ❌ Producto ${productId} NO encontrado en array`);
+                                                        console.log('   IDs disponibles:', window.SalesAgent.products.map(p => p.id));
+                                                    }
+                                                });
+                                            }, 500);
                                         }
-                                    } else {
-                                        console.log('ℹ️ Orquestador: No se detectaron productos relevantes en esta respuesta');
                                     }
+                                } else {
+                                    console.log('ℹ️ Sales Agent no activado o sin productos para mostrar');
                                 }
-                            }, 1500); // Esperar a que termine el typing effect
+                            }, 1500);
                         }
                         
                         // Sales Agent: Make product links functional (inline purchase flow)

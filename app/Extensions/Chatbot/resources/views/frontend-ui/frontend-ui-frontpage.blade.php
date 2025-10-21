@@ -69,6 +69,6 @@
     ></script>
 @endif
 
-@includeIf('sales-agent::sales-agent-component')
+@include('sales-agent::sales-agent-component', ['routes' => $routes ?? []])
 
 @include('chatbot::frontend-ui.frontend-ui-scripts', ['is_editor' => false])
