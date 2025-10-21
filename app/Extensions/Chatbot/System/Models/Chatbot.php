@@ -166,4 +166,9 @@ class Chatbot extends Model
     {
         return $this->hasMany(ChatbotAgent::class, 'chatbot_id', 'id');
     }
+
+    public function salesAgentConfig(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SalesAgentConfig::class, 'chatbot_id', 'id');
+    }
 }

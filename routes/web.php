@@ -85,3 +85,4 @@ Route::get('/chatbot/{uuid}/frame', 'App\Http\Controllers\ExternalChatbotControl
 require __DIR__ . '/auth.php';
 require __DIR__ . '/panel.php';
 require __DIR__ . '/webhooks.php';
+require __DIR__ . '/sales-agent-config.php';
