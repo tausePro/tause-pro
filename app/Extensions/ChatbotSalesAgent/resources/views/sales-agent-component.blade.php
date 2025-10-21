@@ -1,7 +1,15 @@
 {{-- Sales Agent Component - Enhanced Product Display --}}
 <script>
+    // Track Alpine initialization
+    let alpineReady = false;
+    document.addEventListener('alpine:initialized', () => {
+        console.log('🎯 Alpine initialized - Sales Agent ready');
+        alpineReady = true;
+    });
+    
     // Sales Agent - Enhance AI responses with visual product cards
     window.SalesAgent = {
+        alpineReady: false,
         // Configuration
         keywords: @json($chatbot->sales_agent_keywords ?? []),
         enabled: {{ $chatbot->sales_agent_enabled ? 'true' : 'false' }},
@@ -18,14 +26,30 @@
             
             try {
                 console.log('🛍️ Sales Agent: Loading products database...');
-                const response = await fetch('{{ isset($routes) ? $routes['getProducts'] ?? '' : '' }}');
-                const data = await response.json();
                 
-                if (data.success && data.products) {
-                    this.products = data.products;
-                    this.productsLoaded = true;
-                    console.log(`✅ Sales Agent: Loaded ${this.products.length} products`);
-                }
+                // Load all products from all pages
+                let allProducts = [];
+                let currentPage = 1;
+                let totalPages = 1;
+                
+                do {
+                    const response = await fetch(`{{ isset($routes) ? $routes['getProducts'] ?? '' : '' }}?page=${currentPage}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.products) {
+                        allProducts = allProducts.concat(data.products);
+                        totalPages = data.pagination?.last_page || 1;
+                        console.log(`📄 Sales Agent: Loaded page ${currentPage}/${totalPages} - ${data.products.length} products`);
+                        currentPage++;
+                    } else {
+                        break;
+                    }
+                } while (currentPage <= totalPages);
+                
+                this.products = allProducts;
+                this.productsLoaded = true;
+                console.log(`✅ Sales Agent: Loaded ${this.products.length} products total`);
+                
             } catch (error) {
                 console.error('❌ Sales Agent: Error loading products', error);
             }
@@ -327,31 +351,96 @@
             }
             
             console.log('🛒 Starting purchase for:', product.name);
+            console.log('   Product data:', product);
             
             this.purchaseMode = true;
             this.selectedProduct = { ...product, quantity: 1 };
             this.currentStep = 'quantity';
             this.customerData = {};
             
+            console.log('   Purchase mode:', this.purchaseMode);
+            console.log('   Current step:', this.currentStep);
+            console.log('   Selected product:', this.selectedProduct);
+            
             // Trigger a message from the user
+            console.log('   Simulating user message...');
             this.simulateUserMessage(`Quiero comprar: ${product.name}`);
             
             setTimeout(() => {
+                console.log('   Calling askQuantity...');
                 this.askQuantity();
             }, 500);
         },
         
-        // Get chatbot instance safely
-        getChatbotInstance() {
-            const chatbotEl = document.querySelector('[x-data]');
-            if (!chatbotEl || !chatbotEl.__x) return null;
-            return chatbotEl.__x.$data;
+        // Get chatbot instance safely with retry logic
+        getChatbotInstance(retryCount = 0) {
+            const maxRetries = 30; // Aumentado a 30 intentos = 6 segundos máximo
+            const retryDelay = 200; // 200ms entre intentos
+            
+            // Method 1: Find the externalChatbot element directly
+            const chatbotEl = document.querySelector('.lqd-ext-chatbot-window');
+            console.log('   Looking for .lqd-ext-chatbot-window element... (attempt', retryCount + 1, '/', maxRetries, ')');
+            
+            if (chatbotEl) {
+                console.log('   Element found, checking Alpine initialization...');
+                console.log('   Has __x:', !!chatbotEl.__x);
+                console.log('   Alpine ready flag:', alpineReady);
+                
+                if (chatbotEl.__x && chatbotEl.__x.$data) {
+                    console.log('   ✅ Alpine initialized!');
+                    console.log('   Has messages:', !!chatbotEl.__x.$data.messages);
+                    console.log('   Messages count:', chatbotEl.__x.$data.messages ? chatbotEl.__x.$data.messages.length : 0);
+                    
+                    if (chatbotEl.__x.$data.messages) {
+                        this.alpineReady = true;
+                        return chatbotEl.__x.$data;
+                    }
+                } else if (retryCount < maxRetries) {
+                    console.log('   ⏳ Alpine not ready yet, retrying in', retryDelay, 'ms...');
+                    // Alpine not initialized yet, retry
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            resolve(this.getChatbotInstance(retryCount + 1));
+                        }, retryDelay);
+                    });
+                }
+            } else {
+                console.log('   ⚠️ Element .lqd-ext-chatbot-window not found in DOM');
+            }
+            
+            // Method 2: Fallback - search all x-data elements
+            console.log('   Fallback: Searching all x-data elements...');
+            const allXData = document.querySelectorAll('[x-data]');
+            console.log('   Found', allXData.length, 'x-data elements');
+            
+            for (let el of allXData) {
+                if (el.__x && el.__x.$data && el.__x.$data.messages && Array.isArray(el.__x.$data.messages)) {
+                    console.log('   ✅ Chatbot instance found via fallback! Messages:', el.__x.$data.messages.length);
+                    this.alpineReady = true;
+                    return el.__x.$data;
+                }
+            }
+            
+            if (retryCount < maxRetries) {
+                console.log('   ⏳ No instance found, retrying in', retryDelay, 'ms...');
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve(this.getChatbotInstance(retryCount + 1));
+                    }, retryDelay);
+                });
+            }
+            
+            console.error('   ❌ Chatbot instance not found after', maxRetries, 'attempts');
+            console.error('   Total time waited:', (maxRetries * retryDelay / 1000), 'seconds');
+            return null;
         },
         
-        // Simulate user message
-        simulateUserMessage(message) {
-            const chatbot = this.getChatbotInstance();
+        // Simulate user message (async to handle retry)
+        async simulateUserMessage(message) {
+            console.log('   simulateUserMessage called:', message);
+            const chatbot = await this.getChatbotInstance();
             if (chatbot && chatbot.messages) {
+                console.log('   ✅ Adding user message to chat');
                 chatbot.messages.push({
                     id: Date.now(),
                     message: message,
@@ -363,13 +452,17 @@
                         chatbot.scrollMessagesToBottom();
                     }
                 }, 100);
+            } else {
+                console.error('   ❌ Could not add user message - chatbot or messages not found');
             }
         },
         
-        // Add assistant message
-        addAssistantMessage(message) {
-            const chatbot = this.getChatbotInstance();
+        // Add assistant message (async to handle retry)
+        async addAssistantMessage(message) {
+            console.log('   addAssistantMessage called:', message.substring(0, 50));
+            const chatbot = await this.getChatbotInstance();
             if (chatbot && chatbot.messages) {
+                console.log('   ✅ Adding assistant message to chat');
                 chatbot.messages.push({
                     id: Date.now(),
                     message: message,
@@ -381,11 +474,14 @@
                         chatbot.scrollMessagesToBottom();
                     }
                 }, 100);
+            } else {
+                console.error('   ❌ Could not add assistant message - chatbot or messages not found');
             }
         },
         
         // Ask for quantity
         askQuantity() {
+            console.log('   askQuantity called for:', this.selectedProduct.name);
             this.addAssistantMessage(`¡Excelente elección! **${this.selectedProduct.name}** por ${this.selectedProduct.formatted_price}.\n\n¿Cuántas unidades necesitas?`);
         },
         

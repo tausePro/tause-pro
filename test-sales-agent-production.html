@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sales Agent Production</title>
+</head>
+<body>
+    <h1>Test Sales Agent en Producción</h1>
+    
+    <h2>1. Verificar Frame del Chatbot:</h2>
+    <iframe src="https://app.tause.pro/dashboard/chatbot/786ce971-da76-4fd6-adbb-262cbee1200d/frame" 
+            width="400" height="600" id="chatbotFrame"></iframe>
+    
+    <h2>2. Verificar API de Productos:</h2>
+    <button onclick="testProductsAPI()">Probar API de Productos</button>
+    <div id="productsResult"></div>
+    
+    <h2>3. Verificar Sales Agent en Consola:</h2>
+    <p>Abre la consola del navegador (F12) y busca:</p>
+    <ul>
+        <li>🛍️ Sales Agent: Loading products database...</li>
+        <li>✅ Sales Agent: Loaded X products</li>
+    </ul>
+    
+    <script>
+        async function testProductsAPI() {
+            try {
+                const response = await fetch('https://app.tause.pro/api/v2/chatbot/786ce971-da76-4fd6-adbb-262cbee1200d/products');
+                const data = await response.json();
+                
+                document.getElementById('productsResult').innerHTML = `
+                    <h3>Resultado API Productos:</h3>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Productos encontrados:</strong> ${data.products ? data.products.length : 0}</p>
+                    <p><strong>Primer producto:</strong> ${data.products && data.products[0] ? data.products[0].name : 'N/A'}</p>
+                `;
+            } catch (error) {
+                document.getElementById('productsResult').innerHTML = `
+                    <h3>Error:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Auto-test al cargar
+        window.onload = function() {
+            setTimeout(testProductsAPI, 2000);
+        };
+    </script>
+</body>
+</html>

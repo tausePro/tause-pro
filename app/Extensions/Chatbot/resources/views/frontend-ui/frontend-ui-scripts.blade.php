@@ -381,9 +381,34 @@
                     
                     const triggerMessage = event.data.data;
                     
+                    // Ensure we have an active conversation
+                    if (!this.activeConversation) {
+                        console.log('[Chatbot] No active conversation, starting new one...');
+                        this.startNewConversation().then(() => {
+                            // Inject trigger after conversation is created
+                            if (this.messages && Array.isArray(this.messages)) {
+                                this.messages.push(triggerMessage);
+                                console.log('[Chatbot] ✅ Trigger message injected into chat');
+                                this.scrollMessagesToBottom();
+                            }
+                        });
+                        return;
+                    }
+                    
                     if (this.messages && Array.isArray(this.messages)) {
                         this.messages.push(triggerMessage);
                         console.log('[Chatbot] ✅ Trigger message injected into chat');
+                        
+                        // Open chatbot if closed
+                        if (this.windowState === 'close') {
+                            console.log('[Chatbot] Opening chatbot window for trigger');
+                            this.toggleWindowState('open');
+                        }
+                        
+                        // Switch to conversation view
+                        if (this.currentView !== 'conversation-messages') {
+                            this.toggleView('conversation-messages');
+                        }
                         
                         setTimeout(() => {
                             this.scrollMessagesToBottom();
