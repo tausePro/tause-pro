@@ -82,7 +82,7 @@
                     </div>
 
                     {{-- WooCommerce & Wompi Config --}}
-                    @if ($chatbot->woocommerce_enabled || $chatbot->wompi_enabled)
+                    <div x-show="activeChatbot.woocommerce_enabled || activeChatbot.wompi_enabled">
                         <div class="rounded-lg bg-green-50 p-3">
                             <div class="flex items-start gap-2">
                                 <svg class="mt-0.5 h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,17 +93,14 @@
                                         @lang('E-commerce Integration Active')
                                     </p>
                                     <p class="mt-1 text-2xs text-green-700">
-                                        @if ($chatbot->woocommerce_enabled)
-                                            @lang('WooCommerce connected')
-                                        @endif
-                                        @if ($chatbot->wompi_enabled)
-                                            @lang('Wompi payments enabled')
-                                        @endif
+                                        <span x-show="activeChatbot.woocommerce_enabled">@lang('WooCommerce connected')</span>
+                                        <span x-show="activeChatbot.wompi_enabled">@lang('Wompi payments enabled')</span>
                                     </p>
                                 </div>
                             </div>
                         </div>
-                    @else
+                    </div>
+                    <div x-show="!activeChatbot.woocommerce_enabled && !activeChatbot.wompi_enabled">
                         <div class="rounded-lg bg-yellow-50 p-3">
                             <div class="flex items-start gap-2">
                                 <svg class="mt-0.5 h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +116,7 @@
                                 </div>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
         </div>
