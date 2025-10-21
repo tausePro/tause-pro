@@ -69,6 +69,11 @@ class ChatbotCustomizeRequest extends FormRequest
             // Sales Agent
             'sales_agent_enabled'           => ['sometimes', 'nullable', 'boolean'],
             'sales_agent_keywords'          => ['sometimes', 'nullable', 'array'],
+            // Advanced Customization
+            'custom_bg_image_url'           => ['sometimes', 'nullable', 'string', 'url'],
+            'welcome_text'                  => ['sometimes', 'nullable', 'string'],
+            'initial_prompt_text'           => ['sometimes', 'nullable', 'string'],
+            'cta_button_text'               => ['sometimes', 'nullable', 'string'],
         ];
     }
 

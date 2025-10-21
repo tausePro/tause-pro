@@ -83,6 +83,11 @@ class Chatbot extends Model
         'header_bg_gradient',
         'header_bg_image',
         'human_agent_conditions',
+        // advanced customization
+        'custom_bg_image_url',
+        'welcome_text',
+        'initial_prompt_text',
+        'cta_button_text',
     ];
 
     protected $casts = [
@@ -153,5 +158,10 @@ class Chatbot extends Model
     public function products(): HasMany
     {
         return $this->hasMany(ChatbotProduct::class, 'chatbot_id', 'id');
+    }
+
+    public function agents(): HasMany
+    {
+        return $this->hasMany(ChatbotAgent::class, 'chatbot_id', 'id');
     }
 }

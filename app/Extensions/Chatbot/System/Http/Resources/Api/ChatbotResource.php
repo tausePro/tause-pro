@@ -46,6 +46,10 @@ class ChatbotResource extends JsonResource
             'header_bg_color'            => $this->header_bg_color,
             'header_bg_gradient'         => $this->header_bg_gradient,
             'header_bg_image'            => asset($this->header_bg_image),
+            'custom_bg_image_url'        => $this->custom_bg_image_url,
+            'welcome_text'               => $this->welcome_text,
+            'initial_prompt_text'        => $this->initial_prompt_text,
+            'cta_button_text'            => $this->cta_button_text,
         ];
     }
 }
