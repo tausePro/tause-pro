@@ -149,24 +149,42 @@ class ChatbotEcommerceController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'sales_agent_enabled' => 'boolean',
-            'sales_agent_keywords' => 'nullable|array',
-            'sales_agent_keywords.*' => 'string',
+            'enabled' => 'boolean',
+            'agent_name' => 'required|string|max:100',
+            'agent_description' => 'nullable|string|max:500',
+            'tone' => 'required|in:formal,casual,friendly',
+            'sales_strategy' => 'required|in:consultative,aggressive,helpful',
+            'search_strategy' => 'required|in:keyword,semantic,hybrid',
+            'product_display_mode' => 'required|in:conversational,cards,both',
+            'custom_prompt' => 'nullable|string|max:2000',
+            'auto_activate' => 'boolean',
+            'activation_keywords' => 'nullable|array',
+            'activation_keywords.*' => 'string',
+            'product_card_config' => 'nullable|array',
+            'product_card_config.button_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'product_card_config.button_text_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'product_card_config.button_style' => 'nullable|in:solid,gradient,outline',
+            'product_card_config.card_border_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'product_card_config.card_shadow' => 'nullable|in:none,sm,md,lg',
+            'product_card_config.price_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'product_card_config.discount_badge_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'product_card_config.show_stock_indicator' => 'nullable|boolean',
+            'product_card_config.show_discount_badge' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        // Guardar configuración
-        $chatbot->update([
-            'sales_agent_enabled' => $request->boolean('sales_agent_enabled'),
-            'sales_agent_keywords' => $request->sales_agent_keywords ?? [],
-        ]);
+        // Guardar configuración en SalesAgentConfig
+        $chatbot->salesAgentConfig()->updateOrCreate(
+            ['chatbot_id' => $chatbot->id],
+            $validator->validated()
+        );
 
         return redirect()
             ->route('dashboard.chatbot.ecommerce.index', $chatbot)
-            ->with('success', '✅ Configuración del Agente de Ventas guardada');
+            ->with('success', '✅ Configuración del Agente de Ventas guardada exitosamente');
     }
 
     /**

@@ -228,68 +228,19 @@
                         🤖 Configuración del Agente de Ventas
                     </h3>
                     
-                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="salesAgentConfig" class="flex flex-col gap-5">                               
+                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="salesAgentConfigForm" class="flex flex-col gap-5">                               
                         @csrf
                         
-                        <div>
-                            <x-forms.input
-                                class="h-[18px] w-[34px] [background-size:0.625rem]"
-                                class:label="text-heading-foreground flex-row-reverse justify-between"
-                                label="{{ __('Activar Agente de Ventas') }}"
-                                name="sales_agent_enabled"
-                                size="lg"
-                                type="checkbox"
-                                switcher
-                                value="1"
-                                :checked="old('sales_agent_enabled', $chatbot->sales_agent_enabled)"
-                            />
-                            <p class="mt-1 text-2xs opacity-60">
-                                Cuando esté activo, el chatbot detectará automáticamente intenciones de compra y mostrará el catálogo de productos
-                            </p>
+                        @include('chatbot::ecommerce.tabs.sales-agent-config', [
+                            'salesAgentConfig' => $chatbot->salesAgentConfig,
+                            'chatbot' => $chatbot
+                        ])
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-success">
+                                💾 Guardar Configuración del Agente
+                            </button>
                         </div>
-
-                        <div>
-                            <label class="lqd-input-label flex cursor-pointer items-center gap-2 text-2xs font-medium leading-none text-label mb-3">
-                                Palabras clave para detectar intención de compra
-                            </label>
-                            
-                            <div class="flex gap-2 mb-2">
-                                <input 
-                                    type="text"
-                                    class="lqd-input lqd-input-lg h-11 block peer w-full px-4 py-2 border border-input-border bg-input-background text-input-foreground text-base ring-offset-0 transition-colors focus:border-secondary focus:outline-0 focus:ring focus:ring-secondary"
-                                    x-model="newKeyword"
-                                    @keydown.enter.prevent="addKeyword"
-                                    placeholder="Ej: comprar, precio, producto..."
-                                >
-                                <button 
-                                    type="button"
-                                    class="btn btn-primary"
-                                    @click="addKeyword"
-                                >
-                                    ➕ Agregar
-                                </button>
-                            </div>
-                            
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="(keyword, index) in keywords" :key="index">
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-2xs font-medium text-primary">
-                                        <span x-text="keyword"></span>
-                                        <button 
-                                            type="button"
-                                            class="ml-1 text-primary/60 hover:text-primary"
-                                            @click="removeKeyword(index)"
-                                        >
-                                            ✕
-                                        </button>
-                                        <input type="hidden" name="sales_agent_keywords[]" :value="keyword">
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-success">
-                            💾 Guardar Configuración del Agente
-                        </button>
                     </form>
                 </div>
             </div>
@@ -409,20 +360,26 @@
 @push('script')
 <script>
     document.addEventListener('alpine:init', () => {
-        Alpine.data('salesAgentConfig', () => ({
-            keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
-            newKeyword: '',
-            
-            addKeyword() {
-                const keyword = this.newKeyword.trim().toLowerCase();
-                if (keyword && !this.keywords.includes(keyword)) {
-                    this.keywords.push(keyword);
-                    this.newKeyword = '';
+        Alpine.data('salesAgentConfigForm', () => ({
+            init() {
+                // Sincronizar color pickers
+                const buttonColorInput = document.getElementById('buttonColorInput');
+                const buttonColorPreview = document.getElementById('buttonColorPreview');
+                const priceColorInput = document.getElementById('priceColorInput');
+                const priceColorPreview = document.getElementById('priceColorPreview');
+                
+                if (buttonColorInput && buttonColorPreview) {
+                    buttonColorInput.addEventListener('input', function() {
+                        buttonColorPreview.style.backgroundColor = this.value;
+                        document.querySelector('input[name="product_card_config[button_color]"]').value = this.value;
+                    });
                 }
-            },
-            
-            removeKeyword(index) {
-                this.keywords.splice(index, 1);
+                
+                if (priceColorInput && priceColorPreview) {
+                    priceColorInput.addEventListener('input', function() {
+                        priceColorPreview.style.backgroundColor = this.value;
+                    });
+                }
             }
         }));
     });
