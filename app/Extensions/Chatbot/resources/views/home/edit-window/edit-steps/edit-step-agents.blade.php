@@ -15,7 +15,7 @@
         @lang('Configure AI agents to handle specific tasks and improve customer interactions.')
     </p>
 
-    <div class="flex flex-col gap-5 pt-9" x-data="agentsManager()">
+    <div class="flex flex-col gap-5 pt-9">
         {{-- Sales Agent --}}
         <div class="rounded-xl border border-border p-4 transition-all hover:border-primary/30">
             {{-- Agent Header --}}
@@ -39,8 +39,8 @@
                         <input 
                             type="checkbox" 
                             class="peer sr-only" 
-                            x-model="agents.sales.enabled"
-                            @change="toggleAgent('sales')"
+                            x-model="activeChatbot.sales_agent_enabled"
+                            @change="submitData()"
                         >
                         <div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50"></div>
                     </label>
@@ -48,7 +48,7 @@
             </div>
 
             {{-- Agent Settings (shown when enabled) --}}
-            <div x-show="agents.sales.enabled" x-collapse>
+            <div x-show="activeChatbot.sales_agent_enabled" x-collapse>
                 <div class="space-y-3 border-t border-border pt-3">
                     {{-- Keywords --}}
                     <div>
@@ -58,7 +58,8 @@
                         <input
                             type="text"
                             class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            x-model="agents.sales.keywords"
+                            x-model="activeChatbot.sales_agent_keywords"
+                            @input="submitData()"
                             placeholder="comprar, precio, producto, buy, price"
                         >
                         <p class="mt-1 text-2xs opacity-60">
@@ -73,7 +74,8 @@
                         </label>
                         <select
                             class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            x-model="agents.sales.priority"
+                            x-model="activeChatbot.sales_agent_priority"
+                            @change="submitData()"
                         >
                             <option value="10">@lang('High')</option>
                             <option value="5">@lang('Medium')</option>
@@ -251,37 +253,3 @@
         </button>
     </div>
 </div>
-
-<script>
-    function agentsManager() {
-        return {
-            agents: {
-                sales: {
-                    enabled: false,
-                    keywords: 'comprar, precio, producto, buy, price, product',
-                    priority: 10
-                }
-            },
-
-            init() {
-                // Load agents configuration from chatbot
-                if (this.activeChatbot && this.activeChatbot.agents) {
-                    this.agents = this.activeChatbot.agents;
-                }
-            },
-
-            toggleAgent(agentType) {
-                console.log(`[Agents] Toggling ${agentType}:`, this.agents[agentType].enabled);
-                
-                // Update activeChatbot
-                if (!this.activeChatbot.agents) {
-                    this.activeChatbot.agents = {};
-                }
-                this.activeChatbot.agents[agentType] = this.agents[agentType];
-                
-                // Auto-save
-                this.submitData();
-            }
-        }
-    }
-</script>

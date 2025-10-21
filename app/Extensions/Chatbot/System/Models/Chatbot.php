@@ -73,6 +73,7 @@ class Chatbot extends Model
         // Sales Agent
         'sales_agent_enabled',
         'sales_agent_keywords',
+        'sales_agent_priority',
         // links
         'whatsapp_link',
         'telegram_link',
@@ -108,6 +109,7 @@ class Chatbot extends Model
         'wompi_enabled'                 => 'boolean',
         'sales_agent_enabled'           => 'boolean',
         'sales_agent_keywords'          => 'json',
+        'sales_agent_priority'          => 'integer',
         'human_agent_conditions'        => 'json',
     ];
 
