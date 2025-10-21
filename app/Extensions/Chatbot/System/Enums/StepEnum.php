@@ -12,6 +12,7 @@ enum StepEnum: string
     case customize = 'customize';
     case train = 'train';
     case triggers = 'triggers';
+    case agents = 'agents';
     case embed = 'embed';
     case channel = 'channel';
 

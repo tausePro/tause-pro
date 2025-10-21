@@ -76,7 +76,7 @@
                         <div
                             class="lqd-step-progress-bar absolute start-0 top-0 h-full w-0 rounded-full bg-gradient-to-r from-gradient-from to-gradient-to transition-all"
                             :style="{
-                                width: editingStep * {{ \App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() ? 16.66 : 20 }} + '%'
+                                width: editingStep * {{ \App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() ? 14.28 : 16.66 }} + '%'
                             }"
                         ></div>
                     </div>
@@ -97,6 +97,7 @@
                     @include('chatbot::home.edit-window.edit-steps.edit-step-customize', ['avatars', $avatars])
                     @include('chatbot::home.edit-window.edit-steps.edit-step-train')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-triggers')
+                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-embed')
                     @if (\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels())
                         @include('chatbot::home.edit-window.edit-steps.edit-step-channel')
