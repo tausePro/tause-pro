@@ -167,12 +167,12 @@ class WooCommerceService
         }
 
         // Precio
-        $price = number_format($product->price, 0, ',', '.');
+        $price = number_format((float) $product->price, 0, ',', '.');
         $parts[] = "Precio: \${$price} COP";
 
         if ($product->sale_price && $product->sale_price < $product->regular_price) {
-            $regularPrice = number_format($product->regular_price, 0, ',', '.');
-            $discount = round((($product->regular_price - $product->sale_price) / $product->regular_price) * 100);
+            $regularPrice = number_format((float) $product->regular_price, 0, ',', '.');
+            $discount = round((((float) $product->regular_price - (float) $product->sale_price) / (float) $product->regular_price) * 100);
             $parts[] = "Precio anterior: \${$regularPrice} COP";
             $parts[] = "Descuento: {$discount}% OFF";
         }
