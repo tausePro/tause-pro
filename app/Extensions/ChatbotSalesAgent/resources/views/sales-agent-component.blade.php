@@ -362,14 +362,13 @@
             console.log('   Current step:', this.currentStep);
             console.log('   Selected product:', this.selectedProduct);
             
-            // Trigger a message from the user
-            console.log('   Simulating user message...');
-            this.simulateUserMessage(`Quiero comprar: ${product.name}`);
-            
+            // Start purchase flow directly without simulating user message
+            // This avoids dependency on Alpine.js instance
+            console.log('   Starting purchase flow...');
             setTimeout(() => {
                 console.log('   Calling askQuantity...');
                 this.askQuantity();
-            }, 500);
+            }, 300);
         },
         
         // Get chatbot instance safely with retry logic
@@ -460,9 +459,11 @@
         // Add assistant message (async to handle retry)
         async addAssistantMessage(message) {
             console.log('   addAssistantMessage called:', message.substring(0, 50));
+            
+            // Try Alpine.js first (for compatibility)
             const chatbot = await this.getChatbotInstance();
             if (chatbot && chatbot.messages) {
-                console.log('   ✅ Adding assistant message to chat');
+                console.log('   ✅ Adding assistant message via Alpine');
                 chatbot.messages.push({
                     id: Date.now(),
                     message: message,
@@ -474,9 +475,57 @@
                         chatbot.scrollMessagesToBottom();
                     }
                 }, 100);
-            } else {
-                console.error('   ❌ Could not add assistant message - chatbot or messages not found');
+                return;
             }
+            
+            // Fallback: Inject message directly into DOM
+            console.log('   ⚠️ Alpine not available, injecting message directly into DOM');
+            this.injectMessageIntoDOM(message, 'assistant');
+        },
+        
+        // Inject message directly into DOM (fallback when Alpine is not available)
+        injectMessageIntoDOM(message, role = 'assistant') {
+            const messagesContainer = document.querySelector('.lqd-ext-chatbot-window-conversation-messages');
+            if (!messagesContainer) {
+                console.error('   ❌ Messages container not found');
+                return;
+            }
+            
+            const avatarSrc = document.querySelector('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"] img')?.src || '';
+            
+            const messageHTML = `
+                <div class="lqd-ext-chatbot-window-conversation-message" data-type="${role}">
+                    ${role === 'assistant' ? `
+                        <div class="lqd-ext-chatbot-window-conversation-message-avatar">
+                            <img src="${avatarSrc}" alt="Avatar">
+                        </div>
+                    ` : ''}
+                    <div class="lqd-ext-chatbot-window-conversation-message-content-wrap" style="flex: 1;">
+                        <div class="lqd-ext-chatbot-window-conversation-message-content">
+                            <div class="lqd-ext-chatbot-window-conversation-message-text">
+                                ${this.formatMessage(message)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+            
+            console.log('   ✅ Message injected into DOM');
+        },
+        
+        // Format message with markdown-like syntax
+        formatMessage(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/_(.*?)_/g, '<em>$1</em>');
         },
         
         // Ask for quantity
