@@ -223,13 +223,26 @@
                 </div>
 
                 {{-- Sales Agent Configuration --}}
-                <div class="border-t pt-7">
-                    <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
-                        🤖 Configuración del Agente de Ventas
-                    </h3>
+                <div class="border-t pt-7" x-data="{ showAdvanced: false }">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-semibold text-heading-foreground">
+                            🤖 Configuración del Agente de Ventas
+                        </h3>
+                        <button 
+                            type="button"
+                            @click="showAdvanced = !showAdvanced"
+                            class="btn btn-sm btn-outline-primary"
+                        >
+                            <span x-show="!showAdvanced">⚙️ Configuración Avanzada</span>
+                            <span x-show="showAdvanced">📋 Configuración Básica</span>
+                        </button>
+                    </div>
                     
                     <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="salesAgentConfig" class="flex flex-col gap-5">                               
                         @csrf
+                        
+                        {{-- Configuración Básica --}}
+                        <div x-show="!showAdvanced">
                         
                         <div>
                             <x-forms.input
@@ -290,6 +303,59 @@
                         <button type="submit" class="btn btn-success">
                             💾 Guardar Configuración del Agente
                         </button>
+                        </div>
+                        
+                        {{-- Configuración Avanzada --}}
+                        <div x-show="showAdvanced" style="display: none;">
+                            @php
+                                // Crear clase anónima con método getProductCardConfig
+                                $salesAgentConfig = new class($chatbot) {
+                                    private $chatbot;
+                                    public $agent_name;
+                                    public $agent_description;
+                                    public $tone;
+                                    public $sales_strategy;
+                                    public $search_strategy;
+                                    public $product_display_mode;
+                                    public $custom_prompt;
+                                    
+                                    public function __construct($chatbot) {
+                                        $this->chatbot = $chatbot;
+                                        $this->agent_name = $chatbot->sales_agent_name ?? 'Vendedor';
+                                        $this->agent_description = $chatbot->sales_agent_description ?? '';
+                                        $this->tone = $chatbot->sales_agent_tone ?? 'friendly';
+                                        $this->sales_strategy = $chatbot->sales_agent_strategy ?? 'helpful';
+                                        $this->search_strategy = $chatbot->sales_agent_search_strategy ?? 'semantic';
+                                        $this->product_display_mode = $chatbot->sales_agent_display_mode ?? 'both';
+                                        $this->custom_prompt = $chatbot->sales_agent_custom_prompt ?? '';
+                                    }
+                                    
+                                    public function getProductCardConfig() {
+                                        $config = is_string($this->chatbot->sales_agent_card_config) 
+                                            ? json_decode($this->chatbot->sales_agent_card_config, true) 
+                                            : ($this->chatbot->sales_agent_card_config ?? []);
+                                        
+                                        return array_merge([
+                                            'button_color' => '#10b981',
+                                            'button_style' => 'solid',
+                                            'card_shadow' => 'md',
+                                            'price_color' => '#667eea',
+                                            'show_stock_indicator' => true,
+                                            'show_discount_badge' => true,
+                                        ], is_array($config) ? $config : []);
+                                    }
+                                };
+                            @endphp
+                            
+                            @include('chatbot::ecommerce.tabs.sales-agent-config', [
+                                'salesAgentConfig' => $salesAgentConfig,
+                                'chatbot' => $chatbot
+                            ])
+                            
+                            <button type="submit" class="btn btn-success mt-6">
+                                💾 Guardar Configuración Avanzada
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

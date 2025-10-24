@@ -29,7 +29,6 @@ class ChatbotEcommerceController extends Controller
         }
 
         $products = $chatbot->products()
-            ->active()
             ->latest('last_synced_at')
             ->paginate(20);
 
@@ -152,17 +151,54 @@ class ChatbotEcommerceController extends Controller
             'sales_agent_enabled' => 'boolean',
             'sales_agent_keywords' => 'nullable|array',
             'sales_agent_keywords.*' => 'string',
+            'agent_name' => 'nullable|string|max:255',
+            'agent_description' => 'nullable|string',
+            'tone' => 'nullable|in:formal,casual,friendly',
+            'sales_strategy' => 'nullable|in:consultative,aggressive,helpful',
+            'search_strategy' => 'nullable|in:keyword,semantic,hybrid',
+            'product_display_mode' => 'nullable|in:conversational,cards,both',
+            'custom_prompt' => 'nullable|string',
+            'product_card_config' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        // Guardar configuración
-        $chatbot->update([
+        // Preparar datos para actualizar
+        $updateData = [
             'sales_agent_enabled' => $request->boolean('sales_agent_enabled'),
             'sales_agent_keywords' => $request->sales_agent_keywords ?? [],
-        ]);
+        ];
+
+        // Agregar configuración avanzada si está presente
+        if ($request->has('agent_name')) {
+            $updateData['sales_agent_name'] = $request->agent_name;
+        }
+        if ($request->has('agent_description')) {
+            $updateData['sales_agent_description'] = $request->agent_description;
+        }
+        if ($request->has('tone')) {
+            $updateData['sales_agent_tone'] = $request->tone;
+        }
+        if ($request->has('sales_strategy')) {
+            $updateData['sales_agent_strategy'] = $request->sales_strategy;
+        }
+        if ($request->has('search_strategy')) {
+            $updateData['sales_agent_search_strategy'] = $request->search_strategy;
+        }
+        if ($request->has('product_display_mode')) {
+            $updateData['sales_agent_display_mode'] = $request->product_display_mode;
+        }
+        if ($request->has('custom_prompt')) {
+            $updateData['sales_agent_custom_prompt'] = $request->custom_prompt;
+        }
+        if ($request->has('product_card_config')) {
+            $updateData['sales_agent_card_config'] = json_encode($request->product_card_config);
+        }
+
+        // Guardar configuración
+        $chatbot->update($updateData);
 
         return redirect()
             ->route('dashboard.chatbot.ecommerce.index', $chatbot)

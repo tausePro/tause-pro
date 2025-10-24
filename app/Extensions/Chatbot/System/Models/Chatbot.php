@@ -74,6 +74,14 @@ class Chatbot extends Model
         'sales_agent_enabled',
         'sales_agent_keywords',
         'sales_agent_priority',
+        'sales_agent_name',
+        'sales_agent_description',
+        'sales_agent_tone',
+        'sales_agent_strategy',
+        'sales_agent_search_strategy',
+        'sales_agent_display_mode',
+        'sales_agent_custom_prompt',
+        'sales_agent_card_config',
         // links
         'whatsapp_link',
         'telegram_link',
@@ -110,6 +118,7 @@ class Chatbot extends Model
         'sales_agent_enabled'           => 'boolean',
         'sales_agent_keywords'          => 'json',
         'sales_agent_priority'          => 'integer',
+        'sales_agent_card_config'       => 'json',
         'human_agent_conditions'        => 'json',
     ];
 
