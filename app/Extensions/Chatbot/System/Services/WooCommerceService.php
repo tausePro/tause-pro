@@ -19,8 +19,15 @@ class WooCommerceService
     public function syncProducts(Chatbot $chatbot): array
     {
         try {
+            Log::info('Starting WooCommerce sync', [
+                'chatbot_id' => $chatbot->id,
+                'chatbot_name' => $chatbot->name,
+                'woo_url' => $chatbot->woocommerce_url,
+            ]);
+            
             // Validar configuración
             if (!$this->hasValidConfiguration($chatbot)) {
+                Log::warning('Invalid WooCommerce configuration', ['chatbot_id' => $chatbot->id]);
                 return [
                     'success' => false,
                     'message' => 'Configuración de WooCommerce incompleta',
@@ -31,6 +38,11 @@ class WooCommerceService
             
             // Obtener productos de WooCommerce
             $products = $this->fetchProductsFromWooCommerce($config);
+            
+            Log::info('Products fetched from WooCommerce', [
+                'chatbot_id' => $chatbot->id,
+                'count' => count($products),
+            ]);
 
             if (empty($products)) {
                 return [
