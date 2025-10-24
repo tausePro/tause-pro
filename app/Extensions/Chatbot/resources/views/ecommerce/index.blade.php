@@ -112,21 +112,26 @@
                                 💾 Guardar Configuración
                             </button>
                             
-                            @if($chatbot->woocommerce_enabled)
+                            @if($chatbot->woocommerce_url && $chatbot->woocommerce_key)
                                 <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" class="btn btn-success">
+                                    <button type="submit" class="btn btn-success" {{ !$chatbot->woocommerce_enabled ? 'disabled' : '' }}>
                                         🔄 Sincronizar Productos
                                     </button>
                                 </form>
                             @endif
                         </div>
 
-                        @if($chatbot->woocommerce_enabled)
+                        @if($chatbot->woocommerce_url && $chatbot->woocommerce_key)
                             <div class="mt-3 rounded-lg bg-gray-50 p-3">
                                 <p class="text-2xs opacity-60">
                                     Última sincronización: <strong>{{ $chatbot->woocommerce_last_sync ? $chatbot->woocommerce_last_sync->diffForHumans() : 'Nunca' }}</strong>
                                 </p>
+                                @if(!$chatbot->woocommerce_enabled)
+                                    <p class="mt-1 text-2xs text-amber-600">
+                                        ⚠️ WooCommerce está deshabilitado. Activa el toggle y guarda para poder sincronizar.
+                                    </p>
+                                @endif
                             </div>
                         @endif
                     </form>
