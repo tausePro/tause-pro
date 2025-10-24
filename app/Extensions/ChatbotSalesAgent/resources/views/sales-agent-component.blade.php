@@ -531,7 +531,468 @@
         // Ask for quantity
         askQuantity() {
             console.log('   askQuantity called for:', this.selectedProduct.name);
+            
+            // Try to add message via Alpine first
             this.addAssistantMessage(`¡Excelente elección! **${this.selectedProduct.name}** por ${this.selectedProduct.formatted_price}.\n\n¿Cuántas unidades necesitas?`);
+            
+            // If Alpine is not available, show inline form instead
+            setTimeout(() => {
+                if (!this.alpineReady) {
+                    console.log('   ⚠️ Alpine not ready, showing inline quantity form');
+                    this.showInlineQuantityForm();
+                }
+            }, 1000);
+        },
+        
+        // Show inline quantity form when Alpine is not available
+        showInlineQuantityForm() {
+            const lastProductCard = document.querySelector('.enhanced-product-card:last-of-type');
+            if (!lastProductCard) {
+                console.error('   ❌ Product card not found');
+                return;
+            }
+            
+            const formHTML = `
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0ea5e9; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+                    <div style="font-weight: 700; font-size: 1rem; color: #0c4a6e; margin-bottom: 1rem;">
+                        🛒 ¡Excelente elección!
+                    </div>
+                    <div style="font-size: 0.9rem; color: #075985; margin-bottom: 1rem;">
+                        <strong>${this.escapeHtml(this.selectedProduct.name)}</strong><br>
+                        Precio: ${this.selectedProduct.formatted_price}
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 600; color: #0c4a6e; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            ¿Cuántas unidades necesitas?
+                        </label>
+                        <input 
+                            type="number" 
+                            id="sales-agent-quantity-input"
+                            min="1" 
+                            value="1"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid #0ea5e9; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; text-align: center;"
+                        >
+                    </div>
+                    <button 
+                        onclick="window.SalesAgent.handleInlineQuantitySubmit()"
+                        style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 0.875rem; border: none; border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); transition: transform 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'"
+                        onmouseout="this.style.transform='translateY(0)'"
+                    >
+                        Continuar con la compra →
+                    </button>
+                </div>
+            `;
+            
+            lastProductCard.insertAdjacentHTML('afterend', formHTML);
+            
+            // Scroll to form
+            setTimeout(() => {
+                document.getElementById('sales-agent-quantity-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        },
+        
+        // Handle inline quantity form submission
+        handleInlineQuantitySubmit() {
+            const input = document.getElementById('sales-agent-quantity-input');
+            if (!input) return;
+            
+            const qty = parseInt(input.value);
+            if (isNaN(qty) || qty < 1) {
+                alert('Por favor ingresa una cantidad válida');
+                return;
+            }
+            
+            this.selectedProduct.quantity = qty;
+            console.log('   Quantity selected:', qty);
+            
+            // Remove the form
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            // Continue to next step
+            this.currentStep = 'first_name';
+            this.showInlineNameForm();
+        },
+        
+        // Show inline name form
+        showInlineNameForm() {
+            const lastElement = document.querySelector('.enhanced-product-card:last-of-type') || 
+                               document.querySelector('[style*="background: linear-gradient"]');
+            if (!lastElement) return;
+            
+            const total = this.selectedProduct.price * this.selectedProduct.quantity;
+            
+            const formHTML = `
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0ea5e9; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+                    <div style="font-weight: 700; font-size: 1rem; color: #0c4a6e; margin-bottom: 0.5rem;">
+                        ✅ Perfecto, ${this.selectedProduct.quantity} ${this.selectedProduct.quantity === 1 ? 'unidad' : 'unidades'}
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #0ea5e9; margin-bottom: 1rem;">
+                        💰 Subtotal: $${new Intl.NumberFormat('es-CO').format(total)} COP
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; font-style: italic;">
+                        (El costo de envío se coordinará por WhatsApp)
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 600; color: #0c4a6e; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            ¿Cuál es tu nombre? (solo el primer nombre)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="sales-agent-firstname-input"
+                            placeholder="Ej: Juan"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid #0ea5e9; border-radius: 0.5rem; font-size: 1rem;"
+                        >
+                    </div>
+                    <button 
+                        onclick="window.SalesAgent.handleInlineFirstNameSubmit()"
+                        style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 0.875rem; border: none; border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);"
+                    >
+                        Continuar →
+                    </button>
+                </div>
+            `;
+            
+            lastElement.insertAdjacentHTML('afterend', formHTML);
+            
+            setTimeout(() => {
+                const input = document.getElementById('sales-agent-firstname-input');
+                input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                input?.focus();
+            }, 100);
+        },
+        
+        // Handle first name submission
+        handleInlineFirstNameSubmit() {
+            const input = document.getElementById('sales-agent-firstname-input');
+            if (!input || !input.value.trim()) {
+                alert('Por favor ingresa tu nombre');
+                return;
+            }
+            
+            this.customerData.first_name = input.value.trim();
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'last_name';
+            this.showInlineLastNameForm();
+        },
+        
+        // Show inline last name form
+        showInlineLastNameForm() {
+            this.showInlineFormField({
+                id: 'lastname',
+                label: '¿Cuál es tu apellido?',
+                placeholder: 'Ej: Pérez',
+                type: 'text',
+                onSubmit: 'handleInlineLastNameSubmit'
+            });
+        },
+        
+        handleInlineLastNameSubmit() {
+            const input = document.getElementById('sales-agent-lastname-input');
+            if (!input || !input.value.trim()) {
+                alert('Por favor ingresa tu apellido');
+                return;
+            }
+            
+            this.customerData.last_name = input.value.trim();
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'email';
+            this.showInlineEmailForm();
+        },
+        
+        // Show inline email form
+        showInlineEmailForm() {
+            this.showInlineFormField({
+                id: 'email',
+                label: '¿Cuál es tu correo electrónico?',
+                placeholder: 'ejemplo@correo.com',
+                type: 'email',
+                onSubmit: 'handleInlineEmailSubmit'
+            });
+        },
+        
+        handleInlineEmailSubmit() {
+            const input = document.getElementById('sales-agent-email-input');
+            if (!input || !input.value.trim() || !input.value.includes('@')) {
+                alert('Por favor ingresa un correo válido');
+                return;
+            }
+            
+            this.customerData.email = input.value.trim();
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'phone';
+            this.showInlinePhoneForm();
+        },
+        
+        // Show inline phone form
+        showInlinePhoneForm() {
+            this.showInlineFormField({
+                id: 'phone',
+                label: '¿Cuál es tu número de teléfono?',
+                placeholder: 'Ej: 3001234567',
+                type: 'tel',
+                onSubmit: 'handleInlinePhoneSubmit'
+            });
+        },
+        
+        handleInlinePhoneSubmit() {
+            const input = document.getElementById('sales-agent-phone-input');
+            if (!input || !input.value.trim()) {
+                alert('Por favor ingresa tu teléfono');
+                return;
+            }
+            
+            this.customerData.phone = input.value.trim();
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'department';
+            this.showInlineDepartmentForm();
+        },
+        
+        // Show inline department form
+        showInlineDepartmentForm() {
+            const lastElement = this.getLastFormElement();
+            if (!lastElement) return;
+            
+            const formHTML = `
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0ea5e9; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 600; color: #0c4a6e; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            ¿En qué departamento vives?
+                        </label>
+                        <select 
+                            id="sales-agent-department-input"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid #0ea5e9; border-radius: 0.5rem; font-size: 1rem;"
+                        >
+                            <option value="">Selecciona...</option>
+                            <option value="Amazonas">Amazonas</option>
+                            <option value="Antioquia">Antioquia</option>
+                            <option value="Arauca">Arauca</option>
+                            <option value="Atlántico">Atlántico</option>
+                            <option value="Bolívar">Bolívar</option>
+                            <option value="Boyacá">Boyacá</option>
+                            <option value="Caldas">Caldas</option>
+                            <option value="Caquetá">Caquetá</option>
+                            <option value="Casanare">Casanare</option>
+                            <option value="Cauca">Cauca</option>
+                            <option value="Cesar">Cesar</option>
+                            <option value="Chocó">Chocó</option>
+                            <option value="Córdoba">Córdoba</option>
+                            <option value="Cundinamarca">Cundinamarca</option>
+                            <option value="Guainía">Guainía</option>
+                            <option value="Guaviare">Guaviare</option>
+                            <option value="Huila">Huila</option>
+                            <option value="La Guajira">La Guajira</option>
+                            <option value="Magdalena">Magdalena</option>
+                            <option value="Meta">Meta</option>
+                            <option value="Nariño">Nariño</option>
+                            <option value="Norte de Santander">Norte de Santander</option>
+                            <option value="Putumayo">Putumayo</option>
+                            <option value="Quindío">Quindío</option>
+                            <option value="Risaralda">Risaralda</option>
+                            <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+                            <option value="Santander">Santander</option>
+                            <option value="Sucre">Sucre</option>
+                            <option value="Tolima">Tolima</option>
+                            <option value="Valle del Cauca">Valle del Cauca</option>
+                            <option value="Vaupés">Vaupés</option>
+                            <option value="Vichada">Vichada</option>
+                        </select>
+                    </div>
+                    <button 
+                        onclick="window.SalesAgent.handleInlineDepartmentSubmit()"
+                        style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 0.875rem; border: none; border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);"
+                    >
+                        Continuar →
+                    </button>
+                </div>
+            `;
+            
+            lastElement.insertAdjacentHTML('afterend', formHTML);
+            this.scrollToElement('sales-agent-department-input');
+        },
+        
+        handleInlineDepartmentSubmit() {
+            const select = document.getElementById('sales-agent-department-input');
+            if (!select || !select.value) {
+                alert('Por favor selecciona tu departamento');
+                return;
+            }
+            
+            this.customerData.department = select.value;
+            select.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'city';
+            this.showInlineCityForm();
+        },
+        
+        // Show inline city form
+        showInlineCityForm() {
+            this.showInlineFormField({
+                id: 'city',
+                label: '¿En qué ciudad vives?',
+                placeholder: 'Ej: Bogotá',
+                type: 'text',
+                onSubmit: 'handleInlineCitySubmit'
+            });
+        },
+        
+        handleInlineCitySubmit() {
+            const input = document.getElementById('sales-agent-city-input');
+            if (!input || !input.value.trim()) {
+                alert('Por favor ingresa tu ciudad');
+                return;
+            }
+            
+            this.customerData.city = input.value.trim();
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'address';
+            this.showInlineAddressForm();
+        },
+        
+        // Show inline address form
+        showInlineAddressForm() {
+            this.showInlineFormField({
+                id: 'address',
+                label: '¿Cuál es tu dirección completa?',
+                placeholder: 'Ej: Calle 123 #45-67',
+                type: 'text',
+                onSubmit: 'handleInlineAddressSubmit'
+            });
+        },
+        
+        handleInlineAddressSubmit() {
+            const input = document.getElementById('sales-agent-address-input');
+            if (!input || !input.value.trim()) {
+                alert('Por favor ingresa tu dirección');
+                return;
+            }
+            
+            this.customerData.address = input.value.trim();
+            this.customerData.address_type = 'Casa'; // Default
+            input.closest('div[style*="background: linear-gradient"]')?.remove();
+            
+            this.currentStep = 'confirmation';
+            this.showInlineConfirmation();
+        },
+        
+        // Generic form field helper
+        showInlineFormField(config) {
+            const lastElement = this.getLastFormElement();
+            if (!lastElement) return;
+            
+            const formHTML = `
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #0ea5e9; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 600; color: #0c4a6e; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            ${config.label}
+                        </label>
+                        <input 
+                            type="${config.type}" 
+                            id="sales-agent-${config.id}-input"
+                            placeholder="${config.placeholder}"
+                            style="width: 100%; padding: 0.75rem; border: 2px solid #0ea5e9; border-radius: 0.5rem; font-size: 1rem;"
+                        >
+                    </div>
+                    <button 
+                        onclick="window.SalesAgent.${config.onSubmit}()"
+                        style="width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 0.875rem; border: none; border-radius: 0.75rem; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);"
+                    >
+                        Continuar →
+                    </button>
+                </div>
+            `;
+            
+            lastElement.insertAdjacentHTML('afterend', formHTML);
+            this.scrollToElement(`sales-agent-${config.id}-input`);
+        },
+        
+        // Helper to get last form element
+        getLastFormElement() {
+            return document.querySelector('.enhanced-product-card:last-of-type') || 
+                   document.querySelector('[style*="background: linear-gradient"]:last-of-type');
+        },
+        
+        // Helper to scroll to element
+        scrollToElement(elementId) {
+            setTimeout(() => {
+                const element = document.getElementById(elementId);
+                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element?.focus();
+            }, 100);
+        },
+        
+        // Show inline confirmation
+        showInlineConfirmation() {
+            const lastElement = this.getLastFormElement();
+            if (!lastElement) return;
+            
+            const total = this.selectedProduct.price * this.selectedProduct.quantity;
+            
+            const summaryHTML = `
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #10b981; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: #065f46; margin-bottom: 1rem; text-align: center;">
+                        ✅ Confirma tu pedido
+                    </div>
+                    <div style="background: white; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #064e3b; margin-bottom: 0.75rem; border-bottom: 2px solid #10b981; padding-bottom: 0.5rem;">
+                            📦 Resumen de Compra
+                        </div>
+                        <div style="font-size: 0.9rem; color: #064e3b; line-height: 1.8;">
+                            <div><strong>Producto:</strong> ${this.escapeHtml(this.selectedProduct.name)}</div>
+                            <div><strong>Cantidad:</strong> ${this.selectedProduct.quantity}</div>
+                            <div><strong>Precio Unit:</strong> ${this.selectedProduct.formatted_price}</div>
+                            <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #10b981;">
+                                <strong style="font-size: 1.1rem;">Total:</strong> 
+                                <span style="font-size: 1.2rem; font-weight: 700; color: #10b981;">$${new Intl.NumberFormat('es-CO').format(total)} COP</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background: white; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #064e3b; margin-bottom: 0.5rem;">📍 Datos de Envío</div>
+                        <div style="font-size: 0.85rem; color: #065f46; line-height: 1.6;">
+                            <div>${this.escapeHtml(this.customerData.first_name)} ${this.escapeHtml(this.customerData.last_name)}</div>
+                            <div>${this.escapeHtml(this.customerData.email)}</div>
+                            <div>${this.escapeHtml(this.customerData.phone)}</div>
+                            <div>${this.escapeHtml(this.customerData.address)}</div>
+                            <div>${this.escapeHtml(this.customerData.city)}, ${this.escapeHtml(this.customerData.department)}</div>
+                        </div>
+                    </div>
+                    <button 
+                        onclick="window.SalesAgent.handleInlineConfirmOrder()"
+                        style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 1rem 1.5rem; border: none; border-radius: 0.75rem; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); transition: transform 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'"
+                        onmouseout="this.style.transform='translateY(0)'"
+                    >
+                        💳 Confirmar y Pagar →
+                    </button>
+                    <div style="text-align: center; margin-top: 0.75rem; font-size: 0.75rem; color: #065f46; opacity: 0.8;">
+                        🔒 Pago 100% seguro con Wompi
+                    </div>
+                </div>
+            `;
+            
+            lastElement.insertAdjacentHTML('afterend', summaryHTML);
+            this.scrollToElement(null);
+        },
+        
+        // Handle order confirmation
+        async handleInlineConfirmOrder() {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '⏳ Creando orden...';
+            
+            try {
+                await this.createOrder();
+            } catch (error) {
+                button.disabled = false;
+                button.textContent = '💳 Confirmar y Pagar →';
+                alert('Hubo un error. Por favor intenta de nuevo.');
+            }
         },
         
         // Handle user message during purchase flow
