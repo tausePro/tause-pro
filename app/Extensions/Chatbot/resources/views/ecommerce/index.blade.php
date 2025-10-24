@@ -363,9 +363,25 @@
             {{-- Products List --}}
             @if($chatbot->woocommerce_enabled && $products->count() > 0)
                 <div class="border-t pt-7">
-                    <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
-                        📦 Productos Sincronizados ({{ $products->total() }})
-                    </h3>
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-heading-foreground">
+                            📦 Productos Sincronizados ({{ $products->total() }})
+                        </h3>
+                        <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mr-1 inline-block h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Sincronizar Ahora
+                            </button>
+                        </form>
+                    </div>
+                    <div class="mb-3 rounded-lg bg-blue-50 p-3">
+                        <p class="text-2xs text-blue-800">
+                            <strong>Última sincronización:</strong> {{ $chatbot->woocommerce_last_sync ? $chatbot->woocommerce_last_sync->diffForHumans() : 'Nunca' }}
+                        </p>
+                    </div>
                     
                     <div class="overflow-hidden rounded-lg border">
                         <div class="overflow-x-auto">
