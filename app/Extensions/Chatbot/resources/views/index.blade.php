@@ -290,7 +290,7 @@
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
-                            body: this.getFormData(this.chatbots.data.at(chatbotIndex))
+                            body: JSON.stringify({ id: id })
                         });
 
                         if (!res.ok) {
