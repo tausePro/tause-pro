@@ -1383,5 +1383,15 @@
 	"Productos Sincronizados": "Productos Sincronizados",
 	"Última sincronización": "Última sincronización",
 	"Nunca": "Nunca",
-	"Guardar Configuración": "Guardar Configuración"
+	"Guardar Configuración": "Guardar Configuración",
+	"When to Handoff to Human": "Cuándo Transferir a Humano",
+	"Define the conditions under which the AI should transfer the conversation to a human agent.": "Define las condiciones bajo las cuales la IA debe transferir la conversación a un agente humano.",
+	"When the issue is too complex or ambiguous.": "Cuando el problema es demasiado complejo o ambiguo.",
+	"When the customer is frustrated or dissatisfied.": "Cuando el cliente está frustrado o insatisfecho.",
+	"When sensitive topics (legal, financial, medical, etc.) are involved.": "Cuando se involucran temas sensibles (legales, financieros, médicos, etc.).",
+	"When the AI fails to understand after repeated attempts.": "Cuando la IA no logra entender después de intentos repetidos.",
+	"When empathy or emotional intelligence is required.": "Cuando se requiere empatía o inteligencia emocional.",
+	"When the request is outside the AI's scope or permissions.": "Cuando la solicitud está fuera del alcance o permisos de la IA.",
+	"When the customer explicitly requests a human.": "Cuando el cliente solicita explícitamente un humano.",
+	"Save Instructions": "Guardar Instrucciones"
 }

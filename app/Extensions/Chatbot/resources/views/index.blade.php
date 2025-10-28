@@ -5,13 +5,13 @@
         $user_avatar = '/' . $user_avatar;
     }
     $human_agent_conditions = [
-        'When the issue is too complex or ambiguous.',
-        'When the customer is frustrated or dissatisfied.',
-        'When sensitive topics (legal, financial, medical, etc.) are involved.',
-        'When the AI fails to understand after repeated attempts.',
-        'When empathy or emotional intelligence is required.',
-        'When the request is outside the AI’s scope or permissions.',
-        'When the customer explicitly requests a human.',
+        __('When the issue is too complex or ambiguous.'),
+        __('When the customer is frustrated or dissatisfied.'),
+        __('When sensitive topics (legal, financial, medical, etc.) are involved.'),
+        __('When the AI fails to understand after repeated attempts.'),
+        __('When empathy or emotional intelligence is required.'),
+        __('When the request is outside the AI\'s scope or permissions.'),
+        __('When the customer explicitly requests a human.'),
     ];
 @endphp
 
