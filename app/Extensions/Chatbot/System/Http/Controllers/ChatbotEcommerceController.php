@@ -9,6 +9,7 @@ use App\Extensions\Chatbot\System\Services\WooCommerceService;
 use App\Extensions\Chatbot\System\Services\WompiService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ChatbotEcommerceController extends Controller
@@ -82,7 +83,18 @@ class ChatbotEcommerceController extends Controller
      */
     public function syncProducts(Chatbot $chatbot)
     {
+        Log::info('🔵 SYNC PRODUCTS CONTROLLER CALLED', [
+            'chatbot_id' => $chatbot->id,
+            'user_id' => auth()->id(),
+            'chatbot_user_id' => $chatbot->user_id,
+        ]);
+        
         if ($chatbot->user_id !== auth()->id()) {
+            Log::warning('🔴 UNAUTHORIZED SYNC ATTEMPT', [
+                'chatbot_id' => $chatbot->id,
+                'auth_user' => auth()->id(),
+                'chatbot_owner' => $chatbot->user_id,
+            ]);
             abort(403, 'This action is unauthorized.');
         }
 

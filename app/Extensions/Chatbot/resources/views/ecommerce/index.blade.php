@@ -243,7 +243,20 @@
                         </button>
                     </div>
                     
-                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="salesAgentConfig" class="flex flex-col gap-5">                               
+                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="{
+                        keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
+                        newKeyword: '',
+                        addKeyword() {
+                            const keyword = this.newKeyword.trim().toLowerCase();
+                            if (keyword && !this.keywords.includes(keyword)) {
+                                this.keywords.push(keyword);
+                                this.newKeyword = '';
+                            }
+                        },
+                        removeKeyword(index) {
+                            this.keywords.splice(index, 1);
+                        }
+                    }" class="flex flex-col gap-5">                               
                         @csrf
                         
                         {{-- Configuración Básica --}}
@@ -492,27 +505,4 @@
         </div>
     </div>
 @endsection
-
-@push('script')
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('salesAgentConfig', () => ({
-            keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
-            newKeyword: '',
-            
-            addKeyword() {
-                const keyword = this.newKeyword.trim().toLowerCase();
-                if (keyword && !this.keywords.includes(keyword)) {
-                    this.keywords.push(keyword);
-                    this.newKeyword = '';
-                }
-            },
-            
-            removeKeyword(index) {
-                this.keywords.splice(index, 1);
-            }
-        }));
-    });
-</script>
-@endpush
 
