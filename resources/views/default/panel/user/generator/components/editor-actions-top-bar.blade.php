@@ -89,8 +89,8 @@
                     class="peer w-full border-none bg-transparent px-5 py-4 text-[12px] font-medium text-inherit focus:outline-none max-lg:border max-lg:border-t"
                     id="document_title"
                     type="text"
-                    placeholder="@lang('Untitled Document')"
-                    value="@lang('Untitled Document')"
+                    placeholder="{{ __('Untitled Document') }}"
+                    value="{{ isset($workbook) && !empty($workbook->title) ? $workbook->title : __('Untitled Document') }}"
                 />
                 <span
                     class="pointer-events-none absolute end-3 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm transition-opacity peer-focus:opacity-0"

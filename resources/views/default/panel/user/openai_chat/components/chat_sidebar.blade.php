@@ -33,9 +33,7 @@
                 size="sm"
                 hover-variant="danger"
                 href="javascript:void(0);"
-                onclick="{!! $app_is_demo
-                    ? 'return toastr.info(\'{{ __('This feature is disabled in Demo version.') }}\')'
-                    : 'return deleteAllConv(\'{{ isset($category) ? $category->id : 0 }}\')' !!}"
+                onclick="{!! $app_is_demo ? 'return toastr.info(\'{{ __('This feature is disabled in Demo version.') }}\')' : 'return deleteAllConv(\'{{ isset($category) ? $category->id : 0 }}\')' !!}"
             >
                 <x-tabler-trash class="size-5" />
             </x-button>

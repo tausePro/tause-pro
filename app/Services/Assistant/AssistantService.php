@@ -340,6 +340,8 @@ class AssistantService
 
             return collect($models)->filter(function ($model) {
                 return str_starts_with($model['id'], 'gpt');
+            })->reject(function ($model) {
+                return str_starts_with($model['id'], 'gpt-5-') || $model['id'] === 'gpt-5' || $model['id'] === 'gpt-image-1';
             });
 
         } catch (Exception $e) {

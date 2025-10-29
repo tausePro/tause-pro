@@ -7,7 +7,9 @@ namespace App\Domains\Entity;
 use App\Domains\Entity\Contracts\Calculate\WithCharsInterface;
 use App\Domains\Entity\Contracts\Calculate\WithImagesInterface;
 use App\Domains\Entity\Contracts\Calculate\WithImageToVideoInterface;
+use App\Domains\Entity\Contracts\Calculate\WithMinuteInterface;
 use App\Domains\Entity\Contracts\Calculate\WithPlagiarismInterface;
+use App\Domains\Entity\Contracts\Calculate\WithSecondInterface;
 use App\Domains\Entity\Contracts\Calculate\WithSpeechToTextInterface;
 use App\Domains\Entity\Contracts\Calculate\WithTextToSpeechInterface;
 use App\Domains\Entity\Contracts\Calculate\WithTextToVideoInterface;
@@ -48,6 +50,16 @@ class EntityStats
     public static function char(): EntityStatItem
     {
         return self::makeStat(WithCharsInterface::class);
+    }
+
+    public static function minute(): EntityStatItem
+    {
+        return self::makeStat(WithMinuteInterface::class);
+    }
+
+    public static function second(): EntityStatItem
+    {
+        return self::makeStat(WithSecondInterface::class);
     }
 
     public static function word(): EntityStatItem

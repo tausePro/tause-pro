@@ -20,6 +20,7 @@ namespace Google\Service\Compute\Resource;
 use Google\Service\Compute\Operation;
 use Google\Service\Compute\ReservationSubBlocksGetResponse;
 use Google\Service\Compute\ReservationSubBlocksListResponse;
+use Google\Service\Compute\ReservationSubBlocksReportFaultyRequest;
 
 /**
  * The "reservationSubBlocks" collection of methods.
@@ -159,6 +160,40 @@ class ReservationSubBlocks extends \Google\Service\Resource
     $params = ['project' => $project, 'zone' => $zone, 'parentName' => $parentName, 'reservationSubBlock' => $reservationSubBlock];
     $params = array_merge($params, $optParams);
     return $this->call('performMaintenance', [$params], Operation::class);
+  }
+  /**
+   * Allows customers to report a faulty subBlock.
+   * (reservationSubBlocks.reportFaulty)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $zone Name of the zone for this request. Zone name should
+   * conform to RFC1035.
+   * @param string $parentName The name of the parent reservation and parent
+   * block. In the format of
+   * reservations/{reservation_name}/reservationBlocks/{reservation_block_name}
+   * @param string $reservationSubBlock The name of the reservation subBlock. Name
+   * should conform to RFC1035 or be a resource ID.
+   * @param ReservationSubBlocksReportFaultyRequest $postBody
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string requestId An optional request ID to identify requests.
+   * Specify a unique request ID so that if you must retry your request, the
+   * server will know to ignore the request if it has already been completed. For
+   * example, consider a situation where you make an initial request and the
+   * request times out. If you make the request again with the same request ID,
+   * the server can check if original operation with the same request ID was
+   * received, and if so, will ignore the second request. This prevents clients
+   * from accidentally creating duplicate commitments. The request ID must be a
+   * valid UUID with the exception that zero UUID is not supported (
+   * 00000000-0000-0000-0000-000000000000).
+   * @return Operation
+   * @throws \Google\Service\Exception
+   */
+  public function reportFaulty($project, $zone, $parentName, $reservationSubBlock, ReservationSubBlocksReportFaultyRequest $postBody, $optParams = [])
+  {
+    $params = ['project' => $project, 'zone' => $zone, 'parentName' => $parentName, 'reservationSubBlock' => $reservationSubBlock, 'postBody' => $postBody];
+    $params = array_merge($params, $optParams);
+    return $this->call('reportFaulty', [$params], Operation::class);
   }
 }
 

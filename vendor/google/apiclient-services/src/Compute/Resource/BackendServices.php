@@ -222,6 +222,21 @@ class BackendServices extends \Google\Service\Resource
     return $this->call('get', [$params], BackendService::class);
   }
   /**
+   * Returns effective security policies applied to this backend service.
+   * (backendServices.getEffectiveSecurityPolicies)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $backendService Name of the Backend Service for this request.
+   * @param array $optParams Optional parameters.
+   * @throws \Google\Service\Exception
+   */
+  public function getEffectiveSecurityPolicies($project, $backendService, $optParams = [])
+  {
+    $params = ['project' => $project, 'backendService' => $backendService];
+    $params = array_merge($params, $optParams);
+    return $this->call('getEffectiveSecurityPolicies', [$params]);
+  }
+  /**
    * Gets the most recent health check results for this BackendService. Example
    * request body: { "group": "/zones/us-east1-b/instanceGroups/lb-backend-
    * example" } (backendServices.getHealth)

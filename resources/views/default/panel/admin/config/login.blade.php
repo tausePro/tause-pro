@@ -1,6 +1,6 @@
 @php use App\Domains\Engine\Enums\EngineEnum;use App\Domains\Entity\Enums\EntityEnum; @endphp
 @extends('panel.layout.settings')
-@section('title', __('Login Settings'))
+@section('title', __('Login/Signup Settings'))
 @section('titlebar_actions', '')
 @section('additional_css')
 
@@ -16,7 +16,8 @@
 			<div class="col-md-12">
 				<div class="mb-4">
 					<x-alert class="rounde mb-4">
-						<a href="https://scribehow.com/shared/Obtaining_reCAPTCHA_site_and_secret_keys_for_magicaicom__CMjndIDqTt26fz9xdhAQww" target="_blank">
+						<a href="https://scribehow.com/shared/Obtaining_reCAPTCHA_site_and_secret_keys_for_magicaicom__CMjndIDqTt26fz9xdhAQww"
+						   target="_blank">
 							{{ __('Check the documentation.') }}
 							<x-tabler-arrow-up-right class="size-4 inline align-text-bottom"/>
 						</a>
@@ -243,6 +244,120 @@
 		<x-form-step
 			class="mb-3"
 			step="5"
+		>
+			{{ __('Required Fields During Registration') }}
+		</x-form-step>
+		<div class="row mb-4">
+			<div class="col-md-12">
+				<div class="mb-4">
+					<x-alert class="mb-6">
+						<p class="text-sm text-gray-700">
+							{{ __('Configure which fields are required during user registration. Email and password fields are always required.') }}
+						</p>
+					</x-alert>
+
+					@php
+						$optionalFields = [
+							[
+								'id' => 'country',
+								'label' => __('Country'),
+								'icon' => 'map-pin',
+								'checked' => (bool) setting('registration_fields_country', 0),
+							],
+							[
+								'id' => 'phone',
+								'label' => __('Phone'),
+								'icon' => 'phone',
+								'checked' => (bool) setting('registration_fields_phone', 0),
+							],
+							[
+								'id' => 'name',
+								'label' => __('Name'),
+								'icon' => 'user',
+								'checked' => (bool) setting('registration_fields_name', 1),
+							],
+							[
+								'id' => 'surname',
+								'label' => __('Last Name'),
+								'icon' => 'user',
+								'checked' => (bool) setting('registration_fields_surname', 1),
+							],
+						];
+
+						$requiredFields = [
+							[
+								'label' => __('Email Address'),
+								'icon' => 'mail',
+							],
+							[
+								'label' => __('Password'),
+								'icon' => 'key',
+							],
+							[
+								'label' => __('Confirm Password'),
+								'icon' => 'lock',
+							],
+						];
+					@endphp
+
+					<div class="space-y-4 text-sm">
+						{{-- Optional Fields --}}
+						<div>
+							<h5 class="font-semibold text-gray-700 mb-2">{{ __('Optional Fields') }}</h5>
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+								@foreach($optionalFields as $field)
+									<div class="col-span-1">
+										<div class="bg-white border rounded-lg shadow-sm h-full p-2 flex flex-col justify-between">
+											<div>
+												<div class="flex items-center gap-1">
+													<x-dynamic-component :component="'tabler-' . $field['icon']" class="w-4 h-4 text-gray-400"/>
+													<span class="text-xs">{{ $field['label'] }}</span>
+												</div>
+												<x-forms.input
+													class:container="mb-0 mt-1"
+													class="h-4 w-8 [background-size:10px]"
+													id="registration_fields_{{ $field['id'] }}"
+													name="registration_fields_{{ $field['id'] }}"
+													type="checkbox"
+													:checked="$field['checked']"
+													switcher
+												/>
+											</div>
+										</div>
+									</div>
+								@endforeach
+							</div>
+						</div>
+						{{-- Required Fields --}}
+						<div>
+							<h5 class="font-semibold text-gray-700 mb-2">{{ __('Required Fields') }}</h5>
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+								@foreach($requiredFields as $field)
+									<div class="col-span-1">
+										<div class="bg-blue-50 border border-blue-200 rounded-lg shadow-sm h-full p-2">
+											<div class="flex items-center gap-1 mb-1">
+												<x-dynamic-component :component="'tabler-' . $field['icon']" class="w-4 h-4 text-blue-500"/>
+												<span class="font-semibold text-blue-700 text-sm">{{ $field['label'] }}</span>
+												<x-tabler-lock class="w-3 h-3 text-blue-500 ml-auto"/>
+											</div>
+											<span
+												class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
+                            {{ __('Required') }}
+                        </span>
+										</div>
+									</div>
+								@endforeach
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<x-form-step
+			class="mb-3"
+			step="6"
 		>
 			{{ __('Other Settings') }}
 		</x-form-step>

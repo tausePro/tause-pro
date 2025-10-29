@@ -72,7 +72,7 @@
 </div>
 
 <div
-    class="lqd-generator-sidebar group/sidebar fixed bottom-0 start-0 top-[--editor-tb-h] z-40 w-[--sidebar-w] translate-x-0 bg-background shadow-[2px_4px_26px_rgba(0,0,0,0.05)] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.49,1.0)] group-[&.lqd-generator-sidebar-collapsed]/generator:-translate-x-[calc(100%-35px)] rtl:group-[&.lqd-generator-sidebar-collapsed]/generator:translate-x-[calc(100%-35px)]">
+    class="lqd-generator-sidebar group/sidebar fixed bottom-0 start-0 top-[--editor-tb-h] z-40 w-[--sidebar-w] translate-x-0 bg-background shadow-[2px_4px_26px_rgba(0,0,0,0.05)] transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.49,1.0)] group-[&.lqd-generator-sidebar-collapsed]/generator:-translate-x-[calc(100%-35px)] group-[&.lqd-generator-sidebar-collapsed]/generator:bg-background/10 rtl:group-[&.lqd-generator-sidebar-collapsed]/generator:translate-x-[calc(100%-35px)]">
     <button
         class="lqd-generator-sidebar-toggle absolute -end-2.5 top-16 z-10 flex size-5 origin-center translate-x-0 items-center justify-center rounded-full bg-heading-foreground/15 p-0 text-heading-foreground/90 transition-colors hover:bg-heading-foreground hover:text-background group-[&.lqd-generator-sidebar-collapsed]/generator:rotate-180 max-lg:top-1/2 max-lg:-translate-y-1/2 max-md:!h-7 max-md:!w-7"
         @click.prevent="toggleSideNavCollapse()"

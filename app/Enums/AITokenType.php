@@ -16,6 +16,8 @@ enum AITokenType: string implements Contracts\WithStringBackedEnum
     case IMAGE = 'image';
 
     case CHARACTER = 'character';
+    case MINUTE = 'minute';
+    case SECOND = 'second';
     case IMAGE_TO_VIDEO = 'image_to_video';
     case TEXT_TO_SPEECH = 'text_to_speech';
     case SPEECH_TO_TEXT = 'speech_to_text';
@@ -28,8 +30,9 @@ enum AITokenType: string implements Contracts\WithStringBackedEnum
     public function label(): string
     {
         return match ($this) {
-            self::WORD  => __('Word'),
-            self::IMAGE => __('Image'),
+            self::WORD   => __('Word'),
+            self::IMAGE  => __('Image'),
+            self::SECOND => __('Second'),
         };
     }
 }

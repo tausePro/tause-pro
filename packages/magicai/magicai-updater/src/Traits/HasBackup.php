@@ -182,10 +182,13 @@ trait HasBackup
         // unlimited max execution time
         set_time_limit(0);
 
-        // increase memory_limit to 1GB
+        // increase memory_limit to unlimited
         ini_set('memory_limit', '-1');
 
-        // increase max_execution_time to 1 hour
-        ini_set('max_execution_time', 3600);
+        // increase max_execution_time to unlimited
+        ini_set('max_execution_time', '0');
+        
+        // increase max_input_time to unlimited
+        ini_set('max_input_time', '0');
     }
 }

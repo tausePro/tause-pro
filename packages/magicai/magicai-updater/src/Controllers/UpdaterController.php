@@ -40,6 +40,11 @@ class UpdaterController
 
     public function backup(Request $request): \Illuminate\Contracts\View\Factory|\Illuminate\Foundation\Application|View|\Illuminate\View\View|RedirectResponse|\Illuminate\Contracts\Foundation\Application
     {
+        // Extend execution time for backup
+        set_time_limit(0);
+        ini_set('max_execution_time', '0');
+        ini_set('memory_limit', '-1');
+        
         $data = Updater::backupView();
 
         if ($data['updated']) {
@@ -69,6 +74,11 @@ class UpdaterController
 
     public function upgrade(Request $request): \Illuminate\Foundation\Application|\Illuminate\Http\Response|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
     {
+        // Extend execution time for upgrade
+        set_time_limit(0);
+        ini_set('max_execution_time', '0');
+        ini_set('memory_limit', '-1');
+        
         $backupFileName = Updater::findLastBackup();
 
         if (file_exists(base_path($backupFileName))) {
@@ -89,6 +99,11 @@ class UpdaterController
 
     public function downloadStep(): \Illuminate\Contracts\View\Factory|\Illuminate\Foundation\Application|View|\Illuminate\View\View|RedirectResponse|\Illuminate\Contracts\Foundation\Application
     {
+        // Extend execution time for download
+        set_time_limit(0);
+        ini_set('max_execution_time', '0');
+        ini_set('memory_limit', '-1');
+        
         $data = Updater::downloadView();
 
         $backupFileName = Updater::findLastBackup();

@@ -82,6 +82,12 @@ class Chatbot extends Model
         'sales_agent_display_mode',
         'sales_agent_custom_prompt',
         'sales_agent_card_config',
+        // Negotiation
+        'negotiation_enabled',
+        'negotiation_max_discount',
+        'negotiation_min_cart_value',
+        'negotiation_triggers',
+        'negotiation_coupon_duration',
         // links
         'whatsapp_link',
         'telegram_link',
@@ -120,6 +126,11 @@ class Chatbot extends Model
         'sales_agent_priority'          => 'integer',
         'sales_agent_card_config'       => 'json',
         'human_agent_conditions'        => 'json',
+        'negotiation_enabled'           => 'boolean',
+        'negotiation_max_discount'      => 'integer',
+        'negotiation_min_cart_value'    => 'integer',
+        'negotiation_triggers'          => 'array',
+        'negotiation_coupon_duration'   => 'integer',
     ];
 
     public function conversations(): HasMany

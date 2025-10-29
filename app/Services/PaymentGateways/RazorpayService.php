@@ -176,7 +176,16 @@ class RazorpayService implements BaseGatewayService, ProductInterface
     {
         $order_id = 'ORDER-' . strtoupper(Str::random(13));
 
-        return view('panel.user.finance.subscription.' . self::$GATEWAY_CODE, compact('plan', 'order_id'));
+        $newDiscountedPrice = $plan->price;
+        $coupon = checkCouponInRequest();
+        if ($coupon) {
+            $newDiscountedPrice = $plan->price - ($plan->price * ($coupon->discount / 100));
+            if ($newDiscountedPrice != floor($newDiscountedPrice)) {
+                $newDiscountedPrice = number_format($newDiscountedPrice, 2);
+            }
+        }
+
+        return view('panel.user.finance.subscription.' . self::$GATEWAY_CODE, compact('plan', 'newDiscountedPrice', 'order_id', 'coupon'));
     }
 
     public static function subscribeCheckout(Request $request, $referral = null)

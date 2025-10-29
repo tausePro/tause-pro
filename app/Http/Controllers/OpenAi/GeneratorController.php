@@ -99,7 +99,7 @@ class GeneratorController extends Controller
         $message = $this->createChatMessage($user, $chatParams);
         $history = $this->buildChatHistory($chatParams, $message->user_openai_chat_id);
 
-        $isFileSearch = setting('openai_file_search', 0) && $chatParams['chat']->openai_vector_id !== null;
+        $isFileSearch = setting('openai_file_search', 0) && ! empty($chatParams['chat']->openai_vector_id);
 
         return $this->streamService->ChatStream(
             $chat_bot,

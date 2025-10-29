@@ -125,19 +125,31 @@
     </div>
 
     <template id="chat_user_image_bubble">
-        <div class="lqd-chat-image-bubble mb-2 flex flex-row-reverse content-end gap-2 lg:ms-auto">
-            <div class="mb-2 flex w-4/5 justify-end rounded-3xl text-heading-foreground dark:text-heading-foreground md:w-1/2">
-                <a
-                    data-fslightbox="gallery"
-                    data-type="image"
-                    href="#"
+        <div class="lqd-chat-image-bubble mb-2 flex !w-auto max-w-[50%] flex-row-reverse content-end gap-2 !px-3 !py-2.5 last:mb-0 lg:ms-auto lg:justify-self-end">
+            <a
+                class="flex items-center gap-1.5 underline underline-offset-2"
+                data-fslightbox="gallery"
+                data-type="image"
+                href="#"
+                target="_blank"
+            >
+                <svg
+                    class="shrink-0 opacity-50"
+                    width="15"
+                    height="19"
+                    viewBox="0 0 15 19"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
                 >
-                    <img
-                        class="img-content rounded-3xl"
-                        loading="lazy"
+                    <path
+                        d="M1.66667 18.5C1.20833 18.5 0.815972 18.3042 0.489583 17.9125C0.163194 17.5208 0 17.05 0 16.5V2.5C0 1.95 0.163194 1.47917 0.489583 1.0875C0.815972 0.695833 1.20833 0.5 1.66667 0.5H10L15 6.5V16.5C15 17.05 14.8368 17.5208 14.5104 17.9125C14.184 18.3042 13.7917 18.5 13.3333 18.5H1.66667ZM3.33333 14.5H11.6667V12.5H3.33333V14.5ZM3.33333 10.5H11.6667V8.5H3.33333V10.5ZM3.33333 6.5H9.16667V4.5H3.33333V6.5Z"
                     />
-                </a>
-            </div>
+                </svg>
+                <img
+                    class="img-content rounded-3xl"
+                    loading="lazy"
+                />
+            </a>
         </div>
     </template>
 
@@ -148,6 +160,7 @@
                     data-fslightbox="gallery"
                     data-type="image"
                     href="#"
+                    target="_blank"
                 >
                     <img
                         class="img-content rounded-3xl"
@@ -244,32 +257,50 @@
         <div class="relative">
             <button
                 class="prompt_image_close absolute -end-2 -top-2 flex size-5 items-center justify-center rounded-full bg-red-600 text-white"
-                onclick="document.getElementById('mainupscale_src').style.display = 'block';"
+                onclick="if ( document.getElementById('mainupscale_src') ) { document.getElementById('mainupscale_src').style.display = 'block'; }"
             >
                 <x-tabler-x class="size-4" />
             </button>
             <img
-                class="m-0 aspect-square w-full rounded-xl object-cover object-center"
-                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAUCAYAAADskT9PAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAUmSURBVEhLtVbbaxxlFP/N7M7Mzu7sfdfNJrWlF4ut1koQqU2xtlKpoEJfCuKD/gW+SPFRBa2iKVLUJ/FFUKHggxYRLN6gIm1TjWlNY5LaJk3abLLZzV6yt7l5zje7mwtWQelvmd35vvnmnN+5r/TMiffcxcoyOnDpw5Dooyl+cX8n4LguInoA0sBrb7l779mKbCQMnyyj1jKh+X1oWTZOD1+64ySkg28MupbrgO49SHTRvUS/qr+tnB46TucAvUjk3O4L/w2sRiJDpcffPOEu5ctYrtSE1RwCmR4zO/aI4vNB01WkeuKCBCsPb+yFEgwIYqvBK9NxRPjYAJbBqlSZ1a2Gty6MXYX0xNvvuqNDE1jIFXH0wB5oPhnF5RoyiSimcov47pffEQrp6N+/C1bLgtVoYuvTB+HXmIADm3R0xOtE9tFUCvlWCxXTRDagg3Wfmc8RCbl9yoOf4j/6yRcegbFf/0SpVBPWd8TJbAKDrNBUGbsH7usS2Hx4P/wBDTZZG6UwWXSmYllo2DZZ7nmPFes+v5Amro68Nvj9sVNfeQSuDF+He20UbrMJSVXbR9iRgK3qaMQy6B/YAZMI2M0WNj9JBDQNJbOFl7fvgEPWNRwbJpHoQJd9+PDaVfhIcdeYVegQEH5xJB9i+SnsOnIUPWEVGzJJZONBZA0/AoUZ7NyyCQnDQIoqJR2NIEXK40R0uxHGw4kE0jdvYkuhiEN3ZXAomcKhRBL7KBT2uhyhnKPE5r2VfS8wTNCx0Lw1BbdRR2NqHM5SAc5yBRa5uS8Vx7Z0EhvjMfQRAVWSEaJ4z9br4nWOfSQUwsL0NMrFIpbyebG/Gqz83KiDr8/5YFmksO0UQUC2LeQ29WN0eBizUhDXE9txET0YQhb1vp04/dN5EW92Z75SxXRtGTOkvEAhYITJWomTTFG8zG+Xb9dOuuH82paOI5ExENLFhoBHgKxvRDYh99hJzD30Ku5PKnCP0fqlDVgwVRiqgkuzt1Cs1ZArl6GQMo4rlysjnEwimskgSKHRSXmQPMLoRp5uqlUbtfoMmTSLxYIlypTRbXN1y8ULj2xEr97CmXdoo3EvQos3iV2eDiswKcMncnmqPOpebdFpyoNnz/0sjOFQ7SFPnKcQ+Em6S2sODZ/kphWKKjBiXoLzupMewgMuxdSwl3Dqo1dw8v3XcUP2Y+DzSzjwwxxZ304TEuqnHtG1isB7XN8aXToFOUi/AdrT6WIvdM7KJGPpxyJqQ2WUL5RQPVuicHlPO9LhUB4otRy0Zh5NWo/UShgjl3PC3Q5sdZbcng0EqPFYuFKuUGmaKFAjWn2ZpgPjwTC03QaM/giCe6PUMj0XeJ3w4iQixDhmBDE+MycSid0kONI5Rdf+thHNNxr4cu8+IeifcGxkmHKpRfFe8d+aPsDbczSRm/4o6oEUyloCSqIXTjyLVryHStThY2uwIgrY+fxxDH72DeZmb2BychIT439gZHwa41Nz4jlPGLJK3K+HSEKZDhSg4uRzh/Hx2cvYcXeaOpkLm8pq8NshGNUFcXg9OiJ/++BFLFbq6Mmm2ztrsTZz1sILwYUJlEhA1bTFfwHuYCyc+3mA1qrk0jB6YGUYPUXDiFxYo9Z7pLcPJguiy6JKWQ+NWvL3C/NoUqvuVA9D4WH0KQ2jg8cH3eJCCcs0jLiXrIawkL5UyoFMX4oi4VDDtBCj1qzQhOQ84QH0b+AqWT+MGPMjYxB/yao0hHj23w5cs6y8Aybxf/+Q8OuxiIG/ANTLQ4Xeth7OAAAAAElFTkSuQmCC"
+                class="m-0 aspect-square w-20 rounded-xl object-cover object-center"
+                src=""
             />
         </div>
     </template>
 
     <template id="prompt_pdf">
-        <div class="relative m-2 flex h-[80px] items-end rounded-[10px]">
+        <div class="relative flex items-center gap-3 self-center rounded-full bg-foreground/5 px-3 py-2.5 text-sm/tight text-heading-foreground">
+            <a
+                class="flex items-center gap-1.5"
+                href="#"
+                target="_blank"
+            >
+                <svg
+                    class="shrink-0 opacity-50"
+                    width="15"
+                    height="19"
+                    viewBox="0 0 15 19"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        d="M1.66667 18.5C1.20833 18.5 0.815972 18.3042 0.489583 17.9125C0.163194 17.5208 0 17.05 0 16.5V2.5C0 1.95 0.163194 1.47917 0.489583 1.0875C0.815972 0.695833 1.20833 0.5 1.66667 0.5H10L15 6.5V16.5C15 17.05 14.8368 17.5208 14.5104 17.9125C14.184 18.3042 13.7917 18.5 13.3333 18.5H1.66667ZM3.33333 14.5H11.6667V12.5H3.33333V14.5ZM3.33333 10.5H11.6667V8.5H3.33333V10.5ZM3.33333 6.5H9.16667V4.5H3.33333V6.5Z"
+                    />
+                </svg>
+                <span class="inline-block max-w-52 truncate"></span>
+            </a>
             <button
-                class="prompt_pdf_close absolute -end-2 -top-2 flex size-5 items-center justify-center rounded-full bg-red-600 text-white"
-                onclick="document.getElementById('mainupscale_src').style.display = 'block';"
+                class="prompt_image_close shrink-0"
+                onclick="if ( document.getElementById('mainupscale_src') ) { document.getElementById('mainupscale_src').style.display = 'block'; }"
             >
                 <x-tabler-x class="size-4" />
             </button>
-            <label></label>
         </div>
     </template>
 
     <template id="prompt_image_add_btn">
         <div class="promt_image_btn">
-            <button class="aspect-square w-full rounded-xl bg-foreground/10 text-2xl font-light transition-all hover:bg-emerald-500 hover:text-white">+
+            <button class="aspect-square w-20 rounded-xl bg-foreground/10 text-2xl font-light transition-all hover:bg-emerald-500 hover:text-white">+
             </button>
         </div>
     </template>

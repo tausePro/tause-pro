@@ -3,23 +3,190 @@
         @include('panel.user.generator.components.editor-actions-top-bar')
     </div>
 
-    <div class="container relative">
-        <div class="mx-auto lg:w-2/3">
-            <form
-                class="lqd-tinymce-toolbar-fixed workbook-form pt-[calc(var(--editor-tb-h)+var(--editor-bb-h)+3rem)] max-md:group-[&.lqd-generator-sidebar-collapsed]/generator:ps-8"
-                x-data="{}"
-                @submit.prevent
+    <div class="relative">
+        <form
+            class="lqd-tinymce-toolbar-fixed workbook-form pt-[calc(var(--editor-tb-h)+var(--editor-bb-h))] max-md:group-[&.lqd-generator-sidebar-collapsed]/generator:ps-8 [&_.tox-tinymce]:rounded-none"
+            x-data="{
+                hoveredElements: [],
+                hoveredActions: [],
+                editorScrollY: 0,
+                coverActiveAction: 'none',
+                get hoveredEmojiEl() {
+                    return this.hoveredElements.find(elObj => elObj.element.id === 'lqd-editor-emoji-el' && (elObj.isHovered || this.hoveredActions.includes('emoji-actions')));
+                },
+                get hoveredCoverEl() {
+                    return this.hoveredElements.find(elObj => elObj.element.id === 'lqd-editor-cover-el' && (elObj.isHovered || this.hoveredActions.includes('cover-actions')));
+                },
+                init() {
+                    this.onElementHover = this.onElementHover.bind(this);
+                },
+                onElementHover(event) {
+                    const { element, rect, eventType } = event.detail;
+            
+                    if (!element && !rect) {
+                        return;
+                    }
+            
+                    const elId = element.id;
+                    const existingHoveredElementIndex = this.hoveredElements.findIndex(elObj => elObj.element.id === elId);
+                    const elObj = { element, rect, isHovered: eventType === 'mouseover' };
+            
+                    if (existingHoveredElementIndex === -1) {
+                        this.hoveredElements.push(elObj);
+                    } else {
+                        this.hoveredElements[existingHoveredElementIndex] = elObj;
+                    }
+                },
+                onEditorScroll(ev) {
+                    const { event } = ev.detail;
+            
+                    this.editorScrollY = event.scrollY;
+                },
+                moveCoverEl(dir = 'down') {
+                    if (!tinymce?.activeEditor) {
+                        return console.warn('{{ __('Could not find any active editor.') }}')
+                    }
+            
+                    const coverEl = tinymce.activeEditor.dom.get('lqd-editor-cover-el');
+            
+                    if (!coverEl) {
+                        return console.warn('{{ __('Could not find the cover element.') }}')
+                    }
+            
+                    if (dir === 'up') {
+                        const prevSibling = tinymce.activeEditor.dom.getPrev(coverEl, '*');
+            
+                        if (prevSibling) {
+                            tinymce.activeEditor.dom.replace(coverEl, prevSibling);
+                            tinymce.activeEditor.dom.insertAfter(prevSibling, coverEl);
+                        }
+                    } else if (dir === 'down') {
+                        const nextSibling = tinymce.activeEditor.dom.getNext(coverEl, '*');
+            
+                        if (nextSibling) {
+                            tinymce.activeEditor.dom.insertAfter(coverEl, nextSibling);
+                        }
+                    }
+                },
+                deleteCoverEl() {
+                    if (!tinymce?.activeEditor) {
+                        return console.warn('{{ __('Could not find any active editor.') }}')
+                    }
+            
+                    const coverEl = tinymce.activeEditor.dom.get('lqd-editor-cover-el');
+            
+                    if (!coverEl) {
+                        return console.warn('{{ __('Could not find the cover element.') }}')
+                    }
+            
+                    tinymce.activeEditor.dom.remove(coverEl);
+                },
+            }"
+            @submit.prevent
+            @hovered-element.window="onElementHover"
+            @editor-scroll.window="onEditorScroll"
+        >
+            <textarea
+                class="tinymce is-generator-v2 w-full border-none bg-transparent"
+                rows="25"
             >
-                <textarea
-                    class="tinymce w-full border-none bg-transparent"
-                    rows="25"
-                >
 @if (isset($workbook))
 {!! $workbook->output !!}
 @endif
-				</textarea>
-            </form>
-        </div>
+			</textarea>
+            <input
+                class="editor-cover-input hidden"
+                type="file"
+                name="editor_cover"
+            >
+            <div
+                class="lqd-emoji-picker absolute left-0 top-0 z-1 hidden max-sm:fixed max-sm:!left-1/2 max-sm:!top-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2 [&.active]:block">
+            </div>
+
+            <div
+                class="lqd-emoji-el-actions pointer-events-none absolute left-[calc(var(--x)+2.5rem)] top-[calc(var(--y)+var(--editor-tb-h)+var(--editor-bb-h)+2.5rem)] z-1 hidden [--x:0px] [--y:0px] [&.active]:flex"
+                :class="{ 'active': hoveredEmojiEl || hoveredActions.includes('emoji-actions') }"
+                :style="{ '--y': `${(hoveredEmojiEl?.rect?.y ?? 0) - (editorScrollY)}px`, '--x': `${hoveredEmojiEl?.rect?.x ?? 0}px` }"
+                @mouseenter.prevent="hoveredActions.push('emoji-actions')"
+                @mouseleave.prevent="hoveredActions = hoveredActions.filter(action => action !== 'emoji-actions')"
+            >
+                <button
+                    class="lqd-emoji-el-edit-btn inline-grid size-7 place-items-center rounded-full border bg-background shadow-xs"
+                    type="button"
+                >
+                    <x-tabler-pencil class="size-4" />
+                </button>
+            </div>
+
+            <div
+                class="lqd-cover-el-actions group absolute end-5 top-[calc(var(--y)+var(--editor-tb-h)+var(--editor-bb-h)+2.5rem)] z-1 hidden rounded-full bg-background py-1.5 shadow-xs [&.active]:flex"
+                :data-sub-actions="coverActiveAction"
+                :class="{ 'active': hoveredCoverEl || hoveredActions.includes('cover-actions') }"
+                :style="{ '--y': `${(hoveredCoverEl?.rect?.y ?? 0) - (editorScrollY)}px`, '--x': `${hoveredCoverEl?.rect?.x ?? 0}px` }"
+                @mouseenter.prevent="hoveredActions.push('cover-actions')"
+                @mouseleave.prevent="hoveredActions = hoveredActions.filter(action => action !== 'cover-actions')"
+            >
+                <div class="hidden items-center gap-3 pe-2 ps-4 group-[&[data-sub-actions=none]]:flex">
+                    <button
+                        class="lqd-cover-el-replace-btn inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="document.querySelector('.editor-cover-input')?.click()"
+                    >
+                        {{ __('Replace') }}
+                    </button>
+
+                    <span class="inline-block h-4 w-px bg-foreground/5"></span>
+
+                    <button
+                        class="lqd-cover-el-reposition-btn inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="coverActiveAction = 'reposition'"
+                    >
+                        {{ __('Reposition') }}
+                    </button>
+
+                    <span class="inline-block h-4 w-px bg-foreground/5"></span>
+
+                    <button
+                        class="lqd-cover-el-delete-btn inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="deleteCoverEl"
+                    >
+                        <x-tabler-trash class="size-4" />
+                    </button>
+                </div>
+
+                <div class="hidden items-center gap-3 pe-4 ps-2 group-[&[data-sub-actions=reposition]]:flex">
+                    <button
+                        class="lqd-cover-el-reposition-up-btn inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="moveCoverEl('up')"
+                    >
+                        <x-tabler-arrow-up class="size-4" />
+                    </button>
+
+                    <span class="inline-block h-4 w-px bg-foreground/5"></span>
+
+                    <button
+                        class="lqd-cover-el-reposition-down-btn inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="moveCoverEl('down')"
+                    >
+                        <x-tabler-arrow-down class="size-4" />
+                    </button>
+
+                    <span class="inline-block h-4 w-px bg-foreground/5"></span>
+
+                    <button
+                        class="lqd-cover-el-subaction-close inline-flex min-h-6 min-w-6 items-center justify-center text-center text-xs font-medium"
+                        type="button"
+                        @click.prevent="coverActiveAction = 'none'"
+                    >
+                        {{ __('Done') }}
+                    </button>
+                </div>
+            </div>
+        </form>
         <form
             class="group/form invisible fixed bottom-8 left-1/2 flex w-[min(95vw,680px)] -translate-x-1/2 translate-y-4 items-center justify-between rounded-full p-1 opacity-0 transition-all group-[&.lqd-generator-sidebar-collapsed]/generator:visible group-[&.lqd-generator-sidebar-collapsed]/generator:translate-y-0 group-[&.lqd-generator-sidebar-collapsed]/generator:opacity-100 max-lg:z-40"
             data-ai="prompt"
@@ -135,18 +302,19 @@
                 data: formData,
                 contentType: false,
                 processData: false,
-            }).done(function(data) {
-                toastr.success(data.message);
-            }).fail(function(data) {
-                toastr.error(data.responseJSON.message);
-            });
+                success: function(data) {
+                    toastr.success(data.message);
+                },
+                error: function(data) {
+                    toastr.error(data.responseJSON.message);
+                }
+            })
         }
 
-        $('#document_title').on('keypress', function(ev) {
+        $(document).on('keypress', '#document_title', function(ev) {
             const input = $(this);
             if (ev.code === 'Enter') {
-                ev.preventDefault();
-                saveDocTitle(input.val());
+                // blur triggers the change event on the input. and change event handler is set down at the bottom
                 input.blur();
             }
         });
@@ -215,13 +383,32 @@
             });
         })
 
-        $(document).on('click', '.web_hook_save', function() {
-            const message_no = $("#_message_no").val();
-            const prompt = $("#_prompt").val();
-            const title = $('#document_title').val();
-            let result = tinyMCE.activeEditor.getContent();
-            saveResponse(prompt, result, message_no, title);
-            toastr.success('Document saved successfully!');
+        $(document).on('click', '.web_hook_save', async function() {
+            const message_no = $("#_message_no");
+            const prompt = $("#_prompt");
+            const title = $('#document_title');
+            const content = tinyMCE.activeEditor.getContent();
+
+            try {
+                const data = await saveResponse(prompt.val(), content, message_no.val(), title.val());
+
+                if (data.status === 'success') {
+                    if (data.entry?.slug) {
+                        if (!location.pathname.endsWith('/' + data.entry.slug)) {
+                            history.pushState({}, '', location.origin + location.pathname + '/' + data.entry.slug);
+                        }
+                    }
+                    if (data.entry?.id) {
+                        message_no.val(data.entry?.id);
+                    }
+                }
+
+                toastr.success('{{ __('Document Saved Successfully.') }}')
+            } catch (error) {
+                const message = error.message || error?.responseJSON?.message || '{{ __("Couldn't save the document. Please try again.") }}';
+
+                toastr.error(message);
+            }
         });
 
         $(document).on('click', '#openai_generator_button', function() {

@@ -295,7 +295,7 @@ div.tox {
 		.tox-toolbar__primary {
 			border-bottom: none !important;
 			padding-bottom: 0;
-			gap: 2rem;
+			gap: 1rem;
 		}
 
 		.tox-toolbar__group {
@@ -319,6 +319,15 @@ div.tox {
 				margin-inline-start: auto;
 				justify-content: end;
 				padding-inline-end: 0.5rem;
+				gap: 1rem;
+
+				.tox-icon {
+					opacity: 0.75;
+				}
+
+				.tox-tbtn {
+					width: auto !important;
+				}
 			}
 		}
 	}

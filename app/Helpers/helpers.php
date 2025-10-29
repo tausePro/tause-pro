@@ -12,6 +12,7 @@ use App\Models\PaymentProof;
 use App\Models\Plan;
 use App\Models\PrivacyTerms;
 use App\Models\UserOrder;
+use App\Services\Chatbot\ParserExcelService;
 use Datlechin\GoogleTranslate\Facades\GoogleTranslate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -1480,6 +1481,96 @@ function showTeamFunctionality(): bool
     return Helper::setting('team_functionality') && ! auth()?->user()?->getAttribute('team_id') && $plan;
 }
 
+if (! function_exists('mimeToExtension')) {
+    function mimeToExtension(string $mimeType): string
+    {
+        static $mimeMap = [
+            // Microsoft Office
+            'application/msword'                                                        => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'   => 'docx',
+            'application/vnd.ms-excel'                                                  => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'         => 'xlsx',
+            'application/vnd.ms-powerpoint'                                             => 'ppt',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+
+            // Documents
+            'application/pdf'  => 'pdf',
+            'text/plain'       => 'txt',
+            'text/csv'         => 'csv',
+            'text/html'        => 'html',
+            'text/css'         => 'css',
+            'text/javascript'  => 'js',
+            'application/json' => 'json',
+            'application/xml'  => 'xml',
+            'text/xml'         => 'xml',
+            'application/rtf'  => 'rtf',
+
+            // Images
+            'image/jpeg'    => 'jpg',
+            'image/png'     => 'png',
+            'image/gif'     => 'gif',
+            'image/webp'    => 'webp',
+            'image/svg+xml' => 'svg',
+            'image/bmp'     => 'bmp',
+            'image/tiff'    => 'tiff',
+            'image/ico'     => 'ico',
+
+            // Audio
+            'audio/mpeg' => 'mp3',
+            'audio/wav'  => 'wav',
+            'audio/ogg'  => 'ogg',
+            'audio/mp4'  => 'm4a',
+            'audio/aac'  => 'aac',
+
+            // Video
+            'video/mp4'       => 'mp4',
+            'video/mpeg'      => 'mpeg',
+            'video/quicktime' => 'mov',
+            'video/x-msvideo' => 'avi',
+            'video/webm'      => 'webm',
+
+            // Archives
+            'application/zip'              => 'zip',
+            'application/x-rar-compressed' => 'rar',
+            'application/x-tar'            => 'tar',
+            'application/gzip'             => 'gz',
+            'application/x-7z-compressed'  => '7z',
+
+            // Programming
+            'text/x-php'         => 'php',
+            'text/x-python'      => 'py',
+            'text/x-java-source' => 'java',
+            'text/x-c'           => 'c',
+            'text/x-c++src'      => 'cpp',
+            'text/x-csharp'      => 'cs',
+
+            // Other
+            'application/octet-stream' => 'bin',
+        ];
+
+        // First check our mapping
+        if (isset($mimeMap[$mimeType])) {
+            return $mimeMap[$mimeType];
+        }
+
+        // Fallback: extract extension from MIME type
+        $parts = explode('/', $mimeType);
+        if (count($parts) >= 2) {
+            $subtype = $parts[1];
+            // Handle special cases in subtype
+            $subtype = str_replace([
+                'vnd.ms-',
+                'vnd.openxmlformats-officedocument.',
+                'x-',
+            ], '', $subtype);
+
+            return $subtype;
+        }
+
+        return 'bin';
+    }
+}
+
 function generateRandomWords($wordCount): string
 {
     $words = [];
@@ -1691,6 +1782,95 @@ if (! function_exists('isFileSecure')) {
         return true;
     }
 
+    if (! function_exists('processFileContent')) {
+        function processFileContent(string $extension, string $tempFileName): string
+        {
+            $tempPath = public_path("uploads/$tempFileName");
+
+            switch ($extension) {
+                case 'pdf':
+                    $parser = new \Smalot\PdfParser\Parser;
+                    $text = $parser->parseFile($tempPath)->getText();
+
+                    return mb_check_encoding($text, 'UTF-8') ? $text : mb_convert_encoding($text, 'UTF-8', mb_detect_encoding($text));
+
+                case 'docx':
+                    return docxToText($tempPath);
+
+                case 'doc':
+                    return docToText($tempPath);
+
+                case 'csv':
+                    $file = file_get_contents($tempPath);
+                    $rows = explode(PHP_EOL, $file);
+                    $header = str_getcsv(array_shift($rows));
+                    $dataAsJson = [];
+                    foreach ($rows as $row) {
+                        if (trim($row)) {
+                            $data = array_combine($header, array_pad(str_getcsv($row), count($header), ''));
+                            $dataAsJson[] = json_encode($data, JSON_THROW_ON_ERROR);
+                        }
+                    }
+
+                    return implode("\n", $dataAsJson);
+
+                case 'xls':
+                case 'xlsx':
+                    $parser = app(ParserExcelService::class);
+
+                    return $parser->setPath($tempPath)->parse();
+
+                default:
+                    throw new RuntimeException('Unsupported file type');
+            }
+        }
+    }
+
+    if (! function_exists('docToText')) {
+        function docToText($path_to_file): array|string|null
+        {
+            $fileHandle = fopen($path_to_file, 'rb');
+            $line = @fread($fileHandle, filesize($path_to_file));
+            $lines = explode(chr(0x0D), $line);
+            $response = '';
+            foreach ($lines as $current_line) {
+                $pos = strpos($current_line, chr(0x00));
+                if (($pos !== false) || ($current_line === '')) {
+                    $response .= "\n";
+                } else {
+                    $response .= $current_line . ' ';
+                }
+            }
+
+            return preg_replace('/[^a-zA-Z0-9\s\,\.\-\n\r\t@\/\_\(\)]/', '', $response);
+        }
+    }
+
+    if (! function_exists('docxToText')) {
+        function docxToText($path_to_file): bool|string
+        {
+            $response = '';
+            $zip = new ZipArchive;
+            if (! $zip->open($path_to_file)) {
+                return false;
+            }
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $entry = $zip->statIndex($i);
+                if ($entry['name'] !== 'word/document.xml') {
+                    continue;
+                }
+                $content = $zip->getFromIndex($i);
+
+                $content = str_replace(['</w:r></w:p></w:tc><w:tc>', '</w:r></w:p>'], ["\r\n", "\n"], $content ?? '');
+                $content = strip_tags($content);
+                $response .= $content;
+            }
+            $zip->close();
+
+            return $response;
+        }
+    }
+
     if (! function_exists('validateUploadedFile')) {
         function validateUploadedFile(string $filePath, string $extension): bool
         {
@@ -1725,6 +1905,24 @@ if (! function_exists('isFileSecure')) {
             }
 
             return true;
+        }
+    }
+}
+
+if (! function_exists('measureVoiceLength')) {
+    function measureVoiceLength($filePath): ?float
+    {
+        try {
+            $getID3 = new getID3;
+            $fileInfo = $getID3->analyze($filePath);
+
+            if (isset($fileInfo['playtime_seconds'])) {
+                return round($fileInfo['playtime_seconds'] / 60, 2);
+            }
+
+            return 1;
+        } catch (Throwable $e) {
+            return 1;
         }
     }
 }

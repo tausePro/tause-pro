@@ -28,7 +28,6 @@ use App\Models\UserOpenaiChatMessage;
 use App\Services\Ai\OpenAI\FileSearchService;
 use App\Services\Assistant\AssistantService;
 use App\Services\Bedrock\BedrockRuntimeService;
-use App\Services\Chatbot\ParserExcelService;
 use App\Services\GatewaySelector;
 use App\Services\Stream\StreamService;
 use App\Services\VectorService;
@@ -52,7 +51,6 @@ use Random\RandomException;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
-use ZipArchive;
 
 class AIChatController extends Controller
 {
@@ -482,7 +480,13 @@ class AIChatController extends Controller
 
         $elevenlabsAgentId = null;
         if (setting('default_voice_chat_engine', 'openai') == 'elevenlabs' && MarketplaceHelper::isRegistered('elevenlabs-voice-chat')) {
-            $elevenlabsAgentId = app(ElevenLabsVoiceChatService::class)?->fetchVoiceChatbot()?->agent_id;
+            $voiceChatbot = app(ElevenLabsVoiceChatService::class)?->fetchVoiceChatbot();
+
+            if (is_array($voiceChatbot)) {
+                $elevenlabsAgentId = $voiceChatbot['agent_id'] ?? null;
+            } elseif (is_object($voiceChatbot)) {
+                $elevenlabsAgentId = $voiceChatbot->agent_id ?? null;
+            }
         }
 
         $html = view($chatView, compact(
@@ -499,47 +503,6 @@ class AIChatController extends Controller
         $html2 = view('panel.user.openai_chat.components.chat_sidebar_list', compact('list', 'tempChat', 'chat', 'generators', 'website_url'))->render();
 
         return response()->json(compact('html', 'html2', 'chat'));
-    }
-
-    public function docToText($path_to_file): array|string|null
-    {
-        $fileHandle = fopen($path_to_file, 'rb');
-        $line = @fread($fileHandle, filesize($path_to_file));
-        $lines = explode(chr(0x0D), $line);
-        $response = '';
-        foreach ($lines as $current_line) {
-            $pos = strpos($current_line, chr(0x00));
-            if (($pos !== false) || ($current_line === '')) {
-                $response .= "\n";
-            } else {
-                $response .= $current_line . ' ';
-            }
-        }
-
-        return preg_replace('/[^a-zA-Z0-9\s\,\.\-\n\r\t@\/\_\(\)]/', '', $response);
-    }
-
-    public function docxToText($path_to_file): bool|string
-    {
-        $response = '';
-        $zip = new ZipArchive;
-        if (! $zip->open($path_to_file)) {
-            return false;
-        }
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $entry = $zip->statIndex($i);
-            if ($entry['name'] !== 'word/document.xml') {
-                continue;
-            }
-            $content = $zip->getFromIndex($i);
-
-            $content = str_replace(['</w:r></w:p></w:tc><w:tc>', '</w:r></w:p>'], ["\r\n", "\n"], $content ?? '');
-            $content = strip_tags($content);
-            $response .= $content;
-        }
-        $zip->close();
-
-        return $response;
     }
 
     public function startNewDocChat(Request $request): JsonResponse
@@ -2330,7 +2293,7 @@ class AIChatController extends Controller
         $chat_id = $message?->user_openai_chat_id;
         $chat = UserOpenaiChat::whereId($chat_id)->first();
         if ($chat) {
-            $chat_bot = EntityEnum::fromSlug($this->settings?->openai_default_model) ?? EntityEnum::GPT_3_5_TURBO;
+            $chat_bot = EntityEnum::GPT_4_O;
             if ($chat->messages()->count() <= 2) {
                 $systemPromot = $this->applyPromptRules('You are a chatbot. Generate a title for a chat based on provided conversation. You must return a title only.');
                 $generatedNewChatTitle = OpenAI::chat()->create([
@@ -2443,7 +2406,7 @@ class AIChatController extends Controller
             }
         }
 
-        $page = $this->processFileContent($realExtension, $tempFileName);
+        $page = processFileContent($realExtension, $tempFileName);
 
         Storage::disk('public')->delete($tempFileName);
 
@@ -2489,48 +2452,6 @@ class AIChatController extends Controller
         }
 
         return false;
-    }
-
-    private function processFileContent(string $extension, string $tempFileName): string
-    {
-        $tempPath = public_path("uploads/$tempFileName");
-
-        switch ($extension) {
-            case 'pdf':
-                $parser = new \Smalot\PdfParser\Parser;
-                $text = $parser->parseFile($tempPath)->getText();
-
-                return mb_check_encoding($text, 'UTF-8') ? $text : mb_convert_encoding($text, 'UTF-8', mb_detect_encoding($text));
-
-            case 'docx':
-                return $this->docxToText($tempPath);
-
-            case 'doc':
-                return $this->docToText($tempPath);
-
-            case 'csv':
-                $file = file_get_contents($tempPath);
-                $rows = explode(PHP_EOL, $file);
-                $header = str_getcsv(array_shift($rows));
-                $dataAsJson = [];
-                foreach ($rows as $row) {
-                    if (trim($row)) {
-                        $data = array_combine($header, array_pad(str_getcsv($row), count($header), ''));
-                        $dataAsJson[] = json_encode($data, JSON_THROW_ON_ERROR);
-                    }
-                }
-
-                return implode("\n", $dataAsJson);
-
-            case 'xls':
-            case 'xlsx':
-                $parser = app(ParserExcelService::class);
-
-                return $parser->setPath($tempPath)->parse();
-
-            default:
-                throw new Exception('Unsupported file type');
-        }
     }
 
     private function processEmbeddings(string $content, $chatId): void

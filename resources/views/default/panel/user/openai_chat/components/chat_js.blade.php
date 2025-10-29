@@ -48,8 +48,16 @@
 	@php
 		$template = null;
 		$currentUrl = url()->current();
-
-		if ((! str_contains($currentUrl, '/ai-chat/')) || (! auth()->check())){
+		$currentPath = trim(parse_url($currentUrl, PHP_URL_PATH) ?: '');
+		if (
+			\App\Helpers\Classes\MarketplaceHelper::isRegistered('ai-chat-pro') &&
+			(
+				str_starts_with($currentPath, '/chat') ||
+				str_starts_with($currentPath, '/dashboard/user/openai/chat/pro/') ||
+				! auth()->check()
+			)
+		)
+		{
 			$template = 'chatpro';
 		}
 	@endphp

@@ -121,7 +121,7 @@
 												variant="secondary"
 												href="{{ $item['routes']['paymentSupport'] }}"
 											>
-												@lang('Renew License')
+												@lang('Extend Support & Updates')
 												<span
 													class="inline-grid size-7 place-items-center rounded-full bg-background text-heading-foreground shadow-xl"
 													aria-hidden="true"

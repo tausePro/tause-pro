@@ -8,7 +8,9 @@ use App\Domains\Engine\Enums\EngineEnum;
 use App\Domains\Entity\Contracts\Calculate\WithCharsInterface;
 use App\Domains\Entity\Contracts\Calculate\WithImagesInterface;
 use App\Domains\Entity\Contracts\Calculate\WithImageToVideoInterface;
+use App\Domains\Entity\Contracts\Calculate\WithMinuteInterface;
 use App\Domains\Entity\Contracts\Calculate\WithPlagiarismInterface;
+use App\Domains\Entity\Contracts\Calculate\WithSecondInterface;
 use App\Domains\Entity\Contracts\Calculate\WithSpeechToTextInterface;
 use App\Domains\Entity\Contracts\Calculate\WithTextToSpeechInterface;
 use App\Domains\Entity\Contracts\Calculate\WithTextToVideoInterface;
@@ -132,6 +134,12 @@ enum EntityEnum: string
 
     case GPT_5_CHAT = 'gpt-5-chat-latest';
 
+    case GPT_5_PRO = 'gpt-5-pro';
+
+    case SORA_2 = 'sora-2';
+
+    case SORA_2_PRO = 'sora-2-pro';
+
     // Embedding models for openai
     case TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002';
 
@@ -208,6 +216,8 @@ enum EntityEnum: string
 
     case ISOLATOR = 'isolator';
 
+    case ELEVENLABS_AI_MUSIC = 'elevenlabs-ai-music';
+
     case GOOGLE = 'google';
 
     case AZURE = 'azure';
@@ -237,6 +247,7 @@ enum EntityEnum: string
     case GROK_3_FAST = 'grok-3-fast';
     case GROK_3_MINI_FAST = 'grok-3-mini-fast';
     case GROK_4 = 'grok-4-0709';
+    case GROK_4_FAST = 'grok-4-fast-reasoning';
     case VEO_2 = 'veo2';
     case VEED = 'veed';
     case VEO_3 = 'veo3';
@@ -246,6 +257,10 @@ enum EntityEnum: string
     case NANO_BANANA = 'nano-banana';
 
     case NANO_BANANA_EDIT = 'nano-banana/edit';
+
+    case SEEDREAM_4 = 'seedream/v4/text-to-image';
+
+    case SEEDREAM_4_EDIT = 'seedream/v4/edit';
 
     case FLUX_PRO = 'flux-pro';
 
@@ -346,6 +361,7 @@ enum EntityEnum: string
             self::GPT_O_03_mini,
             self::GPT_5,
             self::GPT_5_CHAT,
+            self::GPT_5_PRO,
             self::GPT_5_MINI,
             self::GPT_5_NANO => true,
             default          => false,
@@ -358,7 +374,7 @@ enum EntityEnum: string
         return match ($this) {
             // self::GPT_3_5_TURBO_0125,
             // self::GPT_3_5_TURBO_1106 => self::GPT_3_5_TURBO,
-            default                  => $this
+            default => $this
         };
     }
 
@@ -370,21 +386,21 @@ enum EntityEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::BLACK_FOREST_LABS_FLUX_1_SCHNELL  => __('Black Forest Labs Flux 1 Schnell'),
-            self::IMAGE_TO_VIDEO                    => __('AI Video'),
-            self::STABLE_DIFFUSION_XL_1024_V_1_0    => __('Stable Diffusion XL 1.0'),
-            self::STABLE_DIFFUSION_V_1_6            => __('Stable Diffusion 1.6'),
-            self::SD_3                              => __('Stable Diffusion 3'),
-            self::SD_3_TURBO                        => __('Stable Diffusion 3 turbo'),
-            self::SD_3_MEDIUM                       => __('Stable Diffusion 3 Medium'),
-            self::SD_3_LARGE                        => __('Stable Diffusion 3 Large'),
-            self::SD_3_LARGE_TURBO                  => __('Stable Diffusion 3 Large Turbo'),
-            self::SD_3_5_LARGE                      => __('Stable Diffusion 3.5 Large'),
-            self::SD_3_5_LARGE_TURBO                => __('Stable Diffusion 3.5 Large Turbo'),
-            self::SD_3_5_MEDIUM                     => __('Stable Diffusion 3.5 Medium'),
-            self::CORE                              => __('Core'),
-            self::ULTRA                             => __('Ultra'),
-            self::AWS_BEDROCK                       => __('AWS Bedrock'),
+            self::BLACK_FOREST_LABS_FLUX_1_SCHNELL => __('Black Forest Labs Flux 1 Schnell'),
+            self::IMAGE_TO_VIDEO                   => __('AI Video'),
+            self::STABLE_DIFFUSION_XL_1024_V_1_0   => __('Stable Diffusion XL 1.0'),
+            self::STABLE_DIFFUSION_V_1_6           => __('Stable Diffusion 1.6'),
+            self::SD_3                             => __('Stable Diffusion 3'),
+            self::SD_3_TURBO                       => __('Stable Diffusion 3 turbo'),
+            self::SD_3_MEDIUM                      => __('Stable Diffusion 3 Medium'),
+            self::SD_3_LARGE                       => __('Stable Diffusion 3 Large'),
+            self::SD_3_LARGE_TURBO                 => __('Stable Diffusion 3 Large Turbo'),
+            self::SD_3_5_LARGE                     => __('Stable Diffusion 3.5 Large'),
+            self::SD_3_5_LARGE_TURBO               => __('Stable Diffusion 3.5 Large Turbo'),
+            self::SD_3_5_MEDIUM                    => __('Stable Diffusion 3.5 Medium'),
+            self::CORE                             => __('Core'),
+            self::ULTRA                            => __('Ultra'),
+            self::AWS_BEDROCK                      => __('AWS Bedrock'),
             // OpenAI
             self::DAVINCI                     => __('Davinci 002 (Expensive &amp; Capable)'),
             self::TEXT_DAVINCI_003            => __('Davinci 003 (Expensive &amp; Capable)'),
@@ -422,28 +438,31 @@ enum EntityEnum: string
             self::GPT_5_MINI                  => __('GPT-5 Mini (May 31, 2024 knowledge cutoff, 128k max output tokens.)'),
             self::GPT_5_NANO                  => __('GPT-5 Nano (May 31, 2024 knowledge cutoff, 128k max output tokens.)'),
             self::GPT_5_CHAT                  => __('GPT-5 Chat (Sep 30, 2024 knowledge cutoff, 128k max output tokens.)'),
+            self::GPT_5_PRO                   => __('GPT-5 Pro (Sep 30, 2024 knowledge cutoff, 272k max output tokens.)'),
+            self::SORA_2                      => __('Sora 2 (Flagship video generation with synced audio)'),
+            self::SORA_2_PRO                  => __('Sora 2 Pro (Most advanced synced-audio video generation)'),
             // Anthropic
-            self::CLAUDE_OPUS_4            => __('Claude Opus 4'),
-            self::CLAUDE_SONNET_4          => __('Claude Sonnet 4'),
-            self::CLAUDE_3_7_SONNET        => __('Claude 3.7 Sonnet'),
-            self::CLAUDE_3_5_HAIKU         => __('Claude 3.5 Haiku'),
-            self::CLAUDE_3_5_SONNET_V2     => __('Claude 3.5 Sonnet V2'),
-            self::CLAUDE_3_5_SONNET        => __('Claude 3.5 Sonnet'),
-            self::CLAUDE_3_SONNET          => __('Claude 3 Sonnet'),
-            self::CLAUDE_3_OPUS            => __('Claude 3 Opus'),
-            self::CLAUDE_3_HAIKU           => __('Claude 3 Haiku'),
-            self::CLAUDE_2_1               => __('Claude 2.1'),
-            self::CLAUDE_2_0               => __('Claude 2'),
-            self::VOYAGE_2                 => __('Voyage 2'),
-            self::VOYAGE_LARGE_2           => __('Voyage Large 2'),
-            self::VOYAGE_CODE_2            => __('Voyage Code 2'),
-            self::CLIPDROP                 => __('Clipdrop for Photo Studio'),
-            self::NOVITA                   => __('Novita for Photo Studio'),
-            self::FREEPIK                  => __('Novita for Image Editor'),
-            self::PLAGIARISMCHECK          => __('Plagiarism Check'),
-            self::SYNTHESIA                => __('Synthesia'),
-            self::HEYGEN                   => __('Heygen'),
-            self::PEBBLELY                 => __('Pebblely'),
+            self::CLAUDE_OPUS_4        => __('Claude Opus 4'),
+            self::CLAUDE_SONNET_4      => __('Claude Sonnet 4'),
+            self::CLAUDE_3_7_SONNET    => __('Claude 3.7 Sonnet'),
+            self::CLAUDE_3_5_HAIKU     => __('Claude 3.5 Haiku'),
+            self::CLAUDE_3_5_SONNET_V2 => __('Claude 3.5 Sonnet V2'),
+            self::CLAUDE_3_5_SONNET    => __('Claude 3.5 Sonnet'),
+            self::CLAUDE_3_SONNET      => __('Claude 3 Sonnet'),
+            self::CLAUDE_3_OPUS        => __('Claude 3 Opus'),
+            self::CLAUDE_3_HAIKU       => __('Claude 3 Haiku'),
+            self::CLAUDE_2_1           => __('Claude 2.1'),
+            self::CLAUDE_2_0           => __('Claude 2'),
+            self::VOYAGE_2             => __('Voyage 2'),
+            self::VOYAGE_LARGE_2       => __('Voyage Large 2'),
+            self::VOYAGE_CODE_2        => __('Voyage Code 2'),
+            self::CLIPDROP             => __('Clipdrop for Photo Studio'),
+            self::NOVITA               => __('Novita for Photo Studio'),
+            self::FREEPIK              => __('Novita for Image Editor'),
+            self::PLAGIARISMCHECK      => __('Plagiarism Check'),
+            self::SYNTHESIA            => __('Synthesia'),
+            self::HEYGEN               => __('Heygen'),
+            self::PEBBLELY             => __('Pebblely'),
             // Gemini
             self::GEMINI_2_5_FLASH_PREVIEW_05_20 => __('Gemini 2.5 Flash Preview 05-20 Adaptive thinking, cost efficiency'),
             self::GEMINI_2_5_PRO                 => __('Gemini 2.5 Pro Preview Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more'),
@@ -454,8 +473,8 @@ enum EntityEnum: string
             self::GEMINI_EMBEDDING_EXP           => __('Gemini Embedding Measuring the relatedness of text strings'),
             self::GEMINI_TEXT_EMBEDDING_004      => __('Gemini Text Embeding 004'),
             // Deepseek
-            self::DEEPSEEK_CHAT            => __('Deepseek Chat'),
-            self::DEEPSEEK_REASONER        => __('Deepseek DeepSeek-R1'),
+            self::DEEPSEEK_CHAT     => __('Deepseek Chat'),
+            self::DEEPSEEK_REASONER => __('Deepseek DeepSeek-R1'),
             // Unsplash
             self::UNSPLASH => __('Unsplash for AI Article Wizard'),
             // Pexels
@@ -466,13 +485,14 @@ enum EntityEnum: string
             self::ELEVENLABS               => __('Elevenlabs for TTS'),
             self::ELEVENLABS_VOICE_CHATBOT => __('Elevenlabs Voice Chatbots'),
             self::ISOLATOR                 => __('Voice Isolator (1 word = 5 used characters of elevenlabs) X 1 token'),
+            self::ELEVENLABS_AI_MUSIC      => __('Elevenlabs for AI Music Pro'),
             // Google
             self::GOOGLE => __('Google for TTS'),
             // Azure
-            self::AZURE              => __('Azure for TTS'),
-            self::AZURE_OPENAI       => __('Azure OpenAI Model'),
+            self::AZURE        => __('Azure for TTS'),
+            self::AZURE_OPENAI => __('Azure OpenAI Model'),
             // Speechify
-            self::Speechify=> __('Speechify for TTS'),
+            self::Speechify => __('Speechify for TTS'),
             // Serper
             self::SERPER => __('Serper for Realtime Data'),
             // Perplexity
@@ -487,40 +507,43 @@ enum EntityEnum: string
             self::GROK_3_FAST        => __('Grok 3 Fast'),
             self::GROK_3_MINI_FAST   => __('Grok 3 Mini Fast'),
             self::GROK_4             => __('Grok 4'),
+            self::GROK_4_FAST        => __('Grok 4 Fast'),
             // FAL AI
-            self::VEO_2                                              => __('Google VEO 2'),
-            self::IMAGEN_4                                           => __('Google Imagen 4'),
-            self::VEED                                               => __('Veed'),
-            self::VEO_3                                              => __('Veo 3'),
-            self::VEO_3_FAST                                         => __('Fast Veo 3'),
-            self::KLING_VIDEO                                        => __('Kling Video'),
-            self::FLUX_PRO                                           => __('Flux Pro'),
-            self::NANO_BANANA                                        => __('Nano Banana'),
-            self::NANO_BANANA_EDIT                                   => __('Nano Banana Edit'),
-            self::FLUX_PRO_KONTEXT_MAX_MULTI                         => __('Flux Pro Kontext Max Multi'),
-            self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE                     => __('Flux Pro Kontext Max Text to Image'),
-            self::FLUX_PRO_KONTEXT                                   => __('Flux Pro Kontext Max'),
-            self::IDEOGRAM                                           => __('Ideogram V2'),
-            self::FLUX_PRO_1_1                                       => __('Flux Pro 1.1'),
-            self::FLUX_REALISM                                       => __('Flux Realism'),
-            self::FLUX_SCHNELL                                       => __('Flux Schnell'),
-            self::KLING                                              => __('Kling 1.0'),
-            self::KLING_2_1                                          => __('Kling 2.1'),
-            self::KLING_IMAGE                                        => __('Kling Image to Video'),
-            self::LUMA_DREAM_MACHINE                                 => __('Luma Dream Machine'),
-            self::HAIPER                                             => __('Haiper'),
-            self::MINIMAX                                            => __('Minimax'),
-            self::VIDEO_UPSCALER                                     => __('Video Upscaler'),
-            self::COGVIDEOX_5B                                       => __('Cogvideox 5B'),
-            self::ANIMATEDIFF_V2V                                    => __('Animatediff V2V'),
-            self::FAST_ANIMATEDIFF_TURBO                             => __('Fast Animatediff Turbo'),
+            self::VEO_2                          => __('Google VEO 2'),
+            self::IMAGEN_4                       => __('Google Imagen 4'),
+            self::VEED                           => __('Veed'),
+            self::VEO_3                          => __('Veo 3'),
+            self::VEO_3_FAST                     => __('Fast Veo 3'),
+            self::KLING_VIDEO                    => __('Kling Video'),
+            self::FLUX_PRO                       => __('Flux Pro'),
+            self::NANO_BANANA                    => __('Nano Banana'),
+            self::NANO_BANANA_EDIT               => __('Nano Banana Edit'),
+            self::SEEDREAM_4                     => __('SeeDream v4 '),
+            self::SEEDREAM_4_EDIT                => __('SeeDream v4 Edit'),
+            self::FLUX_PRO_KONTEXT_MAX_MULTI     => __('Flux Pro Kontext Max Multi'),
+            self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE => __('Flux Pro Kontext Max Text to Image'),
+            self::FLUX_PRO_KONTEXT               => __('Flux Pro Kontext Max'),
+            self::IDEOGRAM                       => __('Ideogram V2'),
+            self::FLUX_PRO_1_1                   => __('Flux Pro 1.1'),
+            self::FLUX_REALISM                   => __('Flux Realism'),
+            self::FLUX_SCHNELL                   => __('Flux Schnell'),
+            self::KLING                          => __('Kling 1.0'),
+            self::KLING_2_1                      => __('Kling 2.1'),
+            self::KLING_IMAGE                    => __('Kling Image to Video'),
+            self::LUMA_DREAM_MACHINE             => __('Luma Dream Machine'),
+            self::HAIPER                         => __('Haiper'),
+            self::MINIMAX                        => __('Minimax'),
+            self::VIDEO_UPSCALER                 => __('Video Upscaler'),
+            self::COGVIDEOX_5B                   => __('Cogvideox 5B'),
+            self::ANIMATEDIFF_V2V                => __('Animatediff V2V'),
+            self::FAST_ANIMATEDIFF_TURBO         => __('Fast Animatediff Turbo'),
 
-            self::AD_MARKETING_VIDEO   		  						  => __('Ad Marketing Video'),
-            self::AD_MARKETING_VIDEO_TOPVIEW						 => __('Topview Ad Video'),
-            self::AI_CLIP_VIZARD						 			         => __('Vizard AI Clip'),
-            self::AI_CLIP_KLAP						 				          => __('Klap AI Clip'),
+            self::AD_MARKETING_VIDEO         => __('Ad Marketing Video'),
+            self::AD_MARKETING_VIDEO_TOPVIEW => __('Topview Ad Video'),
+            self::AI_CLIP_VIZARD             => __('Vizard AI Clip'),
+            self::AI_CLIP_KLAP               => __('Klap AI Clip'),
             // AI/ML api minimax engine
-            self::MUSIC_01				 => __('Music 01'),
+            self::MUSIC_01 => __('Music 01'),
             // Open Router
             self::ANTHROPIC_CLAUDE_3_5_HAIKU_20241022                => __('Anthropic: Claude 3.5 Haiku (2024-10-22)'),
             self::ANTHROPIC_CLAUDE_3_5_HAIKU_20241022_SELF_MODERATED => __('Anthropic: Claude 3.5 Haiku (2024-10-22) (self-moderated)'),
@@ -624,6 +647,9 @@ enum EntityEnum: string
             self::GPT_5_MINI,
             self::GPT_5_NANO,
             self::GPT_5_CHAT,
+            self::GPT_5_PRO,
+            self::SORA_2,
+            self::SORA_2_PRO,
             self::GPT_O_4_MINI => EngineEnum::OPEN_AI,
             // Anthropic
             self::CLAUDE_SONNET_4,
@@ -674,6 +700,7 @@ enum EntityEnum: string
             // Elevenlabs
             self::ELEVENLABS,
             self::ELEVENLABS_VOICE_CHATBOT,
+            self::ELEVENLABS_AI_MUSIC,
             self::ISOLATOR => EngineEnum::ELEVENLABS,
             // Google
             self::GOOGLE => EngineEnum::GOOGLE,
@@ -689,10 +716,10 @@ enum EntityEnum: string
             // PIAPI
             self::MIDJOURNEY => EngineEnum::PI_API,
             // X AI
-            self::GROK_2_1212, self::GROK_2_VISION_1212, self::GROK_3, self::GROK_3_MINI, self::GROK_3_FAST, self::GROK_3_MINI_FAST, self::GROK_4 => EngineEnum::X_AI,
+            self::GROK_2_1212, self::GROK_2_VISION_1212, self::GROK_3, self::GROK_3_MINI, self::GROK_3_FAST, self::GROK_3_MINI_FAST, self::GROK_4, self::GROK_4_FAST => EngineEnum::X_AI,
             // FAL AI
-            self::VEO_2, self::VEED, self::VEO_3,self::VEO_3_FAST, self::KLING_VIDEO, self::VIDEO_UPSCALER, self::COGVIDEOX_5B, self::ANIMATEDIFF_V2V, self::FAST_ANIMATEDIFF_TURBO, self::FLUX_PRO, self::NANO_BANANA, self::NANO_BANANA_EDIT, self::IMAGEN_4 , self::FLUX_PRO_KONTEXT_MAX_MULTI, self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE, self::FLUX_PRO_KONTEXT,  self::FLUX_PRO_1_1, self::FLUX_REALISM, self::FLUX_SCHNELL, self::IDEOGRAM,
-            self::KLING, self::KLING_2_1 ,self::KLING_IMAGE, self::LUMA_DREAM_MACHINE, self::HAIPER, self::MINIMAX => EngineEnum::FAL_AI,
+            self::VEO_2, self::VEED, self::VEO_3, self::VEO_3_FAST, self::KLING_VIDEO, self::VIDEO_UPSCALER, self::COGVIDEOX_5B, self::ANIMATEDIFF_V2V, self::FAST_ANIMATEDIFF_TURBO, self::FLUX_PRO, self::NANO_BANANA, self::NANO_BANANA_EDIT, self::SEEDREAM_4, self::SEEDREAM_4_EDIT, self::IMAGEN_4, self::FLUX_PRO_KONTEXT_MAX_MULTI, self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE, self::FLUX_PRO_KONTEXT, self::FLUX_PRO_1_1, self::FLUX_REALISM, self::FLUX_SCHNELL, self::IDEOGRAM,
+            self::KLING, self::KLING_2_1, self::KLING_IMAGE, self::LUMA_DREAM_MACHINE, self::HAIPER, self::MINIMAX => EngineEnum::FAL_AI,
             // Creatify
             self::AD_MARKETING_VIDEO => EngineEnum::CREATIFY,
             // Topview
@@ -729,7 +756,7 @@ enum EntityEnum: string
             self::PERPLEXITY_LLAMA_31_SONAR_70B_ONLINE,
             self::PERPLEXITY_LLAMA_31_SONAR_70B,
             self::PERPLEXITY_LLAMA_31_SONAR_8B_ONLINE,
-            self::PERPLEXITY_LLAMA_31_SONAR_8B  => EngineEnum::OPEN_ROUTER,
+            self::PERPLEXITY_LLAMA_31_SONAR_8B => EngineEnum::OPEN_ROUTER,
         };
     }
 
@@ -737,22 +764,22 @@ enum EntityEnum: string
     {
         return match ($this) {
             // Together
-            self::BLACK_FOREST_LABS_FLUX_1_SCHNELL=> Together\FLUX1SchnellDriver::class,
+            self::BLACK_FOREST_LABS_FLUX_1_SCHNELL => Together\FLUX1SchnellDriver::class,
             // Stable Diffusion
-            self::IMAGE_TO_VIDEO                   => StableDiffusion\ImageToVideoDriver::class,
-            self::STABLE_DIFFUSION_XL_1024_V_1_0   => StableDiffusion\XL1024V10Driver::class,
-            self::STABLE_DIFFUSION_V_1_6           => StableDiffusion\V16Driver::class,
-            self::SD_3                             => StableDiffusion\Sd3Driver::class,
-            self::SD_3_TURBO                       => StableDiffusion\Sd3TurboDriver::class,
-            self::SD_3_MEDIUM                      => StableDiffusion\Sd3MediumDriver::class,
-            self::SD_3_LARGE                       => StableDiffusion\Sd3LargeDriver::class,
-            self::SD_3_LARGE_TURBO                 => StableDiffusion\Sd3LargeTurboDriver::class,
-            self::SD_3_5_LARGE                     => StableDiffusion\Sd35LargeDriver::class,
-            self::SD_3_5_LARGE_TURBO               => StableDiffusion\Sd35LargeTurboDriver::class,
-            self::SD_3_5_MEDIUM                    => StableDiffusion\Sd35MediumDriver::class,
-            self::CORE                             => StableDiffusion\CoreDriver::class,
-            self::ULTRA                            => StableDiffusion\UltraDriver::class,
-            self::AWS_BEDROCK                      => StableDiffusion\AwsBedrockDriver::class,
+            self::IMAGE_TO_VIDEO                 => StableDiffusion\ImageToVideoDriver::class,
+            self::STABLE_DIFFUSION_XL_1024_V_1_0 => StableDiffusion\XL1024V10Driver::class,
+            self::STABLE_DIFFUSION_V_1_6         => StableDiffusion\V16Driver::class,
+            self::SD_3                           => StableDiffusion\Sd3Driver::class,
+            self::SD_3_TURBO                     => StableDiffusion\Sd3TurboDriver::class,
+            self::SD_3_MEDIUM                    => StableDiffusion\Sd3MediumDriver::class,
+            self::SD_3_LARGE                     => StableDiffusion\Sd3LargeDriver::class,
+            self::SD_3_LARGE_TURBO               => StableDiffusion\Sd3LargeTurboDriver::class,
+            self::SD_3_5_LARGE                   => StableDiffusion\Sd35LargeDriver::class,
+            self::SD_3_5_LARGE_TURBO             => StableDiffusion\Sd35LargeTurboDriver::class,
+            self::SD_3_5_MEDIUM                  => StableDiffusion\Sd35MediumDriver::class,
+            self::CORE                           => StableDiffusion\CoreDriver::class,
+            self::ULTRA                          => StableDiffusion\UltraDriver::class,
+            self::AWS_BEDROCK                    => StableDiffusion\AwsBedrockDriver::class,
             // OpenAI
             self::DAVINCI                     => OpenAI\DavinciDriver::class,
             self::TEXT_DAVINCI_003            => OpenAI\TextDavinciDriver::class,
@@ -790,6 +817,9 @@ enum EntityEnum: string
             self::GPT_5_MINI                  => OpenAI\GPT5MiniDriver::class,
             self::GPT_5_NANO                  => OpenAI\GPT5NanoDriver::class,
             self::GPT_5_CHAT                  => OpenAI\GPT5ChatDriver::class,
+            self::GPT_5_PRO                   => OpenAI\GPT5ProDriver::class,
+            self::SORA_2                      => OpenAI\Sora2Driver::class,
+            self::SORA_2_PRO                  => OpenAI\Sora2ProDriver::class,
 
             // Anthropic
             self::CLAUDE_SONNET_4      => Anthropic\ClaudeSonnet4Driver::class,
@@ -832,6 +862,7 @@ enum EntityEnum: string
             self::ELEVENLABS               => ElevenLabs\ElevenlabsDriver::class,
             self::ELEVENLABS_VOICE_CHATBOT => ElevenLabs\ElevenlabsVoiceChatbotDriver::class,
             self::ISOLATOR                 => ElevenLabs\IsolatorDriver::class,
+            self::ELEVENLABS_AI_MUSIC      => ElevenLabs\ElevenlabsAIMusicDriver::class,
             self::GOOGLE                   => GoogleDriver::class,
             self::AZURE                    => AzureDriver::class,
             self::AZURE_OPENAI             => AzureOpenaiDriver::class,
@@ -839,7 +870,7 @@ enum EntityEnum: string
             self::SERPER                   => SerperDriver::class,
             self::PERPLEXITY               => PerplexityDriver::class,
             // PiAPI
-            self::MIDJOURNEY      => MidjourneyDriver::class,
+            self::MIDJOURNEY => MidjourneyDriver::class,
             // X AI
             self::GROK_2_1212        => XAI\Grok21212Driver::class,
             self::GROK_2_VISION_1212 => XAI\Grok2Vision1212Driver::class,
@@ -848,42 +879,45 @@ enum EntityEnum: string
             self::GROK_3_FAST        => XAI\Grok3FastDriver::class,
             self::GROK_3_MINI_FAST   => XAI\Grok3MiniFastDriver::class,
             self::GROK_4             => XAI\Grok4Driver::class,
+            self::GROK_4_FAST        => XAI\Grok4FastDriver::class,
             // FAL AI
-            self::VEO_2                                              => FalAI\Veo2Driver::class,
-            self::VEO_3                                              => FalAI\Veo3Driver::class,
-            self::VEO_3_FAST                                         => FalAI\Veo3FastDriver::class,
-            self::KLING_VIDEO                                        => FalAI\KlingVideoDriver::class,
-            self::VEED                                               => FalAI\VeedDriver::class,
-            self::FLUX_PRO                                           => FalAI\FluxProDriver::class,
-            self::NANO_BANANA                                        => FalAI\NanoBananaDriver::class,
-            self::NANO_BANANA_EDIT                                   => FalAI\NanoBananaEditDriver::class,
-            self::IMAGEN_4                                           => FalAI\Imagen4Driver::class,
-            self::FLUX_PRO_KONTEXT_MAX_MULTI                         => FalAI\FluxProKontextMaxMultiDriver::class,
-            self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE                     => FalAI\FluxProKontextTextToImageDriver::class,
-            self::FLUX_PRO_KONTEXT                                   => FalAI\FluxProKontextDriver::class,
-            self::IDEOGRAM                                           => FalAI\IdeogramDriver::class,
-            self::FLUX_PRO_1_1                                       => FalAI\FluxPro11Driver::class,
-            self::FLUX_REALISM                                       => FalAI\FluxRealismDriver::class,
-            self::FLUX_SCHNELL                                       => FalAI\FluxSchnellDriver::class,
-            self::KLING                                              => FalAI\KlingDriver::class,
-            self::KLING_2_1                                          => FalAI\KlingV21Driver::class,
-            self::KLING_IMAGE                                        => FalAI\KlingImageDriver::class,
-            self::LUMA_DREAM_MACHINE                                 => FalAI\LumaDreamMachineDriver::class,
-            self::HAIPER                                             => FalAI\HaiperDriver::class,
-            self::MINIMAX                                            => FalAI\MinimaxDriver::class,
-            self::VIDEO_UPSCALER                                     => FalAI\VideoUpscalerDriver::class,
-            self::COGVIDEOX_5B                                       => FalAI\Cogvideox5bDriver::class,
-            self::ANIMATEDIFF_V2V                                    => FalAI\AnimatediffV2vDriver::class,
-            self::FAST_ANIMATEDIFF_TURBO                             => FalAI\FastAnimatediffTurboDriver::class,
+            self::VEO_2                          => FalAI\Veo2Driver::class,
+            self::VEO_3                          => FalAI\Veo3Driver::class,
+            self::VEO_3_FAST                     => FalAI\Veo3FastDriver::class,
+            self::KLING_VIDEO                    => FalAI\KlingVideoDriver::class,
+            self::VEED                           => FalAI\VeedDriver::class,
+            self::FLUX_PRO                       => FalAI\FluxProDriver::class,
+            self::NANO_BANANA                    => FalAI\NanoBananaDriver::class,
+            self::NANO_BANANA_EDIT               => FalAI\NanoBananaEditDriver::class,
+            self::SEEDREAM_4                     => FalAI\SeeDream4Driver::class,
+            self::SEEDREAM_4_EDIT                => FalAI\SeeDream4EditDriver::class,
+            self::IMAGEN_4                       => FalAI\Imagen4Driver::class,
+            self::FLUX_PRO_KONTEXT_MAX_MULTI     => FalAI\FluxProKontextMaxMultiDriver::class,
+            self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE => FalAI\FluxProKontextTextToImageDriver::class,
+            self::FLUX_PRO_KONTEXT               => FalAI\FluxProKontextDriver::class,
+            self::IDEOGRAM                       => FalAI\IdeogramDriver::class,
+            self::FLUX_PRO_1_1                   => FalAI\FluxPro11Driver::class,
+            self::FLUX_REALISM                   => FalAI\FluxRealismDriver::class,
+            self::FLUX_SCHNELL                   => FalAI\FluxSchnellDriver::class,
+            self::KLING                          => FalAI\KlingDriver::class,
+            self::KLING_2_1                      => FalAI\KlingV21Driver::class,
+            self::KLING_IMAGE                    => FalAI\KlingImageDriver::class,
+            self::LUMA_DREAM_MACHINE             => FalAI\LumaDreamMachineDriver::class,
+            self::HAIPER                         => FalAI\HaiperDriver::class,
+            self::MINIMAX                        => FalAI\MinimaxDriver::class,
+            self::VIDEO_UPSCALER                 => FalAI\VideoUpscalerDriver::class,
+            self::COGVIDEOX_5B                   => FalAI\Cogvideox5bDriver::class,
+            self::ANIMATEDIFF_V2V                => FalAI\AnimatediffV2vDriver::class,
+            self::FAST_ANIMATEDIFF_TURBO         => FalAI\FastAnimatediffTurboDriver::class,
             // CREATIFY
-            self::AD_MARKETING_VIDEO								=> Creatify\AdMarketingVideoDriver::class,
+            self::AD_MARKETING_VIDEO => Creatify\AdMarketingVideoDriver::class,
             // Topview
-            self::AD_MARKETING_VIDEO_TOPVIEW						=> Topview\AdMarketingVideoTopviewDriver::class,
+            self::AD_MARKETING_VIDEO_TOPVIEW => Topview\AdMarketingVideoTopviewDriver::class,
             // Ai clip
-            self::AI_CLIP_KLAP 										 => Klap\AIClipKlapDriver::class,
-            self::AI_CLIP_VIZARD 									=> Vizard\AIClipVizardDriver::class,
+            self::AI_CLIP_KLAP   => Klap\AIClipKlapDriver::class,
+            self::AI_CLIP_VIZARD => Vizard\AIClipVizardDriver::class,
             // AI/ML api minimax engine
-            self::MUSIC_01				 => AiMlMinimax\Music01Driver::class,
+            self::MUSIC_01 => AiMlMinimax\Music01Driver::class,
             // OpenRouter
             self::ANTHROPIC_CLAUDE_3_5_HAIKU_20241022                => OpenRouter\AnthropicClaude35Haiku20241022::class,
             self::ANTHROPIC_CLAUDE_3_5_HAIKU_20241022_SELF_MODERATED => OpenRouter\AnthropicClaude35Haiku20241022SelfModerated::class,
@@ -925,29 +959,29 @@ enum EntityEnum: string
             self::STABLE_DIFFUSION_XL_1024_V_1_0   => 0.05,
             self::STABLE_DIFFUSION_V_1_6           => 0.03,
             self::SD_3, self::ULTRA, self::SD_3_TURBO => 0.06,
-            self::SD_3_MEDIUM                         => 0.06,
-            self::SD_3_LARGE                          => 0.10,
-            self::SD_3_LARGE_TURBO                    => 0.15,
-            self::SD_3_5_LARGE                        => 0.15,
-            self::SD_3_5_LARGE_TURBO                  => 0.20,
-            self::SD_3_5_MEDIUM                       => 0.10,
-            self::CORE                                => 0.03,
-            self::AWS_BEDROCK                         => 0.05,
+            self::SD_3_MEDIUM        => 0.06,
+            self::SD_3_LARGE         => 0.10,
+            self::SD_3_LARGE_TURBO   => 0.15,
+            self::SD_3_5_LARGE       => 0.15,
+            self::SD_3_5_LARGE_TURBO => 0.20,
+            self::SD_3_5_MEDIUM      => 0.10,
+            self::CORE               => 0.03,
+            self::AWS_BEDROCK        => 0.05,
 
             // OpenAI
             self::DAVINCI, self::GPT_3_5_TURBO_1106, self::GPT_3_5_TURBO => 0.00000266,
-            self::TEXT_DAVINCI_003       => 0.0000266,
-            self::GPT_3_5_TURBO_0125     => 0.000001995,
+            self::TEXT_DAVINCI_003   => 0.0000266,
+            self::GPT_3_5_TURBO_0125 => 0.000001995,
             self::GPT_4_TURBO, self::GPT_4_1106_PREVIEW, self::GPT_4_0125_PREVIEW, self::TTS_1_HD => 0.0000399,
-            self::GPT_4                     => 0.0000798,
-            self::TEXT_EMBEDDING_ADA_002    => 0.0000000665,
-            self::TEXT_EMBEDDING_3_SMALL    => 0.000000027,
-            self::TEXT_EMBEDDING_3_LARGE    => 0.0000000665,
-            self::WHISPER_1                 => 0.000000798,
-            self::DALL_E_2                  => 0.04,
-            self::DALL_E_3                  => 0.08,
-            self::GPT_IMAGE_1               => 0.042,
-            self::TTS_1, self::GPT_4_O       => 0.00001995,
+            self::GPT_4                  => 0.0000798,
+            self::TEXT_EMBEDDING_ADA_002 => 0.0000000665,
+            self::TEXT_EMBEDDING_3_SMALL => 0.000000027,
+            self::TEXT_EMBEDDING_3_LARGE => 0.0000000665,
+            self::WHISPER_1              => 0.000000798,
+            self::DALL_E_2               => 0.04,
+            self::DALL_E_3               => 0.08,
+            self::GPT_IMAGE_1            => 0.042,
+            self::TTS_1, self::GPT_4_O => 0.00001995,
             self::GPT_4_O_MINI                => 0.000000798,
             self::GPT_4_O_SEARCH_PREVIEW      => 0.0000133,
             self::GPT_4_O_MINI_SEARCH_PREVIEW => 0.000000798,
@@ -961,34 +995,37 @@ enum EntityEnum: string
             self::GPT_4_1_MINI                => 0.00000266,
             self::GPT_O_4_MINI                => 0.000005852,
             self::GPT_O_3                     => 0.0000665,
-            self::GPT_5                       => 0.00001000,
-            self::GPT_5_MINI                  => 0.00000200,
-            self::GPT_5_NANO                  => 0.00000040,
+            self::GPT_5                       => 0.000013330,
+            self::GPT_5_MINI                  => 0.000002670,
+            self::GPT_5_NANO                  => 0.000000530,
             self::GPT_5_CHAT                  => 0.00001000,
+            self::GPT_5_PRO                   => 0.00016,
+            self::SORA_2                      => 0.10,
+            self::SORA_2_PRO                  => 0.50,
 
             // Anthropic
             self::CLAUDE_OPUS_4, self::CLAUDE_SONNET_4, self::CLAUDE_3_7_SONNET, self::CLAUDE_3_5_SONNET_V2, self::CLAUDE_3_5_SONNET, self::CLAUDE_3_SONNET => 0.000015,
-            self::CLAUDE_3_5_HAIKU  => 0.000003,
-            self::CLAUDE_3_OPUS     => 0.000015,
-            self::CLAUDE_3_HAIKU    => 0.000003,
+            self::CLAUDE_3_5_HAIKU => 0.000003,
+            self::CLAUDE_3_OPUS    => 0.000015,
+            self::CLAUDE_3_HAIKU   => 0.000003,
             self::CLAUDE_2_1, self::CLAUDE_2_0 => 0.000015,
 
             // Voyage
             self::VOYAGE_2, self::VOYAGE_CODE_2 => 0.00001,
-            self::VOYAGE_LARGE_2               => 0.000015,
+            self::VOYAGE_LARGE_2 => 0.000015,
 
             // Deepseek
             self::DEEPSEEK_CHAT     => 0.00000147,
             self::DEEPSEEK_REASONER => 0.00000292,
 
             // Others
-            self::CLIPDROP         => 0.5,
-            self::NOVITA           => 0.017,
-            self::FREEPIK          => 0.20,
-            self::PLAGIARISMCHECK  => 0.000276,
-            self::SYNTHESIA        => 2.97,
-            self::HEYGEN           => 0.5,
-            self::PEBBLELY         => 0.019,
+            self::CLIPDROP        => 0.5,
+            self::NOVITA          => 0.017,
+            self::FREEPIK         => 0.20,
+            self::PLAGIARISMCHECK => 0.000276,
+            self::SYNTHESIA       => 2.97,
+            self::HEYGEN          => 0.5,
+            self::PEBBLELY        => 0.019,
 
             // Gemini
             self::GEMINI_2_5_FLASH_PREVIEW_05_20 => 0.00000333,
@@ -1006,6 +1043,7 @@ enum EntityEnum: string
             // Elevenlabs
             self::ELEVENLABS,
             self::ELEVENLABS_VOICE_CHATBOT,
+            self::ELEVENLABS_AI_MUSIC,
             self::ISOLATOR => 0.3,
 
             // Google
@@ -1029,15 +1067,28 @@ enum EntityEnum: string
 
             // X AI
             self::GROK_2_1212, self::GROK_2_VISION_1212 => 0.00001333,
-            self::GROK_3                     => 0.00002,
-            self::GROK_3_MINI                => 0.00000067,
-            self::GROK_3_FAST                => 0.00003333,
-            self::GROK_3_MINI_FAST           => 0.000001,
-            self::GROK_4                     => 0.00002,
+            self::GROK_3           => 0.00002,
+            self::GROK_3_MINI      => 0.00000067,
+            self::GROK_3_FAST      => 0.00003333,
+            self::GROK_3_MINI_FAST => 0.000001,
+            self::GROK_4           => 0.000011000,
+            self::GROK_4_FAST      => 0.000000650,
 
             // FAL AI
-            self::VEO_2, self::VEED, self::FLUX_PRO, self::NANO_BANANA, self::NANO_BANANA_EDIT, self::IMAGEN_4, self::FLUX_PRO_KONTEXT_MAX_MULTI, self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE, self::FLUX_PRO_KONTEXT, self::FLUX_PRO_1_1, self::FLUX_REALISM => 0.4,
-            self::IDEOGRAM, self::KLING, self::KLING_2_1, self::KLING_IMAGE, self::LUMA_DREAM_MACHINE, self::HAIPER, self::MINIMAX => 0.5,
+            self::NANO_BANANA => 0.039,
+            self::SEEDREAM_4  => 0.03,
+            self::FLUX_PRO_1_1, self::FLUX_REALISM, self::IMAGEN_4 => 0.04,
+            self::NANO_BANANA_EDIT, self::SEEDREAM_4_EDIT => 0.4,
+            self::VEO_2       => 2.5,
+            self::VEED        => 0.35,
+            self::VEO_3_FAST  => 1.2,
+            self::VEO_3       => 3.2,
+            self::KLING_VIDEO => 1.4,
+            self::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE, self::FLUX_PRO_KONTEXT, self::FLUX_PRO => 0.4,
+            self::FLUX_SCHNELL               => 0.003,
+            self::FLUX_PRO_KONTEXT_MAX_MULTI => 0.8,
+            self::KLING, self::KLING_2_1, self::KLING_IMAGE, self::LUMA_DREAM_MACHINE, self::HAIPER, self::MINIMAX => 0.5,
+            self::IDEOGRAM => 0.6,
             self::VIDEO_UPSCALER, self::COGVIDEOX_5B, self::ANIMATEDIFF_V2V, self::FAST_ANIMATEDIFF_TURBO => 0.20,
 
             // Creatify
@@ -1080,7 +1131,7 @@ enum EntityEnum: string
             self::PERPLEXITY_LLAMA_31_SONAR_70B_ONLINE               => 0.005,
             self::PERPLEXITY_LLAMA_31_SONAR_70B                      => 0.005,
             self::PERPLEXITY_LLAMA_31_SONAR_8B_ONLINE                => 0.005,
-            self::PERPLEXITY_LLAMA_31_SONAR_8B                       => 0.005,
+            self::PERPLEXITY_LLAMA_31_SONAR_8B                       => 0.000000270,
             // Default fallback
             default => 0.0,
         };
@@ -1109,6 +1160,8 @@ enum EntityEnum: string
             class_interface_exists($driverClass, WithImagesInterface::class)        => __('Images'),
             class_interface_exists($driverClass, WithWordsInterface::class)         => __('Words'),
             class_interface_exists($driverClass, WithCharsInterface::class)         => __('Characters'),
+            class_interface_exists($driverClass, WithMinuteInterface::class)        => __('Minutes'),
+            class_interface_exists($driverClass, WithSecondInterface::class)        => __('Seconds'),
             class_interface_exists($driverClass, WithImageToVideoInterface::class)  => __('Image to Video'),
             class_interface_exists($driverClass, WithTextToSpeechInterface::class)  => __('Text to Speech'),
             class_interface_exists($driverClass, WithSpeechToTextInterface::class)  => __('Speech to Text'),
@@ -1123,16 +1176,18 @@ enum EntityEnum: string
         $driverClass = $this->driverClass();
 
         return match (true) {
-            class_interface_exists($driverClass, WithImagesInterface::class)         => AITokenType::IMAGE,
-            class_interface_exists($driverClass, WithWordsInterface::class)          => AITokenType::WORD,
-            class_interface_exists($driverClass, WithCharsInterface::class)          => AITokenType::CHARACTER,
-            class_interface_exists($driverClass, WithImageToVideoInterface::class)   => AITokenType::IMAGE_TO_VIDEO,
-            class_interface_exists($driverClass, WithTextToSpeechInterface::class)   => AITokenType::TEXT_TO_SPEECH,
-            class_interface_exists($driverClass, WithSpeechToTextInterface::class)   => AITokenType::SPEECH_TO_TEXT,
-            class_interface_exists($driverClass, WithTextToVideoInterface::class)    => AITokenType::TEXT_TO_VIDEO,
-            class_interface_exists($driverClass, WithVideoToVideoInterface::class)   => AITokenType::VIDEO_TO_VIDEO,
-            class_interface_exists($driverClass, WithVisionPreviewInterface::class)  => AITokenType::VISION,
-            class_interface_exists($driverClass, WithPlagiarismInterface::class)     => AITokenType::PLAGIARISM
+            class_interface_exists($driverClass, WithImagesInterface::class)        => AITokenType::IMAGE,
+            class_interface_exists($driverClass, WithWordsInterface::class)         => AITokenType::WORD,
+            class_interface_exists($driverClass, WithCharsInterface::class)         => AITokenType::CHARACTER,
+            class_interface_exists($driverClass, WithMinuteInterface::class)        => AITokenType::MINUTE,
+            class_interface_exists($driverClass, WithSecondInterface::class)        => AITokenType::SECOND,
+            class_interface_exists($driverClass, WithImageToVideoInterface::class)  => AITokenType::IMAGE_TO_VIDEO,
+            class_interface_exists($driverClass, WithTextToSpeechInterface::class)  => AITokenType::TEXT_TO_SPEECH,
+            class_interface_exists($driverClass, WithSpeechToTextInterface::class)  => AITokenType::SPEECH_TO_TEXT,
+            class_interface_exists($driverClass, WithTextToVideoInterface::class)   => AITokenType::TEXT_TO_VIDEO,
+            class_interface_exists($driverClass, WithVideoToVideoInterface::class)  => AITokenType::VIDEO_TO_VIDEO,
+            class_interface_exists($driverClass, WithVisionPreviewInterface::class) => AITokenType::VISION,
+            class_interface_exists($driverClass, WithPlagiarismInterface::class)    => AITokenType::PLAGIARISM
         };
     }
 
@@ -1141,16 +1196,18 @@ enum EntityEnum: string
         $driverClass = $this->driverClass();
 
         return match (true) {
-            class_interface_exists($driverClass, WithImagesInterface::class)        => __('1 Credit = 1 Image'),
+            class_interface_exists($driverClass, WithImagesInterface::class) => __('1 Credit = 1 Image'),
             class_interface_exists($driverClass, WithWordsInterface::class),
             class_interface_exists($driverClass, WithSpeechToTextInterface::class),
             class_interface_exists($driverClass, WithVisionPreviewInterface::class),
-            class_interface_exists($driverClass, WithPlagiarismInterface::class)    => __('1 Credit = 1 Word'),
-            class_interface_exists($driverClass, WithCharsInterface::class)         => __('1 Credit = 1 Character'),
+            class_interface_exists($driverClass, WithPlagiarismInterface::class) => __('1 Credit = 1 Word'),
+            class_interface_exists($driverClass, WithCharsInterface::class)      => __('1 Credit = 1 Character'),
+            class_interface_exists($driverClass, WithMinuteInterface::class)     => __('1 Credit = 1 Minute'),
+            class_interface_exists($driverClass, WithSecondInterface::class)     => __('1 Credit = 1 Second'),
             class_interface_exists($driverClass, WithImageToVideoInterface::class),
             class_interface_exists($driverClass, WithVideoToVideoInterface::class),
-            class_interface_exists($driverClass, WithTextToVideoInterface::class)   => __('1 Credit = 1 Video'),
-            class_interface_exists($driverClass, WithTextToSpeechInterface::class)  => __('1 Credit = 1 Voice'),
+            class_interface_exists($driverClass, WithTextToVideoInterface::class)  => __('1 Credit = 1 Video'),
+            class_interface_exists($driverClass, WithTextToSpeechInterface::class) => __('1 Credit = 1 Voice'),
         };
     }
 
@@ -1160,6 +1217,8 @@ enum EntityEnum: string
             WithImagesInterface::class,
             WithWordsInterface::class,
             WithCharsInterface::class,
+            WithMinuteInterface::class,
+            WithSecondInterface::class,
             WithImageToVideoInterface::class,
             WithVideoToVideoInterface::class,
             WithTextToSpeechInterface::class,
@@ -1175,9 +1234,11 @@ enum EntityEnum: string
         $driverClass = $this->driverClass();
 
         return match (true) {
-            class_interface_exists($driverClass, WithImagesInterface::class)     => 200,
+            class_interface_exists($driverClass, WithImagesInterface::class) => 200,
             class_interface_exists($driverClass, WithWordsInterface::class),
-            class_interface_exists($driverClass, WithCharsInterface::class)      => 5000,
+            class_interface_exists($driverClass, WithCharsInterface::class)  => 5000,
+            class_interface_exists($driverClass, WithMinuteInterface::class) => 20,
+            class_interface_exists($driverClass, WithSecondInterface::class) => 8,
             class_interface_exists($driverClass, WithVideoToVideoInterface::class),
             class_interface_exists($driverClass, WithImageToVideoInterface::class),
             class_interface_exists($driverClass, WithTextToSpeechInterface::class),
@@ -1256,6 +1317,7 @@ enum EntityEnum: string
                 self::GPT_5_MINI,
                 self::GPT_5_NANO,
                 self::GPT_5_CHAT,
+                self::GPT_5_PRO,
                 self::DEEPSEEK_CHAT,
                 self::DEEPSEEK_REASONER,
             ]

@@ -51,12 +51,14 @@ class LoginController extends Controller
             'github_active'              => $request->has('github_active'),
         ]);
 
-        setting(
-            [
-                'freeCreditsUponRegistration'     => $request->get('entities'),
-            ]
-        )->save();
-
+        $optionalFieldIds = ['country', 'phone', 'name', 'surname'];
+        $settings = [
+            'freeCreditsUponRegistration' => $request->get('entities'),
+        ];
+        foreach ($optionalFieldIds as $field) {
+            $settings["registration_fields_{$field}"] = $request->has("registration_fields_{$field}") ? 1 : 0;
+        }
+        setting($settings)->save();
         Setting::forgetCache();
 
         return back()->with(['message' => 'Updated Successfully.', 'type' => 'success']);

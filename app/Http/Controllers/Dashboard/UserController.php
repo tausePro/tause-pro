@@ -1158,6 +1158,96 @@ class UserController extends Controller
             ]);
     }
 
+    public function documentsBulkDelete(Request $request)
+    {
+        $userId = auth()->id();
+
+        try {
+            // Case: Delete all
+            if ($request->boolean('all')) {
+                // Delete UserOpenai docs
+                $docs = UserOpenai::where('user_id', $userId)->get();
+                foreach ($docs as $doc) {
+                    try {
+                        $this->deleteUserOpenaiDocument($doc);
+                    } catch (Throwable $e) {
+                        Log::error("Error deleting doc {$doc->id}: " . $e->getMessage());
+                    }
+                    $doc->delete();
+                }
+
+                // Delete UserFall videos if applicable
+                if (class_exists(UserFall::class)) {
+                    $videos = UserFall::where('user_id', $userId)
+                        ->where('status', 'complete')
+                        ->whereNotNull('video_url')
+                        ->where('video_url', '!=', '')
+                        ->get();
+
+                    foreach ($videos as $video) {
+                        try {
+                            $this->deleteUserFallVideo($video);
+                        } catch (Throwable $e) {
+                            Log::error("Error deleting video {$video->id}: " . $e->getMessage());
+                        }
+                        $video->delete();
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => __('All documents deleted successfully.'),
+                ]);
+            }
+
+            // Case: Delete selected
+            $ids = $request->input('ids', []);
+            if (! is_array($ids) || empty($ids)) {
+                return response()->json(['success' => false, 'message' => __('No documents selected.')], 400);
+            }
+
+            // Delete UserOpenai documents
+            $docs = UserOpenai::where('user_id', $userId)
+                ->whereIn('id', $ids)
+                ->get();
+
+            foreach ($docs as $doc) {
+                try {
+                    $this->deleteUserOpenaiDocument($doc);
+                } catch (Throwable $e) {
+                    Log::error("Error deleting doc {$doc->id}: " . $e->getMessage());
+                }
+                $doc->delete();
+            }
+
+            // Delete UserFall videos (if selected IDs match)
+            if (class_exists(UserFall::class)) {
+                $videos = UserFall::where('user_id', $userId)
+                    ->whereIn('id', $ids)
+                    ->get();
+
+                foreach ($videos as $video) {
+                    try {
+                        $this->deleteUserFallVideo($video);
+                    } catch (Throwable $e) {
+                        Log::error("Error deleting video {$video->id}: " . $e->getMessage());
+                    }
+                    $video->delete();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => __('Selected documents deleted successfully.'),
+            ]);
+
+        } catch (Throwable $th) {
+            Log::error('Bulk delete failed: ' . $th->getMessage());
+
+            return response()->json(['success' => false, 'message' => __('Something went wrong.')], 500);
+        }
+    }
+
     /**
      * Delete UserOpenai document files
      */

@@ -931,6 +931,8 @@ class CreatePaymentRequestBuilderTest extends TestCase
         $receiptItem->setQuantity(1);
         $receiptItem->setDescription('test');
         $receiptItem->setVatCode(3);
+        $receiptItem->setPlannedStatus(6);
+
         $result = [
             [
                 [
@@ -985,6 +987,7 @@ class CreatePaymentRequestBuilderTest extends TestCase
                             'vatCode' => Random::int(1, 6),
                             'paymentMode' => PaymentMode::CREDIT_PAYMENT,
                             'paymentSubject' => PaymentSubject::ANOTHER,
+                            'planned_status' => 6,
                         ],
                         $receiptItem,
                     ],

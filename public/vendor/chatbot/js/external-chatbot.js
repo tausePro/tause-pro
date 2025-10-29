@@ -385,4 +385,22 @@
 			chatbotWrap.setAttribute('data-window-state', open ? 'open' : 'close');
 		});
 	});
+
+	// Load and init proactive triggers
+	const triggersScript = document.createElement('script');
+	triggersScript.src = chatbotHostOrigin + '/vendor/chatbot/js/proactive-triggers.js?v=' + Date.now();
+	triggersScript.onerror = function() {
+		console.error('[Chatbot] Failed to load proactive triggers');
+	};
+	triggersScript.onload = function() {
+		if (window.ChatbotProactiveTriggers && chatBotUuid) {
+			console.log('[Chatbot] Initializing triggers for:', chatBotUuid);
+			// Pass the chatbot host origin to the triggers service
+			window.ChatbotProactiveTriggers.chatbotHost = chatbotHostOrigin;
+			window.ChatbotProactiveTriggers.init(chatBotUuid);
+		} else {
+			console.error('[Chatbot] ProactiveTriggers not available');
+		}
+	};
+	document.head.appendChild(triggersScript);
 })();

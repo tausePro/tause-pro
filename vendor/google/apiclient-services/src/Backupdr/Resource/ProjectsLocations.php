@@ -48,7 +48,9 @@ class ProjectsLocations extends \Google\Service\Resource
   /**
    * Gets the Trial state for a given project (locations.getTrial)
    *
-   * @param string $name Required. The name of the trial to retrieve.
+   * @param string $name Required. The project for which trial details need to be
+   * retrieved. Format: projects/{project}/locations/{location} Supported
+   * Locations are - us, eu and asia.
    * @param array $optParams Optional parameters.
    * @return Trial
    * @throws \Google\Service\Exception
@@ -67,9 +69,9 @@ class ProjectsLocations extends \Google\Service\Resource
    * applicable.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param string extraLocationTypes Optional. Do not use this field. It is
-   * unsupported and is ignored unless explicitly documented otherwise. This is
-   * primarily for internal usage.
+   * @opt_param string extraLocationTypes Optional. Unless explicitly documented
+   * otherwise, don't use this unsupported field which is primarily intended for
+   * internal usage.
    * @opt_param string filter A filter to narrow down results to a preferred
    * subset. The filtering language accepts strings like `"displayName=tokyo"`,
    * and is documented in more detail in [AIP-160](https://google.aip.dev/160).

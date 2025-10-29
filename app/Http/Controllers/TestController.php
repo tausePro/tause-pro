@@ -2,34 +2,100 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Classes\ApiHelper;
 use Illuminate\Http\Request;
-use NeuronAI\Providers\OpenAI\OpenAI;
-use NeuronAI\Chat\Messages\UserMessage;
 
 class TestController extends Controller
 {
-    public function testNeuron(Request $request)
+    public function test(Request $request)
     {
-        try {
-            $provider = new OpenAI(
-                key: config('neuron.providers.openai.key', 'test-key'),
-                model: config('neuron.providers.openai.model', 'gpt-3.5-turbo'),
-            );
+        $userId = auth()->id();
+        $folder = 'uploads/media/';
+        $folder .= 'other/';
+        $folder .= 'u-' . $userId . '/support_1756125134_7gPb8.pdf';
+        dd(file_exists(public_path($folder)));
 
-            $response = $provider->chat([
-                new UserMessage('Hello, how are you?')
-            ]);
+        return view('test');
+    }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Neuron AI is working!',
-                'response' => $response->getContent(),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage(),
-            ], 500);
+    public function stream(Request $request, string $model)
+    {
+        // Disable PHP buffering
+        @ini_set('output_buffering', 'off');
+        @ini_set('zlib.output_compression', false);
+        @ini_set('implicit_flush', true);
+        ob_implicit_flush(true);
+        while (ob_get_level() > 0) {
+            @ob_end_flush();
         }
+
+        return response()->stream(function () use ($model) {
+            $output = '';
+            $responsedText = '';
+            $history = [];
+            $total_used_tokens = 0;
+
+            // --- OpenAI GPT models ---
+            if (str_starts_with($model, 'gpt')) {
+                ApiHelper::setOpenAiKey();
+                $history[] = ['role' => 'user', 'content' => 'Hello, write essay about cats.'];
+
+                $stream = \OpenAI\Laravel\Facades\OpenAI::responses()->createStreamed([
+                    'model'             => $model,
+                    'input'             => $history,
+                    'max_output_tokens' => 2000,
+                    'temperature'       => 1.0,
+                    'stream'            => true,
+                ]);
+
+                foreach ($stream as $response) {
+                    if (connection_aborted()) {
+                        return;
+                    }
+
+                    if ($response->event === 'response.output_text.delta' && isset($response->response->delta)) {
+                        $text = $response->response->delta;
+                        $messageFix = str_replace(["\r\n", "\r", "\n"], '<br/>', $text);
+                        $output .= $messageFix;
+                        $responsedText .= $text;
+                        $total_used_tokens += countWords($text);
+
+                        echo PHP_EOL;
+                        // echo "event: data\n";
+                        echo "data: {$messageFix}";
+                        echo "\n\n";
+                        @ob_flush();
+                        @flush();
+                    }
+                }
+
+                echo "data: [DONE]\n\n";
+
+                return;
+            }
+
+            // --- Gemini placeholder ---
+            if ($model === 'test') {
+                for ($i = 1; $i <= 5; $i++) {
+                    if (connection_aborted()) {
+                        return;
+                    }
+
+                    echo "data: GEMINI chunk {$i}\n\n";
+                    @ob_flush();
+                    @flush();
+                    sleep(1);
+                }
+                echo "data: [DONE]\n\n";
+
+                return;
+            }
+
+        }, 200, [
+            'Content-Type'      => 'text/event-stream',
+            'Cache-Control'     => 'no-cache, must-revalidate',
+            'Connection'        => 'keep-alive',
+            'X-Accel-Buffering' => 'no', // disable nginx buffering
+        ]);
     }
 }

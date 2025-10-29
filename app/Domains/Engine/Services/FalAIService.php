@@ -106,12 +106,15 @@ class FalAIService
 
     public static function generate($prompt, ?EntityEnum $entity = EntityEnum::FLUX_PRO)
     {
+
         $ratio = self::ratio();
 
         if ($entity === EntityEnum::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE) {
             $entityValue = $entity->value;
         } elseif ($entity === EntityEnum::NANO_BANANA) {
             $entityValue = $entity->value;
+        } elseif ($entity === EntityEnum::SEEDREAM_4) {
+            $entityValue = 'bytedance/' . $entity->value;
         } else {
             $entityValue = (setting('fal_ai_default_model') ?: $entity?->value);
 
@@ -150,10 +153,15 @@ class FalAIService
     public static function check($uuid, EntityEnum $entity = EntityEnum::FLUX_PRO): ?array
     {
         $entityValue = (setting('fal_ai_default_model') ?: $entity->value);
+
         $enum = EntityEnum::fromSlug($entityValue);
 
         if ($enum === EntityEnum::FLUX_SCHNELL) {
             $entityValue = 'flux-pro';
+        }
+
+        if ($enum === EntityEnum::SEEDREAM_4) {
+            $entityValue = 'bytedance';
         }
 
         if ($enum === EntityEnum::FLUX_PRO_1_1 || $enum === EntityEnum::FLUX_PRO) {

@@ -119,3 +119,6 @@ echo "php artisan config:clear\n\n";
 echo "=========================================\n";
 echo "Script completado: " . date('Y-m-d H:i:s') . "\n";
 echo "=========================================\n";
+
+
+

@@ -3,7 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/test-neuron', 'App\Http\Controllers\TestController@testNeuron');
+// Removed - NeuronAI cleanup
+// Route::get('/test-neuron', 'App\Http\Controllers\TestController@testNeuron');
 
 /*
 |--------------------------------------------------------------------------
@@ -218,13 +219,13 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/list', 'App\Http\Controllers\Api\EntityController@getAllEntities'); // returns all entities with tokens
     });
 
-    // ChatCommerce API Routes
-    Route::prefix('chatcommerce')->group(function () {
-        Route::post('/chat', 'App\Http\Controllers\Api\ChatcommerceController@chat');
-        Route::post('/start-purchase', 'App\Http\Controllers\Api\ChatcommerceController@startPurchase');
-        Route::post('/customer-info', 'App\Http\Controllers\Api\ChatcommerceController@processCustomerInfo');
-        Route::post('/create-order', 'App\Http\Controllers\Api\ChatcommerceController@createOrder');
-    });
+    // ChatCommerce API Routes - Removed (NeuronAI cleanup)
+    // Route::prefix('chatcommerce')->group(function () {
+    //     Route::post('/chat', 'App\Http\Controllers\Api\ChatcommerceController@chat');
+    //     Route::post('/start-purchase', 'App\Http\Controllers\Api\ChatcommerceController@startPurchase');
+    //     Route::post('/customer-info', 'App\Http\Controllers\Api\ChatcommerceController@processCustomerInfo');
+    //     Route::post('/create-order', 'App\Http\Controllers\Api\ChatcommerceController@createOrder');
+    // });
 });
 
 // External Chatbot API Routes (without auth)

@@ -134,5 +134,12 @@
 				}
 			}
 		}
+
+		&[data-theme=default] {
+
+			.lqd-navbar-item:has(.lqd-navbar-label:only-child) {
+				@apply hidden;
+			}
+		}
 	}
 }

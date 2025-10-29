@@ -238,6 +238,8 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
                 EntityEnum::GPT_4_O_SEARCH_PREVIEW,
                 EntityEnum::GPT_4_O_MINI_SEARCH_PREVIEW,
                 EntityEnum::GPT_IMAGE_1,
+                EntityEnum::SORA_2,
+                EntityEnum::SORA_2_PRO,
             ],
             self::STABLE_DIFFUSION => [
                 EntityEnum::fromSlug($settingTwo?->stable_diffusion_default_model ?? $settingTwo?->stablediffusion_default_model ?? EntityEnum::STABLE_DIFFUSION_XL_1024_V_1_0->slug()),
@@ -252,6 +254,7 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
             ],
             self::DEEP_SEEK        => [EntityEnum::fromSlug(setting('deepseek_default_model', EntityEnum::DEEPSEEK_CHAT->slug()))],
             self::ELEVENLABS       => [
+                EntityEnum::ELEVENLABS_AI_MUSIC,
                 EntityEnum::ELEVENLABS,
                 EntityEnum::ELEVENLABS_VOICE_CHATBOT,
                 EntityEnum::ISOLATOR,
@@ -279,6 +282,8 @@ enum EngineEnum: string implements Contracts\WithStringBackedEnum
                 EntityEnum::FLUX_PRO_KONTEXT_TEXT_TO_IMAGE,
                 EntityEnum::NANO_BANANA,
                 EntityEnum::NANO_BANANA_EDIT,
+                EntityEnum::SEEDREAM_4,
+                EntityEnum::SEEDREAM_4_EDIT,
             ],
             self::CREATIFY => [EntityEnum::AD_MARKETING_VIDEO],
             self::TOPVIEW  => [EntityEnum::AD_MARKETING_VIDEO_TOPVIEW],

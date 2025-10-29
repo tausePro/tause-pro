@@ -27,6 +27,12 @@
     }
 
     $fullModels = collect($fullModels)->unique('value')->values();
+    $activeModels = collect($fullModels)
+        ->filter(function ($model) {
+            $driver = \App\Domains\Entity\Facades\Entity::driver(EntityEnum::tryFrom($model?->value));
+            return $driver->isUnlimitedCredit() || $driver->creditBalance() > 0;
+        })
+        ->values();
     $defaultDriver = \App\Domains\Entity\Facades\Entity::driver(EntityEnum::tryFrom($defaultModel?->value));
     $selectedModel = $defaultDriver;
     if (!$defaultDriver->isUnlimitedCredit() && $defaultDriver->creditBalance() <= 0) {
@@ -246,6 +252,8 @@
                 Alpine.data('modelList', () => ({
                     selectedModelLabel: '',
                     selectedModels: [],
+                    fullModels: @json($fullModels),
+                    activeModels: @json($activeModels),
                     searchString: '',
                     localStorageKey: 'selectedChatModels',
 
@@ -254,7 +262,9 @@
                         const defaultModelLabel = '{{ $selectedModel->model()?->selected_title ?? $selectedModel->enum()?->value }}';
                         const localStorageLastSelectedModels = localStorage.getItem(this.localStorageKey) ??
                             `[{ "value": "${defaultModelValue}", "label": "${defaultModelLabel}" }]`;
-                        const models = JSON.parse(localStorageLastSelectedModels);
+                        const models = JSON.parse(localStorageLastSelectedModels)
+                            .filter(model => this.fullModels.find(m => m === model.value))
+                            .filter(model => this.activeModels.find(m => m === model.value));
 
                         @if ($isMultiModelExtensionEnabled)
                             return models;
@@ -315,13 +325,15 @@
                         @endif
                     },
                     saveChanges() {
-                        this.updateSelectionLabel();
                         this.setLocalStorage();
+                        this.updateSelectionLabel();
                     },
                     init() {
                         const localStorageLastSelectedModels = this.getLocalStorage();
 
                         this.selectedModels = localStorageLastSelectedModels;
+                        // set local storage again on init to make sure we're in sync with available and active models
+                        this.setLocalStorage();
                         this.updateSelectionLabel();
 
                         document.addEventListener('chat-model-change', event => {

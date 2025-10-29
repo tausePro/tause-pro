@@ -477,6 +477,10 @@ document.addEventListener( 'alpine:init', () => {
 	// Generator V2
 	Alpine.data( 'generatorV2', () => ( {
 		itemsSearchStr: '',
+		sideNavCollapsed: false,
+		generatorStep: 0,
+		selectedGenerator: null,
+
 		setItemsSearchStr( str ) {
 			this.itemsSearchStr = str.trim().toLowerCase();
 			if ( this.itemsSearchStr !== '' ) {
@@ -485,7 +489,6 @@ document.addEventListener( 'alpine:init', () => {
 				this.$el.closest( '.lqd-generator-sidebar' ).classList.remove( 'lqd-showing-search-results' );
 			}
 		},
-		sideNavCollapsed: false,
 		/**
 		*
 		* @param {'collapse' | 'expand'} state
@@ -501,7 +504,6 @@ document.addEventListener( 'alpine:init', () => {
 				}
 			}
 		},
-		generatorStep: 0,
 		setGeneratorStep( step ) {
 			if ( step === this.generatorStep ) return;
 			if ( !document.startViewTransition ) {
@@ -509,7 +511,6 @@ document.addEventListener( 'alpine:init', () => {
 			}
 			document.startViewTransition( () => this.generatorStep = Number( step ) );
 		},
-		selectedGenerator: null
 	} ) );
 
 	// Chat

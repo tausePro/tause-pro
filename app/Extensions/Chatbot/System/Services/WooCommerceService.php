@@ -431,6 +431,103 @@ class WooCommerceService
     }
 
     /**
+     * Crear cupón dinámico en WooCommerce
+     */
+    public function createDynamicCoupon(Chatbot $chatbot, array $couponData): array
+    {
+        try {
+            if (!$this->hasValidConfiguration($chatbot)) {
+                return [
+                    'success' => false,
+                    'message' => 'Configuración de WooCommerce incompleta',
+                ];
+            }
+
+            $config = $this->getConfiguration($chatbot);
+            $url = rtrim($config['url'], '/') . '/wp-json/wc/v3/coupons';
+            
+            // Generar código único
+            $code = 'CHAT-' . strtoupper(substr(md5((string) time() . (string) rand()), 0, 8));
+            
+            // Calcular fecha de expiración
+            $expiresAt = now()->addMinutes($couponData['duration'] ?? 30);
+            
+            $response = Http::withBasicAuth($config['key'], $config['secret'])
+                ->timeout(30)
+                ->post($url, [
+                    'code' => $code,
+                    'discount_type' => 'percent',
+                    'amount' => (string) $couponData['discount'],
+                    'individual_use' => true,
+                    'usage_limit' => 1,
+                    'usage_limit_per_user' => 1,
+                    'limit_usage_to_x_items' => null,
+                    'date_expires' => $expiresAt->toIso8601String(),
+                    'minimum_amount' => (string) ($couponData['min_cart_value'] ?? 0),
+                    'description' => 'Cupón generado por chatbot - Válido por ' . ($couponData['duration'] ?? 30) . ' minutos',
+                    'meta_data' => [
+                        [
+                            'key' => '_chatbot_generated',
+                            'value' => 'yes'
+                        ],
+                        [
+                            'key' => '_chatbot_id',
+                            'value' => (string) $chatbot->id
+                        ],
+                        [
+                            'key' => '_generated_at',
+                            'value' => now()->toDateTimeString()
+                        ]
+                    ]
+                ]);
+
+            if ($response->successful()) {
+                $coupon = $response->json();
+                
+                Log::info('Dynamic coupon created', [
+                    'chatbot_id' => $chatbot->id,
+                    'code' => $code,
+                    'discount' => $couponData['discount'],
+                    'expires_at' => $expiresAt,
+                ]);
+                
+                return [
+                    'success' => true,
+                    'coupon' => [
+                        'code' => $code,
+                        'discount' => $couponData['discount'],
+                        'expires_at' => $expiresAt->toDateTimeString(),
+                        'expires_in_minutes' => $couponData['duration'] ?? 30,
+                        'min_cart_value' => $couponData['min_cart_value'] ?? 0,
+                    ],
+                ];
+            }
+
+            Log::error('Failed to create dynamic coupon', [
+                'chatbot_id' => $chatbot->id,
+                'status' => $response->status(),
+                'response' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al crear cupón en WooCommerce: ' . $response->body(),
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Exception creating dynamic coupon', [
+                'chatbot_id' => $chatbot->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Testear conexión con WooCommerce
      */
     public function testConnection(string $url, string $key, string $secret): array

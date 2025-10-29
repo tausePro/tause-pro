@@ -227,6 +227,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                             Route::get('/single/{slug}', [UserController::class, 'documentsSingle'])->name('single');
                             Route::get('/delete/{slug}', [UserController::class, 'documentsDelete'])->name('delete');
                             Route::get('/delete/image/{slug}', [UserController::class, 'documentsImageDelete'])->name('image.delete');
+                            Route::post('/bulk-delete', [UserController::class, 'documentsBulkDelete'])->name('bulkDelete');
                             Route::post('/workbook-save', [UserController::class, 'openAIGeneratorWorkbookSave']);
 
                             Route::post('/update-folder/{folder}', [UserController::class, 'updateFolder'])->name('update-folder');
@@ -371,7 +372,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                 Route::get('/', [AdminController::class, 'index'])->name('index');
 
                 Route::group([
-                    'as'	    => 'dashboard-widget.',
+                    'as'     => 'dashboard-widget.',
                     'prefix' => 'dashboard-widget',
                 ], function () {
                     Route::put('order', [AdminController::class, 'dashboardWidgetOrderUpdate'])->name('order');
@@ -402,7 +403,6 @@ Route::middleware(['auth', 'updateUserActivity'])
                     Route::post('training', 'training')->name('training');
                     Route::get('web-sites', 'getWebSites')->name('web-sites');
                     Route::post('web-sites', 'postWebSites');
-                    Route::post('save-products', 'saveProducts')->name('save-products');
                     Route::post('upload-pdf', 'uploadPdf')->name('upload-pdf');
                     Route::delete('item/{id}', 'deleteItem')->name('item.delete');
                 });
@@ -420,6 +420,9 @@ Route::middleware(['auth', 'updateUserActivity'])
                 Route::get('chatbot/external-settings', [ChatbotController::class, 'externalChatSettings'])->name('chatbot.external_settings');
 
                 Route::resource('chatbot', ChatbotController::class);
+
+                // Chatbot E-commerce Routes están en ChatbotServiceProvider (líneas 200-212)
+                // NO duplicar aquí para evitar conflictos
 
                 // Marketplace
                 Route::group([
@@ -888,6 +891,8 @@ Route::post('translations/lang-save', [CommonController::class, 'translationsLan
 Route::post('image/upload', [CommonController::class, 'imageUpload'])->name('upload.image');
 
 Route::post('images/upload', [CommonController::class, 'imagesUpload'])->name('upload.images');
+
+Route::post('files/upload', [CommonController::class, 'filesUpload'])->name('upload.files');
 
 Route::post('pdf/getContent', [ChatPdfController::class, 'getSimiliarContent'])->name('pdf.getcontent');
 

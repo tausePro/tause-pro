@@ -103,7 +103,7 @@ class MenuService
     public function generate(bool $active = true): array
     {
 
-        $data = cache()->rememberForever(self::MENU_KEY . time(), function () use ($active) {
+        $data = cache()->rememberForever(self::MENU_KEY, function () use ($active) {
             $items = Menu::query()
                 ->with('children')
                 ->withCount('children')
@@ -1279,6 +1279,24 @@ class MenuService
                 'extension'        => true,
                 'active_condition' => null,
                 'show_condition'   => Route::has('dashboard.user.ai-music.index'),
+            ],
+            'ext_ai_music_pro' => [
+                'parent_key'       => null,
+                'key'              => 'ext_ai_music_pro',
+                'route'            => 'dashboard.user.ai-music-pro.index',
+                'route_slug'       => null,
+                'label'            => 'AI Music Pro',
+                'data-name'        => Introduction::AI_MUSIC_PRO,
+                'icon'             => 'tabler-music',
+                'svg'              => null,
+                'order'            => 20,
+                'is_active'        => true,
+                'params'           => [],
+                'type'             => 'item',
+                'extension'        => true,
+                'active_condition' => null,
+                'show_condition'   => MarketplaceHelper::isRegistered('ai-music-pro'),
+                'badge'            => 'new',
             ],
             'ai_product_shot' => [
                 'parent_key'       => null,

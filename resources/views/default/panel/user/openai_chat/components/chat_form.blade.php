@@ -37,13 +37,8 @@
         />
         <div class="lqd-chat-form-inputs-container flex min-h-[52px] w-full flex-col rounded-[26px] border border-input-border max-md:min-h-[45px]">
             <div
-                class="hidden max-h-32 w-full grid-cols-3 gap-5 overflow-y-auto p-2.5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 [&.active]:grid"
-                id="chat_images"
-            ></div>
-
-            <div
-                class="hidden max-h-32 w-full grid-cols-3 gap-5 overflow-y-auto p-2.5 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 [&.active]:grid"
-                id="chat_pdfs"
+                class="hidden max-h-32 w-full flex-wrap gap-5 overflow-y-auto p-2.5 [&.active]:flex"
+                id="chat-attachment-previews"
             ></div>
 
             <hr class="split_line border-1 mb-2.5 hidden w-full" />

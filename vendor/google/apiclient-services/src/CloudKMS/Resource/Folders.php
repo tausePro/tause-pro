@@ -31,10 +31,11 @@ use Google\Service\CloudKMS\KeyAccessJustificationsPolicyConfig;
 class Folders extends \Google\Service\Resource
 {
   /**
-   * Returns the AutokeyConfig for a folder. (folders.getAutokeyConfig)
+   * Returns the AutokeyConfig for a folder or project. (folders.getAutokeyConfig)
    *
    * @param string $name Required. Name of the AutokeyConfig resource, e.g.
-   * `folders/{FOLDER_NUMBER}/autokeyConfig`.
+   * `folders/{FOLDER_NUMBER}/autokeyConfig` or
+   * `projects/{PROJECT_NUMBER}/autokeyConfig`.
    * @param array $optParams Optional parameters.
    * @return AutokeyConfig
    * @throws \Google\Service\Exception
@@ -46,8 +47,8 @@ class Folders extends \Google\Service\Resource
     return $this->call('getAutokeyConfig', [$params], AutokeyConfig::class);
   }
   /**
-   * Gets the KeyAccessJustificationsPolicyConfig for a given
-   * organization/folder/projects. (folders.getKajPolicyConfig)
+   * Gets the KeyAccessJustificationsPolicyConfig for a given organization,
+   * folder, or project. (folders.getKajPolicyConfig)
    *
    * @param string $name Required. The name of the
    * KeyAccessJustificationsPolicyConfig to get.
@@ -87,8 +88,8 @@ class Folders extends \Google\Service\Resource
     return $this->call('updateAutokeyConfig', [$params], AutokeyConfig::class);
   }
   /**
-   * Updates the KeyAccessJustificationsPolicyConfig for a given
-   * organization/folder/projects. (folders.updateKajPolicyConfig)
+   * Updates the KeyAccessJustificationsPolicyConfig for a given organization,
+   * folder, or project. (folders.updateKajPolicyConfig)
    *
    * @param string $name Identifier. The resource name for this
    * KeyAccessJustificationsPolicyConfig in the format of

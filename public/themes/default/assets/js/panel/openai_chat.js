@@ -29,7 +29,7 @@ let pdf = undefined;
 let pdfName = '';
 let pdfPath = '';
 let filterType = 'all';
-let prompt_images = [];
+let chatAttachments = [];
 let navigatingInChatsHistory = false;
 let selectedHistoryPrompt = -1;
 
@@ -37,73 +37,73 @@ let selectedHistoryPrompt = -1;
  * Credits: Joydeep Bhowmik https://dev.to/joydeep23/adding-keys-our-dom-diffing-algorithm-4d7g
  */
 class LiquidVDOM {
-	getnodeType( node ) {
-		if ( node.nodeType == 1 ) return node.tagName.toLowerCase();
+	getnodeType(node) {
+		if (node.nodeType == 1) return node.tagName.toLowerCase();
 		else return node.nodeType;
 	}
 
-	clean( node ) {
-		for ( let n = 0; n < node.childNodes.length; n++ ) {
-			let child = node.childNodes[ n ];
-			if ( child.nodeType === 8 ) {
+	clean(node) {
+		for (let n = 0; n < node.childNodes.length; n++) {
+			let child = node.childNodes[n];
+			if (child.nodeType === 8) {
 				// Only remove comment nodes
-				node.removeChild( child );
+				node.removeChild(child);
 				n--;
-			} else if ( child.nodeType === 1 ) {
+			} else if (child.nodeType === 1) {
 				// Element node
-				if ( child.hasAttribute( 'key' ) ) {
-					let key = child.getAttribute( 'key' );
+				if (child.hasAttribute('key')) {
+					let key = child.getAttribute('key');
 					child.key = key;
-					child.removeAttribute( 'key' );
+					child.removeAttribute('key');
 				}
-				this.clean( child );
+				this.clean(child);
 			}
 		}
 	}
 
-	parseHTML( str ) {
+	parseHTML(str) {
 		let parser = new DOMParser();
-		let doc = parser.parseFromString( str, 'text/html' );
-		this.clean( doc.body );
+		let doc = parser.parseFromString(str, 'text/html');
+		this.clean(doc.body);
 		return doc.body;
 	}
 
-	attrbutesIndex( el ) {
+	attrbutesIndex(el) {
 		var attributes = {};
-		if ( el.attributes == undefined ) return attributes;
-		for ( var i = 0, atts = el.attributes, n = atts.length; i < n; i++ ) {
-			attributes[ atts[ i ].name ] = atts[ i ].value;
+		if (el.attributes == undefined) return attributes;
+		for (var i = 0, atts = el.attributes, n = atts.length; i < n; i++) {
+			attributes[atts[i].name] = atts[i].value;
 		}
 		return attributes;
 	}
 
-	patchAttributes( vdom, dom ) {
-		let vdomAttributes = this.attrbutesIndex( vdom );
-		let domAttributes = this.attrbutesIndex( dom );
-		if ( vdomAttributes == domAttributes ) return;
-		Object.keys( vdomAttributes ).forEach( ( key, i ) => {
+	patchAttributes(vdom, dom) {
+		let vdomAttributes = this.attrbutesIndex(vdom);
+		let domAttributes = this.attrbutesIndex(dom);
+		if (vdomAttributes == domAttributes) return;
+		Object.keys(vdomAttributes).forEach((key, i) => {
 			//if the attribute is not present in dom then add it
-			if ( !dom.getAttribute( key ) ) {
-				dom.setAttribute( key, vdomAttributes[ key ] );
+			if (!dom.getAttribute(key)) {
+				dom.setAttribute(key, vdomAttributes[key]);
 			} //if the atrtribute is present than compare it
-			else if ( dom.getAttribute( key ) ) {
-				if ( vdomAttributes[ key ] != domAttributes[ key ] ) {
-					dom.setAttribute( key, vdomAttributes[ key ] );
+			else if (dom.getAttribute(key)) {
+				if (vdomAttributes[key] != domAttributes[key]) {
+					dom.setAttribute(key, vdomAttributes[key]);
 				}
 			}
-		} );
-		Object.keys( domAttributes ).forEach( ( key, i ) => {
+		});
+		Object.keys(domAttributes).forEach((key, i) => {
 			//if the attribute is not present in vdom than remove it
-			if ( !vdom.getAttribute( key ) ) {
-				dom.removeAttribute( key );
+			if (!vdom.getAttribute(key)) {
+				dom.removeAttribute(key);
 			}
-		} );
+		});
 	}
 
-	hasTheKey( dom, key ) {
+	hasTheKey(dom, key) {
 		let keymatched = false;
-		for ( let i = 0; i < dom.children.length; i++ ) {
-			if ( key == dom.children[ i ].key ) {
+		for (let i = 0; i < dom.children.length; i++) {
+			if (key == dom.children[i].key) {
 				keymatched = true;
 				break;
 			}
@@ -111,92 +111,92 @@ class LiquidVDOM {
 		return keymatched;
 	}
 
-	patchKeys( vdom, dom ) {
+	patchKeys(vdom, dom) {
 		//remove unmatched keys from dom
-		for ( let i = 0; i < dom.children.length; i++ ) {
-			let dnode = dom.children[ i ];
+		for (let i = 0; i < dom.children.length; i++) {
+			let dnode = dom.children[i];
 			let key = dnode.key;
-			if ( key ) {
-				if ( !this.hasTheKey( vdom, key ) ) {
+			if (key) {
+				if (!this.hasTheKey(vdom, key)) {
 					dnode.remove();
 				}
 			}
 		}
 		//adding keys to dom
-		for ( let i = 0; i < vdom.children.length; i++ ) {
-			let vnode = vdom.children[ i ];
+		for (let i = 0; i < vdom.children.length; i++) {
+			let vnode = vdom.children[i];
 			let key = vnode.key;
-			if ( key ) {
-				if ( !this.hasTheKey( dom, key ) ) {
+			if (key) {
+				if (!this.hasTheKey(dom, key)) {
 					//if key is not present in dom then add it
 					let nthIndex = [].indexOf.call(
 						vnode.parentNode.children,
 						vnode,
 					);
-					if ( dom.children[ nthIndex ] ) {
-						dom.children[ nthIndex ].before( vnode.cloneNode( true ) );
+					if (dom.children[nthIndex]) {
+						dom.children[nthIndex].before(vnode.cloneNode(true));
 					} else {
-						dom.append( vnode.cloneNode( true ) );
+						dom.append(vnode.cloneNode(true));
 					}
 				}
 			}
 		}
 	}
 
-	diff( vdom, dom ) {
+	diff(vdom, dom) {
 		//if dom has no childs then append the childs from vdom
-		if ( dom.hasChildNodes() == false && vdom.hasChildNodes() == true ) {
-			for ( let i = 0; i < vdom.childNodes.length; i++ ) {
+		if (dom.hasChildNodes() == false && vdom.hasChildNodes() == true) {
+			for (let i = 0; i < vdom.childNodes.length; i++) {
 				//appending
-				dom.append( vdom.childNodes[ i ].cloneNode( true ) );
+				dom.append(vdom.childNodes[i].cloneNode(true));
 			}
 		} else {
-			this.patchKeys( vdom, dom );
+			this.patchKeys(vdom, dom);
 			//if dom has extra child
-			if ( dom.childNodes.length > vdom.childNodes.length ) {
+			if (dom.childNodes.length > vdom.childNodes.length) {
 				let count = dom.childNodes.length - vdom.childNodes.length;
-				if ( count > 0 ) {
-					for ( ; count > 0; count-- ) {
-						dom.childNodes[ dom.childNodes.length - count ].remove();
+				if (count > 0) {
+					for (; count > 0; count--) {
+						dom.childNodes[dom.childNodes.length - count].remove();
 					}
 				}
 			}
 			//now comparing all childs
-			for ( let i = 0; i < vdom.childNodes.length; i++ ) {
+			for (let i = 0; i < vdom.childNodes.length; i++) {
 				//if the node is not present in dom append it
-				if ( dom.childNodes[ i ] == undefined ) {
-					dom.append( vdom.childNodes[ i ].cloneNode( true ) );
+				if (dom.childNodes[i] == undefined) {
+					dom.append(vdom.childNodes[i].cloneNode(true));
 					// console.log("appenidng",vdom.childNodes[i])
 				} else if (
-					this.getnodeType( vdom.childNodes[ i ] ) ==
-					this.getnodeType( dom.childNodes[ i ] )
+					this.getnodeType(vdom.childNodes[i]) ==
+					this.getnodeType(dom.childNodes[i])
 				) {
 					//if same node type
 					//if the nodeType is text
-					if ( vdom.childNodes[ i ].nodeType == 3 ) {
+					if (vdom.childNodes[i].nodeType == 3) {
 						//we check if the text content is not same
 						if (
-							vdom.childNodes[ i ].textContent !=
-							dom.childNodes[ i ].textContent
+							vdom.childNodes[i].textContent !=
+							dom.childNodes[i].textContent
 						) {
 							//replace the text content
-							dom.childNodes[ i ].textContent =
-								vdom.childNodes[ i ].textContent;
+							dom.childNodes[i].textContent =
+								vdom.childNodes[i].textContent;
 						}
 					} else {
 						this.patchAttributes(
-							vdom.childNodes[ i ],
-							dom.childNodes[ i ],
+							vdom.childNodes[i],
+							dom.childNodes[i],
 						);
 					}
 				} else {
 					//replace
-					dom.childNodes[ i ].replaceWith(
-						vdom.childNodes[ i ].cloneNode( true ),
+					dom.childNodes[i].replaceWith(
+						vdom.childNodes[i].cloneNode(true),
 					);
 				}
-				if ( vdom.childNodes[ i ].nodeType != 3 ) {
-					this.diff( vdom.childNodes[ i ], dom.childNodes[ i ] );
+				if (vdom.childNodes[i].nodeType != 3) {
+					this.diff(vdom.childNodes[i], dom.childNodes[i]);
 				}
 			}
 		}
@@ -205,35 +205,35 @@ class LiquidVDOM {
 
 const liquidVDOM = new LiquidVDOM();
 
-function unwrapWords( node ) {
+function unwrapWords(node) {
 	if (
 		node.nodeName === 'PRE' ||
 		node.nodeName === 'CODE' ||
 		node.nodeName === 'A' ||
 		node.nodeName === 'TR' ||
-		node.classList?.contains( 'katex' )
+		node.classList?.contains('katex')
 	) return;
 
-	if ( node.classList?.contains( 'done-signal' ) ) {
+	if (node.classList?.contains('done-signal')) {
 		return node.remove();
 	}
 
-	if ( node.nodeType === 3 ) {
+	if (node.nodeType === 3) {
 		return;
 	}
 
-	if ( node.classList?.contains( 'animated-el' ) ) {
-		const textNode = document.createTextNode( node.textContent );
-		node.parentNode.replaceChild( textNode, node );
+	if (node.nodeName === 'SPAN' && node.classList?.contains('animated-el')) {
+		const textNode = document.createTextNode(node.textContent);
+		node.parentNode.replaceChild(textNode, node);
 		return;
 	}
 
-	const childNodes = [ ...node.childNodes ];
-	childNodes.forEach( child => unwrapWords( child ) );
+	const childNodes = [...node.childNodes];
+	childNodes.forEach(child => unwrapWords(child));
 }
 
 function generateUUID() {
-	return ([ 1e7 ]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+	return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
 		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
 	);
 }
@@ -243,50 +243,50 @@ function generateUUID() {
  * @param {AiResponse} param0.responseObj
  * @param {boolean} param0.withoutDone
  */
-function getAiResponseString( { responseObj = null, withoutDone = true } ) {
-	if ( !responseObj ) {
+function getAiResponseString({responseObj = null, withoutDone = true}) {
+	if (!responseObj) {
 		responseObj = aiResponses[0];
 	}
 
-	if ( !responseObj ) return '';
+	if (!responseObj) return '';
 
 	const string = responseObj.response
-		.join( '' )
+		.join('')
 		.trim()
-		.replace( /<br\s*\/?>/g, '\n' );
+		.replace(/<br\s*\/?>/g, '\n');
 
-	if ( withoutDone ) {
-		return string.replace( '[DONE]', '' );
+	if (withoutDone) {
+		return string.replace('[DONE]', '');
 	}
 
 	return string;
 }
 
-function fixUnclosedMarkdownSyntax( string ) {
+function fixUnclosedMarkdownSyntax(string) {
 	let text = string;
 
-	let boldMatch = text.match( /\*\*(?:(?!\*\*).)*$/ );
-	if ( boldMatch ) {
+	let boldMatch = text.match(/\*\*(?:(?!\*\*).)*$/);
+	if (boldMatch) {
 		text = text + '**';
 	}
 
-	let italicMatch = text.match( /\*(?:(?!\*).)*$/ );
-	if ( italicMatch ) {
+	let italicMatch = text.match(/\*(?:(?!\*).)*$/);
+	if (italicMatch) {
 		text = text + '*';
 	}
 
-	let codeBlockMatch = text.match( /```(?:(?!```).)*$/ );
-	if ( codeBlockMatch ) {
+	let codeBlockMatch = text.match(/```(?:(?!```).)*$/);
+	if (codeBlockMatch) {
 		text = text + '```';
 	}
 
-	let inlineCodeMatch = text.match( /`(?:(?!`).)*$/ );
-	if ( inlineCodeMatch ) {
+	let inlineCodeMatch = text.match(/`(?:(?!`).)*$/);
+	if (inlineCodeMatch) {
 		text = text + '`';
 	}
 
-	let strikeMatch = text.match( /~~(?:(?!~~).)*$/ );
-	if ( strikeMatch ) {
+	let strikeMatch = text.match(/~~(?:(?!~~).)*$/);
+	if (strikeMatch) {
 		text = text + '~~';
 	}
 
@@ -298,62 +298,62 @@ function fixUnclosedMarkdownSyntax( string ) {
  * @param {object} options
  * @param {boolean} options.readyForAnimation
  */
-function formatString( string, options = {} ) {
-	if ( !( 'markdownit' in window ) ) return;
+function formatString(string, options = {}) {
+	if (!('markdownit' in window)) return;
 
-	string = fixUnclosedMarkdownSyntax( string );
+	string = fixUnclosedMarkdownSyntax(string);
 
 	string = string
 		.replace(
 			/(?<=\[START_REASONING\])(?:.*?\n\n.*?)(?=\[END_REASONING\]|$)/gs,
-			match => match.replace( /\n\n/g, '\n' ),
+			match => match.replace(/\n\n/g, '\n'),
 		)
-		.replace( '[START_REASONING]', '>' )
-		.replace( '[END_REASONING]', '\n' )
-		.replaceAll( '\\(', '$' )
-		.replaceAll( '\\)', '$' )
-		.replaceAll( '\\[', '$$' )
-		.replaceAll( '\\]', '$$' );
+		.replace('[START_REASONING]', '>')
+		.replace('[END_REASONING]', '\n')
+		.replaceAll('\\(', '$')
+		.replaceAll('\\)', '$')
+		.replaceAll('\\[', '$$')
+		.replaceAll('\\]', '$$');
 
-	const renderer = window.markdownit( {
+	const renderer = window.markdownit({
 		breaks: true,
-		highlight: ( str, lang ) => {
+		highlight: (str, lang) => {
 			const language = lang && lang !== '' ? lang : 'md';
 			const codeString = str;
 
 			const highlighted = Prism.highlight(
 				codeString,
-				( Prism.languages[ language ] != null ? Prism.languages[ language ] : ( language === 'blade' ? Prism.languages.html : Prism.languages.markup ) ),
+				(Prism.languages[language] != null ? Prism.languages[language] : (language === 'blade' ? Prism.languages.html : Prism.languages.markup)),
 				language,
 			);
 
-			return `<pre class="${ options.readyForAnimation ? 'animated-el' : '' } !whitespace-pre-wrap rounded [direction:ltr] max-w-full !w-full language-${ language }"><code data-lang="${ language }" class="language-${ language }">${ highlighted }</code></pre>`;
+			return `<pre class="${options.readyForAnimation ? 'animated-el' : ''} !whitespace-pre-wrap rounded [direction:ltr] max-w-full !w-full language-${language}"><code data-lang="${language}" class="language-${language}">${highlighted}</code></pre>`;
 		},
-	} );
+	});
 
-	if ( 'katex' in window && 'markdownItKatex' in window ) {
-		renderer.use( markdownItKatex );
+	if ('katex' in window && 'markdownItKatex' in window) {
+		renderer.use(markdownItKatex);
 	}
 
-	renderer.use( function ( md ) {
+	renderer.use(function (md) {
 		// Add data-fslightbox attribute to images
 		const defaultRender = md.renderer.rules.image;
 
-		md.renderer.rules.image = function ( tokens, idx, options, env, self ) {
-			const token = tokens[ idx ];
+		md.renderer.rules.image = function (tokens, idx, options, env, self) {
+			const token = tokens[idx];
 			// Find the src attribute to use as the href
-			const srcIndex = token.attrIndex( 'src' );
-			const src = srcIndex >= 0 ? token.attrs[ srcIndex ][ 1 ] : '';
+			const srcIndex = token.attrIndex('src');
+			const src = srcIndex >= 0 ? token.attrs[srcIndex][1] : '';
 
 			// Render the image with default renderer
-			const imageHtml = defaultRender( tokens, idx, options, env, self );
+			const imageHtml = defaultRender(tokens, idx, options, env, self);
 
 			// Wrap in anchor tag with href to the image source
-			return `<a href="${ src }" target="_blank" data-fslightbox="gallery">${ imageHtml }</a>`;
+			return `<a href="${src}" target="_blank" data-fslightbox="gallery">${imageHtml}</a>`;
 		};
 
 		// Detect and wrap HTML code blocks
-		md.core.ruler.before( 'block', 'detect_html_blocks', function ( state ) {
+		md.core.ruler.before('block', 'detect_html_blocks', function (state) {
 			const src = state.src;
 
 			// Look for HTML that starts with <html> or <!DOCTYPE html> and isn't already in code blocks
@@ -362,47 +362,47 @@ function formatString( string, options = {} ) {
 			let modifiedSrc = src;
 			let offset = 0;
 
-			while ( ( match = htmlStartRegex.exec( src ) ) !== null ) {
+			while ((match = htmlStartRegex.exec(src)) !== null) {
 				const startPos = match.index + offset;
 				const htmlStart = match[0];
 
 				// Check if this HTML start is already inside a code block
-				const beforeContent = modifiedSrc.substring( 0, startPos );
-				const codeBlockCount = ( beforeContent.match( /```/g ) || [] ).length;
+				const beforeContent = modifiedSrc.substring(0, startPos);
+				const codeBlockCount = (beforeContent.match(/```/g) || []).length;
 				const isInsideCodeBlock = codeBlockCount % 2 === 1;
 
-				if ( !isInsideCodeBlock ) {
+				if (!isInsideCodeBlock) {
 					// Check if the HTML content doesn't already have ``` at the beginning
-					const startsWithCodeBlock = htmlStart.trim().startsWith( '```' );
+					const startsWithCodeBlock = htmlStart.trim().startsWith('```');
 
-					if ( !startsWithCodeBlock ) {
+					if (!startsWithCodeBlock) {
 						// Ensure the code block starts on a new line
-						const precedingChar = startPos > 0 ? modifiedSrc.charAt( startPos - 1 ) : '\n';
+						const precedingChar = startPos > 0 ? modifiedSrc.charAt(startPos - 1) : '\n';
 						const needsNewline = precedingChar !== '\n';
 
 						// Start wrapping immediately with opening code block
 						const codeBlockStart = (needsNewline ? '\n' : '') + '```html\n';
 
 						// Insert the opening code block
-						modifiedSrc = modifiedSrc.substring( 0, startPos ) + codeBlockStart + modifiedSrc.substring( startPos );
+						modifiedSrc = modifiedSrc.substring(0, startPos) + codeBlockStart + modifiedSrc.substring(startPos);
 
 						// Update offset
 						offset += codeBlockStart.length;
 
 						// Now look for the closing </html> tag in the modified content
-						const afterStart = modifiedSrc.substring( startPos + codeBlockStart.length );
-						const htmlEndMatch = afterStart.match( /<\/html\s*>/i );
+						const afterStart = modifiedSrc.substring(startPos + codeBlockStart.length);
+						const htmlEndMatch = afterStart.match(/<\/html\s*>/i);
 
-						if ( htmlEndMatch ) {
+						if (htmlEndMatch) {
 							const endPos = startPos + codeBlockStart.length + htmlEndMatch.index + htmlEndMatch[0].length;
 
 							// Check if there's already a newline after </html>
-							const nextChar = endPos < modifiedSrc.length ? modifiedSrc.charAt( endPos ) : '';
+							const nextChar = endPos < modifiedSrc.length ? modifiedSrc.charAt(endPos) : '';
 							const hasFollowingNewline = nextChar === '\n';
 
 							// Insert closing code block after </html> with proper newlines
 							const codeBlockEnd = '\n```' + (hasFollowingNewline ? '' : '\n');
-							modifiedSrc = modifiedSrc.substring( 0, endPos ) + codeBlockEnd + modifiedSrc.substring( endPos );
+							modifiedSrc = modifiedSrc.substring(0, endPos) + codeBlockEnd + modifiedSrc.substring(endPos);
 
 							// Update offset for next iterations
 							offset += codeBlockEnd.length;
@@ -411,33 +411,33 @@ function formatString( string, options = {} ) {
 				}
 			}
 
-			if ( modifiedSrc !== src ) {
+			if (modifiedSrc !== src) {
 				state.src = modifiedSrc;
 			}
-		} );
+		});
 
 		// Wrap words with animated-el spans for animation
-		if ( options.readyForAnimation ) {
-			md.core.ruler.after( 'inline', 'wrap_words', function ( state ) {
-				state.tokens.forEach( function ( blockToken ) {
-					if ( blockToken.type !== 'inline' ) return;
+		if (options.readyForAnimation) {
+			md.core.ruler.after('inline', 'wrap_words', function (state) {
+				state.tokens.forEach(function (blockToken) {
+					if (blockToken.type !== 'inline') return;
 
-					const inlineElements = [ 'strong', 'em', 's', 'u', 'a', 'i', 'b', 'code', 'del', 'ins', 'mark', 'sub', 'sup' ];
+					const inlineElements = ['strong', 'em', 's', 'u', 'a', 'i', 'b', 'code', 'del', 'ins', 'mark', 'sub', 'sup'];
 					let insideInlineElement = false;
 
-					blockToken.children.forEach( function ( token ) {
-						if ( token.type === 'text' && !insideInlineElement ) {
+					blockToken.children.forEach(function (token) {
+						if (token.type === 'text' && !insideInlineElement) {
 							// Split text into words and wrap each with span
-							const words = token.content.split( /(\s+)/ );
+							const words = token.content.split(/(\s+)/);
 							let wrappedContent = '';
 
-							words.forEach( word => {
-								if ( word.trim() !== '' ) {
-									wrappedContent += `<span class="animated-el ${ word === '[DONE]' ? 'done-signal' : '' }">${ word }</span>`;
+							words.forEach(word => {
+								if (word.trim() !== '') {
+									wrappedContent += `<span class="animated-el ${word === '[DONE]' ? 'done-signal' : ''}">${word}</span>`;
 								} else {
 									wrappedContent += word; // Preserve whitespace
 								}
-							} );
+							});
 
 							// Convert to HTML token
 							token.type = 'html_inline';
@@ -445,100 +445,100 @@ function formatString( string, options = {} ) {
 						}
 
 						// Track if we're inside inline elements and add animated-el class
-						if ( token.type.endsWith( '_open' ) ) {
+						if (token.type.endsWith('_open')) {
 							const tagName = token.tag;
-							if ( inlineElements.includes( tagName ) ) {
+							if (inlineElements.includes(tagName)) {
 								insideInlineElement = true;
 								// Add animated-el class to inline elements
-								if ( !token.attrGet || !token.attrGet( 'class' ) ) {
-									token.attrSet( 'class', 'animated-el' );
+								if (!token.attrGet || !token.attrGet('class')) {
+									token.attrSet('class', 'animated-el');
 								} else {
-									const existingClass = token.attrGet( 'class' );
-									token.attrSet( 'class', existingClass + ' animated-el' );
+									const existingClass = token.attrGet('class');
+									token.attrSet('class', existingClass + ' animated-el');
 								}
 							}
 						}
 
-						if ( token.type.endsWith( '_close' ) ) {
+						if (token.type.endsWith('_close')) {
 							const tagName = token.tag;
-							if ( inlineElements.includes( tagName ) ) {
+							if (inlineElements.includes(tagName)) {
 								insideInlineElement = false;
 							}
 						}
-					} );
-				} );
-			} );
+					});
+				});
+			});
 		}
 
-		md.core.ruler.after( 'inline', 'convert_elements', function ( state ) {
-			state.tokens.forEach( function ( blockToken ) {
-				if ( blockToken.type !== 'inline' ) return;
+		md.core.ruler.after('inline', 'convert_elements', function (state) {
+			state.tokens.forEach(function (blockToken) {
+				if (blockToken.type !== 'inline') return;
 
 				let fullContent = '';
 
-				blockToken.children.forEach( token => {
-					let { content, type } = token;
+				blockToken.children.forEach(token => {
+					let {content, type} = token;
 
-					switch ( type ) {
-						case 'link_open':
-							content = `<a ${ token.attrs.map( ( [ key, value ] ) => `${ key }="${ value }"` ).join( ' ' ) }>`;
-							break;
-						case 'link_close':
-							content = '</a>';
-							break;
+					switch (type) {
+					case 'link_open':
+						content = `<a ${token.attrs.map(([key, value]) => `${key}="${value}"`).join(' ')}>`;
+						break;
+					case 'link_close':
+						content = '</a>';
+						break;
 					}
 
 					fullContent += content;
-				} );
+				});
 
 				if (
-					fullContent.includes( '<ol>' ) ||
-					fullContent.includes( '<ul>' )
+					fullContent.includes('<ol>') ||
+					fullContent.includes('<ul>')
 				) {
-					const listToken = new state.Token( 'html_inline', '', 0 );
+					const listToken = new state.Token('html_inline', '', 0);
 					listToken.content = fullContent.trim();
 					listToken.markup = 'html';
 					listToken.type = 'html_inline';
 
-					blockToken.children = [ listToken ];
+					blockToken.children = [listToken];
 				}
-			} );
-		} );
+			});
+		});
 
-		md.core.ruler.after( 'inline', 'convert_links', function ( state ) {
-			state.tokens.forEach( function ( blockToken ) {
-				if ( blockToken.type !== 'inline' ) return;
-				blockToken.children.forEach( function ( token, idx ) {
-					const { content } = token;
-					if ( content.includes( '<a ' ) ) {
+		md.core.ruler.after('inline', 'convert_links', function (state) {
+			state.tokens.forEach(function (blockToken) {
+				if (blockToken.type !== 'inline') return;
+				blockToken.children.forEach(function (token, idx) {
+					const {content} = token;
+					if (content.includes('<a ')) {
 						const linkRegex = /(.*)(<a\s+[^>]*\s+href="([^"]+)"[^>]*>([^<]*)<\/a>?)(.*)/;
-						const linkMatch = content.match( linkRegex );
+						const linkMatch = content.match(linkRegex);
 
-						if ( linkMatch ) {
-							const [ , before, , href, text, after ] = linkMatch;
+						if (linkMatch) {
+							const [, before, , href, text, after] = linkMatch;
 
-							const beforeToken = new state.Token( 'text', '', 0 );
+							const beforeToken = new state.Token('text', '', 0);
 							beforeToken.content = before;
 
-							const newToken = new state.Token( 'link_open', 'a', 1, );
+							const newToken = new state.Token('link_open', 'a', 1,);
 							newToken.attrs = [
-								[ 'href', href ],
-								[ 'target', '_blank' ],
+								['href', href],
+								['target', '_blank'],
 							];
-							const textToken = new state.Token( 'text', '', 0 );
+							const textToken = new state.Token('text', '', 0);
 							textToken.content = text;
-							const closingToken = new state.Token( 'link_close', 'a', -1, );
+							const closingToken = new state.Token('link_close', 'a', -1,);
 
-							const afterToken = new state.Token( 'text', '', 0 );
+							const afterToken = new state.Token('text', '', 0);
 							afterToken.content = after;
 
-							blockToken.children.splice( idx, 1, beforeToken, newToken, textToken, closingToken, afterToken, );
+							blockToken.children.splice(idx, 1, beforeToken, newToken, textToken, closingToken, afterToken,);
 						}
 					}
-				} );
-			} );
-		} );
-	} );
+				});
+			});
+		});
+	});
 
 	// Add a renderer rule to handle emphasize and strong markup at the end of a string without closing markers
 	// renderer.use( function ( md ) {
@@ -567,16 +567,16 @@ function formatString( string, options = {} ) {
 	// 	} );
 	// } );
 
-	let renderedString = renderer.render( renderer.utils.unescapeAll( string ) );
+	let renderedString = renderer.render(renderer.utils.unescapeAll(string));
 
 	return renderedString;
 }
 
-const throttledRefreshFsLightbox = _.throttle( () => {
-	if ( 'refreshFsLightbox' in window ) {
+const throttledRefreshFsLightbox = _.throttle(() => {
+	if ('refreshFsLightbox' in window) {
 		refreshFsLightbox();
 	}
-}, 250 );
+}, 250);
 
 function hideTempNote() {
 	const tempChatNote = document.getElementById('temp-chat-note');
@@ -585,15 +585,15 @@ function hideTempNote() {
 	}
 }
 
-function switchGenerateButtonsStatus( generating ) {
-	const generateBtn = document.querySelector( '#send_message_button' );
-	const stopBtn = document.querySelector( '#stop_button' );
+function switchGenerateButtonsStatus(generating) {
+	const generateBtn = document.querySelector('#send_message_button');
+	const stopBtn = document.querySelector('#stop_button');
 
 	generateBtn.disabled = generating;
-	generateBtn.classList.toggle( 'hidden', generating );
-	generateBtn.classList.toggle( 'submitting', generating );
+	generateBtn.classList.toggle('hidden', generating);
+	generateBtn.classList.toggle('submitting', generating);
 
-	stopBtn.classList.toggle( 'active', generating );
+	stopBtn.classList.toggle('active', generating);
 	stopBtn.disabled = !generating;
 }
 
@@ -602,20 +602,20 @@ function switchGenerateButtonsStatus( generating ) {
  * @param {AiResponse} responseObj
  * @param {HTMLElement} el
  */
-function setAnimatingWordY( responseObj, el ) {
-	if ( !el || el?.classList?.contains('done-signal') ) return;
+function setAnimatingWordY(responseObj, el) {
+	if (!el || el?.classList?.contains('done-signal')) return;
 
-	let { offsetTop } = el;
+	let {offsetTop} = el;
 
-	if ( offsetTop <= responseObj.lastAnimatedElOffsetTop ) return;
+	if (offsetTop <= responseObj.lastAnimatedElOffsetTop) return;
 
 	responseObj.lastAnimatedElOffsetTop = offsetTop;
 
-	if ( el.nodeName === 'TR' ) {
-		offsetTop = offsetTop + ( el.closest( 'table' )?.offsetTop || 0 );
+	if (el.nodeName === 'TR') {
+		offsetTop = offsetTop + (el.closest('table')?.offsetTop || 0);
 	}
 
-	responseObj.bubbleEl.style.setProperty( '--animating-word-y', `${ offsetTop }px`, );
+	responseObj.bubbleEl.style.setProperty('--animating-word-y', `${offsetTop}px`,);
 }
 
 /**
@@ -623,21 +623,21 @@ function setAnimatingWordY( responseObj, el ) {
  * @param {AiResponse} responseObj
  * @param {HTMLElement} el
  */
-function onWordAnimationFinish( responseObj, el ) {
-	const isDoneSignal = el.classList.contains( 'done-signal' );
+function onWordAnimationFinish(responseObj, el) {
+	const isDoneSignal = el.classList.contains('done-signal');
 
-	el.classList.replace( 'animating', 'animated' );
+	el.classList.replace('animating', 'animated');
 
-	if ( !responseObj.responseStreaming && isDoneSignal ) {
-		responseObj.bubbleEl.classList.replace( 'animating-words', 'animating-words-done' );
+	if (!responseObj.responseStreaming && isDoneSignal) {
+		responseObj.bubbleEl.classList.replace('animating-words', 'animating-words-done');
 
 		responseObj.animatingWordIndex = -1;
 
-		switchGenerateButtonsStatus( aiResponses.every(res => res.responseStreaming) );
+		switchGenerateButtonsStatus(aiResponses.every(res => res.responseStreaming));
 
-		_.defer( () => {
-			unwrapWords( responseObj.chatContentEl );
-		} );
+		_.defer(() => {
+			unwrapWords(responseObj.chatContentEl);
+		});
 	}
 
 	setAnimatingWordY(responseObj, el);
@@ -660,9 +660,9 @@ function animateNewElements(responseObj) {
 
 		// Simple staggered animation with timeout
 		setTimeout(() => {
-			responseObj.bubbleEl.classList.replace( 'loading', 'streaming-started' );
+			responseObj.bubbleEl.classList.replace('loading', 'streaming-started');
 
-			el.animate([ { opacity: 1 } ], {
+			el.animate([{opacity: 1}], {
 				duration: 500,
 				easing: 'ease',
 				fill: 'forwards',
@@ -676,39 +676,39 @@ function animateNewElements(responseObj) {
  * Reset animation state for new responses
  * @param {AiResponse} responseObj
  */
-function resetAnimationState( responseObj ) {
+function resetAnimationState(responseObj) {
 	responseObj.animatedElements = new Set();
 	responseObj.animatingWordIndex = -1;
 }
 
 /**
  * @param {AiResponse} responseObj
-*/
-function onAiResponse( responseObj ) {
+ */
+function onAiResponse(responseObj) {
 	const contentEl = responseObj.chatContentEl;
-	const responseString = getAiResponseString( { responseObj, withoutDone: false } );
-	const formattedResponse = formatString( responseString, {
+	const responseString = getAiResponseString({responseObj, withoutDone: false});
+	const formattedResponse = formatString(responseString, {
 		readyForAnimation: true
-	} );
-	const responseHTML = liquidVDOM.parseHTML( formattedResponse );
+	});
+	const responseHTML = liquidVDOM.parseHTML(formattedResponse);
 
-	liquidVDOM.clean( contentEl );
-	liquidVDOM.diff( responseHTML, contentEl );
+	liquidVDOM.clean(contentEl);
+	liquidVDOM.diff(responseHTML, contentEl);
 
-	responseObj.bubbleEl.classList.toggle( 'streaming-on', responseObj.responseStreaming );
+	responseObj.bubbleEl.classList.toggle('streaming-on', responseObj.responseStreaming);
 
-	animateNewElements( responseObj );
+	animateNewElements(responseObj);
 
 	throttledRefreshFsLightbox();
 
-	switchGenerateButtonsStatus( aiResponses.every(res => res.responseStreaming) );
+	switchGenerateButtonsStatus(aiResponses.every(res => res.responseStreaming));
 }
 
 /**
  *
  * @param {AiResponse} responseObj
  */
-async function handleCanvasResponseStore( responseObj ) {
+async function handleCanvasResponseStore(responseObj) {
 	try {
 		const res = await fetch('/tiptap-content-store', {
 			method: 'post',
@@ -718,7 +718,7 @@ async function handleCanvasResponseStore( responseObj ) {
 			},
 			body: JSON.stringify({
 				'message_id': responseObj.responseId,
-				'content': formatString( getAiResponseString({ responseObj }) ),
+				'content': formatString(getAiResponseString({responseObj})),
 				'type': 'output'
 			})
 		});
@@ -732,11 +732,12 @@ async function handleCanvasResponseStore( responseObj ) {
 			toastr.error(resData.message || magicai_localize.could_not_save_the_canvas_data);
 		}
 	} catch (error) {
+		alert(error);
 		console.error(error);
 	}
 }
 
-function onBeforePageUnload( e ) {
+function onBeforePageUnload(e) {
 	e.preventDefault();
 	e.returnValue = '';
 }
@@ -744,7 +745,7 @@ function onBeforePageUnload( e ) {
 /**
  * @param {Event} event
  */
-async function onAcceptResponseButtonClick( event ) {
+async function onAcceptResponseButtonClick(event) {
 	event.preventDefault();
 
 	const button = event.currentTarget;
@@ -769,7 +770,7 @@ async function onAcceptResponseButtonClick( event ) {
 	multiAiResposeWrap.remove();
 
 	const chatModelChangeEvent = new CustomEvent('chat-model-change', {
-		detail: { model }
+		detail: {model}
 	});
 	document.dispatchEvent(chatModelChangeEvent);
 }
@@ -777,7 +778,7 @@ async function onAcceptResponseButtonClick( event ) {
 /**
  * @param {Event} event
  */
-async function onRegenerateResponseButtonClick( event ) {
+async function onRegenerateResponseButtonClick(event) {
 	event.preventDefault();
 
 	const button = event.currentTarget;
@@ -788,9 +789,9 @@ async function onRegenerateResponseButtonClick( event ) {
 }
 
 function getFrontModelEl() {
-	let chatbotFrontModel = document.querySelector( '#chatbot_front_model' );
+	let chatbotFrontModel = document.querySelector('#chatbot_front_model');
 
-	if ( !chatbotFrontModel ) {
+	if (!chatbotFrontModel) {
 		chatbotFrontModel = document.createElement('select');
 		chatbotFrontModel.id = 'chatbot_front_model';
 		chatbotFrontModel.style.display = 'none';
@@ -807,20 +808,20 @@ function getFrontModelEl() {
 }
 
 function createAiResponses() {
-	const aiBubbleTemplateEl = document.querySelector( '#chat_ai_bubble' );
+	const aiBubbleTemplateEl = document.querySelector('#chat_ai_bubble');
 	const canvasEditBtnTemplate = document.querySelector('#canvas_edit_btn_block');
 	const canvasModeActivated = document.querySelector('#create_canvas_button.active');
-	const chatsContainer = document.querySelector( '.chats-container' );
+	const chatsContainer = document.querySelector('.chats-container');
 	const chatbotFrontModel = getFrontModelEl();
 	const multiModelsSelected = chatbotFrontModel.selectedOptions.length > 1;
 	let appendAiBubblesTo = chatsContainer;
 
-	if ( multiModelsSelected ) {
+	if (multiModelsSelected) {
 		const multiAiResposeWrap = document.createElement('div');
 
 		multiAiResposeWrap.classList.add('multi-model-response-wrap', 'grid', 'grid-cols-1', 'lg:grid-cols-2', 'gap-x-6');
 
-		chatsContainer.insertAdjacentElement('beforeend', multiAiResposeWrap );
+		chatsContainer.insertAdjacentElement('beforeend', multiAiResposeWrap);
 
 		appendAiBubblesTo = multiAiResposeWrap;
 	}
@@ -909,65 +910,65 @@ function createAiResponses() {
  */
 function sendRequest(type, images, responseObj, sharedMessageUUID = null) {
 	const formData = new FormData();
-	const tempChatButton = document.querySelector( '#temp_chat_button' );
-	const realtime = document.getElementById( 'realtime' );
-	const chatBrandVoice = document.getElementById( 'chat_brand_voice' );
-	const brandVoiceProd = document.getElementById( 'brand_voice_prod' );
-	const assistant = document.getElementById( 'assistant' );
+	const tempChatButton = document.querySelector('#temp_chat_button');
+	const realtime = document.getElementById('realtime');
+	const chatBrandVoice = document.getElementById('chat_brand_voice');
+	const brandVoiceProd = document.getElementById('brand_voice_prod');
+	const assistant = document.getElementById('assistant');
 	const canvasModeActivated = document.querySelector('#create_canvas_button.active');
-	const promptInput = document.getElementById( 'prompt' );
-	const chat_id = $( '#chat_id' ).val();
-	const throttledOnAiResponse = _.throttle( onAiResponse, 100 );
+	const promptInput = document.getElementById('prompt');
+	const chat_id = document.querySelector('#chat_id')?.value;
+	const throttledOnAiResponse = _.throttle(onAiResponse, 100);
 	const abortController = new AbortController();
 	let receivedMessageId = false;
 
-	formData.append( 'template_type', type );
-	formData.append( 'prompt', promptInput.value );
-	formData.append( 'chat_id', chat_id );
-	formData.append( 'category_id', category.id );
-	formData.append( 'images', images == undefined ? '' : images );
-	formData.append( 'pdfname', pdfName == undefined ? '' : pdfName );
-	formData.append( 'pdfpath', pdfPath == undefined ? '' : pdfPath );
-	formData.append( 'realtime', realtime?.checked ? 1 : 0 );
-	formData.append( 'chat_brand_voice', chatBrandVoice?.value || '' );
-	formData.append( 'brand_voice_prod', brandVoiceProd?.value || '' );
-	formData.append( 'chatbot_front_model',  responseObj.model.slug);
-	formData.append( 'assistant', assistant.value || '' );
+	formData.append('template_type', type);
+	formData.append('prompt', promptInput.value);
+	formData.append('chat_id', chat_id);
+	formData.append('category_id', category.id);
+	formData.append('images', images == undefined ? '' : images);
+	formData.append('pdfname', pdfName == undefined ? '' : pdfName);
+	formData.append('pdfpath', pdfPath == undefined ? '' : pdfPath);
+	formData.append('realtime', realtime?.checked ? 1 : 0);
+	formData.append('chat_brand_voice', chatBrandVoice?.value || '');
+	formData.append('brand_voice_prod', brandVoiceProd?.value || '');
+	formData.append('chatbot_front_model', responseObj.model.slug);
+	formData.append('assistant', assistant.value || '');
 
-	if ( sharedMessageUUID ) {
-		formData.append( 'shared_message_uuid', sharedMessageUUID);
+	if (sharedMessageUUID) {
+		formData.append('shared_message_uuid', sharedMessageUUID);
 	}
 
-	if ( tempChatButton && tempChatButton.classList.contains( 'active' ) ) {
-		formData.append( 'temp_chat_button', '1' );
+	if (tempChatButton && tempChatButton.classList.contains('active')) {
+		formData.append('temp_chat_button', '1');
 	}
 
 	responseObj.abortController = abortController;
 
-	fetchEventSource( '/dashboard/user/generator/generate-stream', {
+	fetchEventSource('/dashboard/user/generator/generate-stream', {
 		openWhenHidden: true,
 		method: 'POST',
 		headers: {
-			'X-CSRF-TOKEN': $( 'meta[name="csrf-token"]' ).attr( 'content' ),
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
 		},
 		body: formData,
 		signal: responseObj.abortController.signal,
 		onmessage: async e => {
 			const txt = e.data;
 
-			if ( !receivedMessageId ) {
+			if (!receivedMessageId) {
 				const eventData = e.event
-					.split( '\n' )
-					.reduce( ( acc, line ) => {
-						if ( line.startsWith( 'message' ) ) {
+					.split('\n')
+					.reduce((acc, line) => {
+						if (line.startsWith('message')) {
 							acc.type = 'message';
 							acc.data = e.data;
 						}
 
 						return acc;
-					}, {} );
+					}, {});
 
-				if ( eventData.type === 'message' ) {
+				if (eventData.type === 'message') {
 					const responseId = eventData.data;
 
 					receivedMessageId = true;
@@ -982,181 +983,198 @@ function sendRequest(type, images, responseObj, sharedMessageUUID = null) {
 				return;
 			}
 
-			if ( txt == null ) return;
+			if (txt == null) return;
 
 			const responseIndex = aiResponses.findIndex(response => response.responseId === responseObj.responseId);
 			const isDoneSignal = txt === '[DONE]';
 
-			if ( isDoneSignal ) {
-				messages.push( {
+			if (isDoneSignal) {
+				messages.push({
 					role: 'assistant',
-					content: getAiResponseString({ responseObj }),
-				} );
+					content: getAiResponseString({responseObj}),
+				});
 
-				if ( messages.length >= 6 ) {
-					messages.splice( 1, 2 );
+				if (messages.length >= 6) {
+					messages.splice(1, 2);
 				}
 
 				// if it's done signal, add a space before
-				responseObj.response.push( `${isDoneSignal ? ' ' : ''}${txt}` );
+				responseObj.response.push(`${isDoneSignal ? ' ' : ''}${txt}`);
 				responseObj.responseStreaming = false;
 				responseObj.abortController = null;
 
-				throttledOnAiResponse( responseObj );
+				throttledOnAiResponse(responseObj);
 
-				if ( canvasModeActivated ) {
-					handleCanvasResponseStore( responseObj );
+				if (canvasModeActivated) {
+					handleCanvasResponseStore(responseObj);
 				}
 
-				if ( responseIndex === aiResponses.length - 1 ) {
-					window.removeEventListener( 'beforeunload', onBeforePageUnload );
+				if (responseIndex === aiResponses.length - 1) {
+					window.removeEventListener('beforeunload', onBeforePageUnload);
 
-					changeChatTitle( responseObj.responseId );
+					changeChatTitle(responseObj.responseId);
 				}
 
 				return;
 			}
 
-			responseObj.response.push( txt );
+			responseObj.response.push(txt);
 
-			throttledOnAiResponse( responseObj );
+			throttledOnAiResponse(responseObj);
 		},
 		onerror: err => {
-			window.removeEventListener( 'beforeunload', onBeforePageUnload );
+			window.removeEventListener('beforeunload', onBeforePageUnload);
 
-			switchGenerateButtonsStatus( false );
+			switchGenerateButtonsStatus(false);
 
 			responseObj.abortController = null;
 
 			responseObj.responseStreaming = false;
-			responseObj.response.push( `${magicai_localize.error}: ${err.message}` );
+			responseObj.response.push(`${magicai_localize.error}: ${err.message}`);
 
-			throttledOnAiResponse( responseObj );
+			throttledOnAiResponse(responseObj);
 
 			throw err;
 		},
-	} );
+	});
 }
 
-async function startGenerateRequest( ev ) {
+async function startGenerateRequest(ev) {
 	'use strict';
 
 	ev?.preventDefault();
 
-	const promptInput = document.getElementById( 'prompt' );
+	const promptInput = document.getElementById('prompt');
 	const promptInputValue = promptInput.value;
 
-	if ( !promptInputValue.trim() ) {
-		return toastr.error( magicai_localize?.please_fill_message || 'Please fill the message field', );
+	if (!promptInputValue.trim()) {
+		return toastr.error(magicai_localize?.please_fill_message || 'Please fill the message field',);
 	}
 
-	const generateBtn = document.querySelector( '#send_message_button' );
+	const generateBtn = document.querySelector('#send_message_button');
 	const chatbotFrontModel = getFrontModelEl();
-	const chatsWrapper = document.querySelector( '.chats-wrap' );
-	const chatsContainer = $( '.chats-container' );
-	const userBubbleTemplate = document.querySelector( '#chat_user_bubble' ).content.cloneNode( true );
-	const chatType = document.querySelector( '#chatType' )?.value;
-	const mainUpscaleSrc = document.querySelector( '#mainupscale_src' );
-	const suggestions = document.querySelector( '#sugg' );
-	const chat_id = $( '#chat_id' ).val();
+	const chatsWrapper = document.querySelector('.chats-wrap');
+	const chatsContainer = document.querySelector('.chats-container');
+	const userBubbleTemplate = document.querySelector('#chat_user_bubble').content.cloneNode(true).firstElementChild;
+	const chatType = document.querySelector('#chatType')?.value;
+	const mainUpscaleSrc = document.querySelector('#mainupscale_src');
+	const suggestions = document.querySelector('#sugg');
+	const chat_id = document.querySelector('#chat_id')?.value;
 	const multiModelsSelected = chatbotFrontModel.selectedOptions.length > 1;
 	const sharedMessageUUID = generateUUID();
 
-	chatsWrapper.classList.remove( 'conversation-not-started' );
-	chatsWrapper.classList.add( 'conversation-started' );
+	chatsWrapper.classList.remove('conversation-not-started');
+	chatsWrapper.classList.add('conversation-started');
 
-	Alpine.store( 'realtimeChatStatus' )?.setConversationStarted( true );
+	Alpine.store('realtimeChatStatus')?.setConversationStarted(true);
 
-	if ( generateBtn.classList.contains( 'submitting' ) ) return;
+	if (generateBtn.classList.contains('submitting')) return;
 
 	// Clean up any existing animations before resetting
 	aiResponses.forEach(responseObj => {
-		resetAnimationState( responseObj );
+		resetAnimationState(responseObj);
 	});
 
 	aiResponses = [];
 
-	window.addEventListener( 'beforeunload', onBeforePageUnload );
+	window.addEventListener('beforeunload', onBeforePageUnload);
 
-	switchGenerateButtonsStatus( true );
+	switchGenerateButtonsStatus(true);
 
 	hideTempNote();
 
-	userBubbleTemplate.querySelector( '.chat-content' ).innerHTML = promptInputValue;
+	userBubbleTemplate.querySelector('.chat-content').innerHTML = promptInputValue;
 
-	handlePromptHistory( promptInputValue );
+	handlePromptHistory(promptInputValue);
 
-	chatsContainer.append( userBubbleTemplate );
+	chatsContainer.insertAdjacentElement('beforeend', userBubbleTemplate);
 
-	if ( mainUpscaleSrc ) {
+	if (mainUpscaleSrc) {
 		mainUpscaleSrc.style.display = 'none';
 	}
-	if ( suggestions ) {
+	if (suggestions) {
 		suggestions.style.display = 'none';
 	}
 
-	for ( let i = 0; i < prompt_images.length; i++ ) {
-		const chatImageBubbleTemplate = document.querySelector( '#chat_user_image_bubble' ).content.cloneNode( true );
+	chatAttachments.forEach(({data, name}) => {
+		const chatAttachmentBubbleTemplate = document.querySelector('#chat_user_image_bubble').content.cloneNode(true).firstElementChild;
+		const linkElement = chatAttachmentBubbleTemplate.querySelector('a');
 
-		chatImageBubbleTemplate.querySelector( 'a' ).href = prompt_images[ i ];
-		chatImageBubbleTemplate.querySelector( '.img-content' ).src = prompt_images[ i ];
+		if (data.startsWith('data:image/')) {
+			linkElement.href = data;
+			chatAttachmentBubbleTemplate.querySelector('svg')?.remove();
+			chatAttachmentBubbleTemplate.querySelector('.img-content').src = data;
+		} else {
+			// For non-image files, create a download link
+			linkElement.href = data;
+			linkElement.download = name;
+			linkElement.target = '_self';
 
-		chatsContainer.append( chatImageBubbleTemplate );
-	}
+			const fileNameSpan = document.createElement('span');
+			fileNameSpan.textContent = name;
+
+			linkElement.insertAdjacentElement('beforeend', fileNameSpan);
+			linkElement.removeAttribute('data-fslightbox');
+			linkElement.removeAttribute('data-type');
+			chatAttachmentBubbleTemplate.querySelector('img')?.remove();
+		}
+
+		chatsContainer.insertAdjacentElement('beforeend', chatAttachmentBubbleTemplate);
+	});
 
 	throttledRefreshFsLightbox();
 
 	createAiResponses();
 
-	scrollConversationArea( { smooth: true } );
+	scrollConversationArea({smooth: true});
 
-	if ( prompt_images.length == 0 ) {
-		messages.push( {
+	if (chatAttachments.length == 0) {
+		messages.push({
 			role: 'user',
 			content: promptInputValue,
-		} );
+		});
 	} else {
-		messages.push( {
+		messages.push({
 			role: 'user',
 			content: promptInputValue,
-		} );
+		});
 	}
 
-	if ( category.slug == 'ai_chat_image' ) {
+	if (category.slug == 'ai_chat_image') {
 		let image_formData = new FormData();
 
-		image_formData.append( 'prompt', promptInputValue );
-		image_formData.append( 'chatHistory', JSON.stringify( messages ) );
+		image_formData.append('prompt', promptInputValue);
+		image_formData.append('chatHistory', JSON.stringify(messages));
 
-		let response = await $.ajax( {
+		let response = await $.ajax({
 			url: '/dashboard/user/openai/image/generate',
 			type: 'POST',
 			data: image_formData,
 			processData: false,
 			contentType: false,
-		} );
+		});
 
-		const chatImageBubbleTemplate = document.querySelector( '#chat_bot_image_bubble' ).content.cloneNode( true );
+		const chatImageBubbleTemplate = document.querySelector('#chat_bot_image_bubble').content.cloneNode(true).firstElementChild;
 
-		chatImageBubbleTemplate.querySelector( 'a' ).href = response.path;
-		chatImageBubbleTemplate.querySelector( '.img-content' ).src = response.path;
+		chatImageBubbleTemplate.querySelector('a').href = response.path;
+		chatImageBubbleTemplate.querySelector('.img-content').src = response.path;
 
-		chatsContainer.append( chatImageBubbleTemplate );
+		chatsContainer.insertAdjacentElement('beforeend', chatImageBubbleTemplate);
 
-		messages.push( {
+		messages.push({
 			role: 'assistant',
 			content: '',
-		} );
+		});
 
-		if ( messages.length >= 6 ) {
-			messages.splice( 1, 2 );
+		if (messages.length >= 6) {
+			messages.splice(1, 2);
 		}
 
-		saveResponseAsync( promptInputValue, '', chat_id, '', '', '', response.path );
+		saveResponseAsync(promptInputValue, '', chat_id, '', '', '', response.path);
 
-		switchGenerateButtonsStatus( false );
+		switchGenerateButtonsStatus(false);
 
-		window.removeEventListener( 'beforeunload', onBeforePageUnload );
+		window.removeEventListener('beforeunload', onBeforePageUnload);
 
 		throttledRefreshFsLightbox();
 
@@ -1168,28 +1186,56 @@ async function startGenerateRequest( ev ) {
 	pdfName = '';
 	pdfPath = '';
 
-	if ( prompt_images.length ) {
-		let temp = [ ...prompt_images ];
+	if (chatAttachments.length) {
+		let files = [...chatAttachments];
 
-		prompt_images = [];
+		chatAttachments = [];
+		updatePromptFiles();
 
-		updatePromptImages();
-
-		$.ajax( {
+		$.ajax({
 			type: 'POST',
-			url: '/images/upload',
+			url: '/files/upload',
 			data: {
-				images: temp,
+				files: files,
+				_token: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
 			},
 			success: result => {
-				aiResponses.forEach(responseObj => sendRequest('vision', result.path, responseObj, multiModelsSelected ? sharedMessageUUID : null));
+				if (result.type === 'image') {
+					aiResponses.forEach(responseObj =>
+						sendRequest(
+							'vision',
+							result.path,
+							responseObj,
+							multiModelsSelected ? sharedMessageUUID : null
+						)
+					);
+				} else if (result.type === 'other') {
+					pdfName = result.name;
+					pdfPath = result.path;
+					aiResponses.forEach(responseObj =>
+						sendRequest(
+							'chatPro',
+							null,
+							responseObj,
+							multiModelsSelected ? sharedMessageUUID : null
+						)
+					);
+				}
+				promptInput.value = '';
+				promptInput.style.height = '';
 			},
-		} );
+		});
 
 		return;
 	}
 
-	aiResponses.forEach(responseObj => sendRequest(chatType ?? 'chatbot', null, responseObj, multiModelsSelected ? sharedMessageUUID : null));
+	aiResponses.forEach(responseObj =>
+		sendRequest(
+			chatType ?? 'chatbot', null,
+			responseObj,
+			multiModelsSelected ? sharedMessageUUID : null
+		)
+	);
 
 	promptInput.value = '';
 	promptInput.style.height = '';
@@ -1208,7 +1254,7 @@ function reduceOnStop() {
 				'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
 			},
 			body: JSON.stringify({
-				streamed_text: getAiResponseString({ responseObj }),
+				streamed_text: getAiResponseString({responseObj}),
 				streamed_message_id: responseObj.responseId
 			})
 		});
@@ -1216,88 +1262,89 @@ function reduceOnStop() {
 }
 
 function stopGenerateRequest() {
-	switchGenerateButtonsStatus( false );
+	switchGenerateButtonsStatus(false);
 
 	reduceOnStop();
 }
 
 function updateChatButtons() {
-	const generateBtn = document.querySelector( '#send_message_button' );
-	const stopBtn = document.querySelector( '#stop_button' );
-	const promptInput = document.querySelector( '#prompt' );
+	const generateBtn = document.querySelector('#send_message_button');
+	const stopBtn = document.querySelector('#stop_button');
+	const promptInput = document.querySelector('#prompt');
 	const acceptButtonEls = document.querySelectorAll('.multi-model-response-accept');
 	const regenerateButtonEls = document.querySelectorAll('.multi-model-response-regenerate');
 
-	generateBtn?.removeEventListener( 'click', startGenerateRequest );
-	stopBtn?.removeEventListener( 'click', stopGenerateRequest );
+	generateBtn?.removeEventListener('click', startGenerateRequest);
+	stopBtn?.removeEventListener('click', stopGenerateRequest);
 	acceptButtonEls.forEach(el => el.removeEventListener('click', onAcceptResponseButtonClick));
 	regenerateButtonEls.forEach(el => el.removeEventListener('click', onRegenerateResponseButtonClick));
 
-	if ( promptInput ) {
-		promptInput.addEventListener( 'keypress', ev => {
-			if ( ev.code == 'Enter' && !ev.shiftKey ) {
+	if (promptInput) {
+		promptInput.addEventListener('keypress', ev => {
+			if (ev.code == 'Enter' && !ev.shiftKey) {
 				ev.preventDefault();
-				$( '.lqd-chat-record-trigger' ).show();
+				$('.lqd-chat-record-trigger').show();
 				return startGenerateRequest();
 			}
-		} );
+		});
 	}
 
-	generateBtn?.addEventListener( 'click', startGenerateRequest );
-	stopBtn?.addEventListener( 'click', stopGenerateRequest );
+	generateBtn?.addEventListener('click', startGenerateRequest);
+	stopBtn?.addEventListener('click', stopGenerateRequest);
 	acceptButtonEls.forEach(el => el.addEventListener('click', onAcceptResponseButtonClick));
 	regenerateButtonEls.forEach(el => el.addEventListener('click', onRegenerateResponseButtonClick));
 }
 
-function updateFav( id ) {
-	$.ajax( {
+function updateFav(id) {
+	$.ajax({
 		type: 'post',
 		url: '/dashboard/user/openai/chat/update-prompt',
 		data: {
 			id: id,
 		},
-		success: function ( data ) {
+		success: function (data) {
 			favData = data;
-			updatePrompts( promptsData );
+			updatePrompts(promptsData);
 		},
-		error: function () { },
-	} );
+		error: function () {
+		},
+	});
 }
 
-function updatePrompts( data ) {
-	const $prompts = $( '#prompts' );
+function updatePrompts(data) {
+	const $prompts = $('#prompts');
 
 	$prompts.empty();
 
-	if ( data.length == 0 ) {
-		$( '#no_prompt' ).removeClass( 'hidden' );
+	if (data.length == 0) {
+		$('#no_prompt').removeClass('hidden');
 	} else {
-		$( '#no_prompt' ).addClass( 'hidden' );
+		$('#no_prompt').addClass('hidden');
 	}
 
-	for ( let i = 0; i < data.length; i++ ) {
-		let isFav = favData.filter( item => item.item_id == data[ i ].id ).length;
+	for (let i = 0; i < data.length; i++) {
+		let isFav = favData.filter(item => item.item_id == data[i].id).length;
 
-		let title = data[ i ].title.toLowerCase();
-		let prompt = data[ i ].prompt.toLowerCase();
+		let title = data[i].title.toLowerCase();
+		let prompt = data[i].prompt.toLowerCase();
 		let searchStr = searchString.toLowerCase();
 
-		if ( data[ i ].id == selectedPrompt ) {
-			if ( title.includes( searchStr ) || prompt.includes( searchStr ) ) {
-				if ( ( filterType == 'fav' && isFav != 0 ) || filterType != 'fav' ) {
-					let prompt = document.querySelector( '#selected_prompt' ).content.cloneNode( true );
-					const favbtn = prompt.querySelector( '.favbtn' );
-					prompt.querySelector( '.prompt_title' ).innerHTML = data[ i ].title;
-					prompt.querySelector( '.prompt_text' ).innerHTML = data[ i ].prompt;
-					favbtn.setAttribute( 'id', data[ i ].id );
+		if (data[i].id == selectedPrompt) {
+			if (title.includes(searchStr) || prompt.includes(searchStr)) {
+				if ((filterType == 'fav' && isFav != 0) || filterType != 'fav') {
+					let prompt = document.querySelector('#selected_prompt').content.cloneNode(true);
+					const favbtn = prompt.querySelector('.favbtn');
+					prompt.querySelector('.prompt_title').innerHTML = data[i].title;
+					prompt.querySelector('.prompt_text').innerHTML = data[i].prompt;
+					favbtn.setAttribute('id', data[i].id);
 
-					if ( isFav != 0 ) {
-						favbtn.classList.add( 'active' );
+					if (isFav != 0) {
+						favbtn.classList.add('active');
 					} else {
-						favbtn.classList.remove( 'active' );
+						favbtn.classList.remove('active');
 					}
 
-					$prompts.append( prompt );
+					$prompts.append(prompt);
 				} else {
 					selectedPrompt = -1;
 				}
@@ -1305,28 +1352,28 @@ function updatePrompts( data ) {
 				selectedPrompt = -1;
 			}
 		} else {
-			if ( title.includes( searchStr ) || prompt.includes( searchStr ) ) {
+			if (title.includes(searchStr) || prompt.includes(searchStr)) {
 				if (
-					( filterType == 'fav' && isFav != 0 ) ||
+					(filterType == 'fav' && isFav != 0) ||
 					filterType != 'fav'
 				) {
 					let prompt = document
-						.querySelector( '#unselected_prompt' )
-						.content.cloneNode( true );
-					const favbtn = prompt.querySelector( '.favbtn' );
-					prompt.querySelector( '.prompt_title' ).innerHTML =
-						data[ i ].title;
-					prompt.querySelector( '.prompt_text' ).innerHTML =
-						data[ i ].prompt;
-					favbtn.setAttribute( 'id', data[ i ].id );
+						.querySelector('#unselected_prompt')
+						.content.cloneNode(true);
+					const favbtn = prompt.querySelector('.favbtn');
+					prompt.querySelector('.prompt_title').innerHTML =
+						data[i].title;
+					prompt.querySelector('.prompt_text').innerHTML =
+						data[i].prompt;
+					favbtn.setAttribute('id', data[i].id);
 
-					if ( isFav != 0 ) {
-						favbtn.classList.add( 'active' );
+					if (isFav != 0) {
+						favbtn.classList.add('active');
 					} else {
-						favbtn.classList.remove( 'active' );
+						favbtn.classList.remove('active');
 					}
 
-					$prompts.append( prompt );
+					$prompts.append(prompt);
 				}
 			}
 		}
@@ -1334,64 +1381,130 @@ function updatePrompts( data ) {
 	let favCnt = favData.length;
 	let perCnt = data.length;
 
-	if ( favCnt == 0 ) {
-		$( '#fav_count' )[ 0 ].innerHTML = '';
+	if (favCnt == 0) {
+		$('#fav_count')[0].innerHTML = '';
 	} else {
-		$( '#fav_count' )[ 0 ].innerHTML = favCnt;
+		$('#fav_count')[0].innerHTML = favCnt;
 	}
 
-	if ( perCnt == 0 || perCnt == undefined ) {
-		$( '#per_count' )[ 0 ].innerHTML = '';
+	if (perCnt == 0 || perCnt == undefined) {
+		$('#per_count')[0].innerHTML = '';
 	} else {
-		$( '#per_count' )[ 0 ].innerHTML = perCnt;
+		$('#per_count')[0].innerHTML = perCnt;
 	}
 }
 
-function searchStringChange( e ) {
-	searchString = $( '#search_str' ).val();
-	updatePrompts( promptsData );
+function searchStringChange(e) {
+	searchString = $('#search_str').val();
+	updatePrompts(promptsData);
 }
 
-function openNewImageDlg( e ) {
-	$( '#selectImageInput' ).click();
+function openNewImageDlg(e) {
+	$('#selectImageInput').click();
 }
 
-function updatePromptImages() {
-	$( '#chat_images' ).empty();
-	if ( prompt_images.length == 0 ) {
-		$( '#chat_images' ).removeClass( 'active' );
-		$( '.split_line' ).addClass( 'hidden' );
+function isAllowedFileType(data, name) {
+	const allowedFileTypes = {
+		image: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+		document: [
+			'application/pdf',
+			'application/msword',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'application/vnd.ms-excel',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'text/plain'
+		]
+	};
+
+	const mimeExtensions = {
+		'.png': 'image/png',
+		'.jpg': 'image/jpeg',
+		'.jpeg': 'image/jpeg',
+		'.gif': 'image/gif',
+		'.webp': 'image/webp',
+		'.pdf': 'application/pdf',
+		'.doc': 'application/msword',
+		'.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		'.xls': 'application/vnd.ms-excel',
+		'.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'.txt': 'text/plain'
+	};
+
+	let fileType = null;
+	const mimeMatch = data.match(/^data:([^;]+);/);
+	if (mimeMatch) {
+		fileType = mimeMatch[1];
+	} else {
+		const extMatch = name.match(/\.(\w+)$/);
+		if (!extMatch) return false;
+		const ext = '.' + extMatch[1].toLowerCase();
+		fileType = mimeExtensions[ext] || null;
+	}
+
+	return fileType && Object.values(allowedFileTypes).some(arr => arr.includes(fileType));
+}
+
+function updatePromptFiles() {
+	$('#chat-attachment-previews').empty();
+
+	if (chatAttachments.length == 0) {
+		$('#chat-attachment-previews').removeClass('active');
+		$('.split_line').addClass('hidden');
 		return;
 	}
-	$( '#chat_images' ).addClass( 'active' );
-	$( '.split_line' ).removeClass( 'hidden' );
-	for ( let i = 0; i < prompt_images.length; i++ ) {
-		let new_image = document
-			.querySelector( '#prompt_image' )
-			.content.cloneNode( true );
-		$( new_image.querySelector( 'img' ) ).attr( 'src', prompt_images[ i ] );
-		$( new_image.querySelector( '.prompt_image_close' ) ).attr( 'index', i );
-		$( document.querySelector( '#chat_images' ) ).append( new_image );
-	}
-	let new_image_btn = document
-		.querySelector( '#prompt_image_add_btn' )
-		.content.cloneNode( true );
-	document.querySelector( '#chat_images' ).append( new_image_btn );
-	$( '.promt_image_btn' ).on( 'click', function ( e ) {
+
+	$('#chat-attachment-previews').addClass('active');
+	$('.split_line').removeClass('hidden');
+
+	chatAttachments.forEach(({data, name}, index) => {
+
+		if (data.startsWith('data:image/')) {
+			let newImage = document.querySelector('#prompt_image').content.cloneNode(true).firstElementChild;
+
+			newImage.querySelector('img').setAttribute('src', data);
+			newImage.querySelector('.prompt_image_close').setAttribute('index', index);
+
+			document.querySelector('#chat-attachment-previews').insertAdjacentElement('beforeend', newImage);
+		} else {
+			let newFile = document.querySelector('#prompt_pdf').content.cloneNode(true).firstElementChild;
+			const linkElement = newFile.querySelector('a');
+
+			linkElement.href = data;
+			linkElement.download = name;
+			linkElement.target = '_self';
+
+			newFile.querySelector('a span').textContent = name;
+			newFile.querySelector('.prompt_image_close').setAttribute('index', index);
+
+			document.querySelector('#chat-attachment-previews').insertAdjacentElement('beforeend', newFile);
+		}
+	});
+
+	let new_image_btn = document.querySelector('#prompt_image_add_btn').content.cloneNode(true);
+
+	document.querySelector('#chat-attachment-previews').append(new_image_btn);
+
+	$('.promt_image_btn').on('click', function (e) {
 		e.preventDefault();
-		$( '#chat_add_image' ).click();
-	} );
-	$( '.prompt_image_close' ).on( 'click', function () {
-		prompt_images.splice( $( this ).attr( 'index' ), 1 );
-		updatePromptImages();
-	} );
+		$('#chat_add_image').click();
+	});
+
+	$('.prompt_image_close').on('click', function () {
+		chatAttachments.splice($(this).attr('index'), 1);
+		updatePromptFiles();
+	});
 }
 
-function addImagetoChat( data ) {
-	if ( prompt_images.filter( item => item == data ).length == 0 ) {
-		prompt_images.push( data );
-		updatePromptImages();
+function addFileToChat({data, name}) {
+	if (chatAttachments.find(attachment => attachment.data === data)) return;
+
+	if (!isAllowedFileType(data, name)) {
+		console.warn(`File "${name}" is not allowed.`);
+		return toastr.error('File is not supported.');
 	}
+
+	chatAttachments.push({data, name});
+	updatePromptFiles();
 }
 
 function initChat() {
@@ -1399,240 +1512,233 @@ function initChat() {
 	var chunks = [];
 	var stream_;
 
-	prompt_images = [];
+	chatAttachments = [];
 
-	$( '#scrollable_content' ).animate( { scrollTop: 1000 }, 200 );
+	$('#scrollable_content').animate({scrollTop: 1000}, 200);
 
 	// Start recording when the button is pressed
-	$( '#voice_record_button' ).click( function () {
+	$('#voice_record_button').click(function () {
 		chunks = [];
 		navigator.mediaDevices
-			.getUserMedia( { audio: true } )
-			.then( function ( stream ) {
+			.getUserMedia({audio: true})
+			.then(function (stream) {
 				stream_ = stream;
-				mediaRecorder = new MediaRecorder( stream );
-				$( '#voice_record_button' ).addClass( 'inactive' );
-				$( '#voice_record_stop_button' ).addClass( 'active' );
-				mediaRecorder.ondataavailable = function ( e ) {
-					chunks.push( e.data );
+				mediaRecorder = new MediaRecorder(stream);
+				$('#voice_record_button').addClass('inactive');
+				$('#voice_record_stop_button').addClass('active');
+				mediaRecorder.ondataavailable = function (e) {
+					chunks.push(e.data);
 				};
 				mediaRecorder.start();
-			} )
-			.catch( function ( err ) {
-				console.log( 'The following error occurred: ' + err );
-				toastr.warning( 'Audio is not allowed' );
-			} );
+			})
+			.catch(function (err) {
+				console.log('The following error occurred: ' + err);
+				toastr.warning('Audio is not allowed');
+			});
 
-		$( '#voice_record_stop_button' ).click( function ( e ) {
+		$('#voice_record_stop_button').click(function (e) {
 			e.preventDefault();
-			$( '#voice_record_button' ).removeClass( 'inactive' );
-			$( '#voice_record_stop_button' ).removeClass( 'active' );
+			$('#voice_record_button').removeClass('inactive');
+			$('#voice_record_stop_button').removeClass('active');
 			mediaRecorder.onstop = function () {
-				var blob = new Blob( chunks, { type: 'audio/mp3' } );
+				var blob = new Blob(chunks, {type: 'audio/mp3'});
 
 				var formData = new FormData();
-				var fileOfBlob = new File( [ blob ], 'audio.mp3' );
-				formData.append( 'file', fileOfBlob );
+				var fileOfBlob = new File([blob], 'audio.mp3');
+				formData.append('file', fileOfBlob);
 
 				chunks = [];
 
-				$.ajax( {
+				$.ajax({
 					url: '/dashboard/user/openai/chat/transaudio',
 					type: 'POST',
 					data: formData,
 					contentType: false,
 					processData: false,
-					success: function ( response ) {
-						if ( response.length >= 4 ) {
-							$( '#prompt' ).val( response );
+					success: function (response) {
+						if (response.length >= 4) {
+							$('#prompt').val(response);
 						}
 					},
 					error: function () {
 						// Handle the error response
 					},
-				} );
+				});
 			};
 			mediaRecorder.stop();
 			stream_
 				.getTracks() // get all tracks from the MediaStream
-				.forEach( track => track.stop() ); // stop each of them
-		} );
-	} );
+				.forEach(track => track.stop()); // stop each of them
+		});
+	});
 
-	$( '#btn_add_new_prompt' ).on( 'click', function ( e ) {
-		prompt_title = $( '#new_prompt_title' ).val();
-		prompt = $( '#new_prompt' ).val();
+	$('#btn_add_new_prompt').on('click', function (e) {
+		prompt_title = $('#new_prompt_title').val();
+		prompt = $('#new_prompt').val();
 
-		if ( prompt_title.trim() == '' ) {
-			toastr.warning( 'Please input title' );
+		if (prompt_title.trim() == '') {
+			toastr.warning('Please input title');
 			return;
 		}
 
-		if ( prompt.trim() == '' ) {
-			toastr.warning( 'Please input prompt' );
+		if (prompt.trim() == '') {
+			toastr.warning('Please input prompt');
 			return;
 		}
 
-		$.ajax( {
+		$.ajax({
 			type: 'post',
 			url: '/dashboard/user/openai/chat/add-prompt',
 			data: {
 				title: prompt_title,
 				prompt: prompt,
 			},
-			success: function ( data ) {
+			success: function (data) {
 				promptsData = data;
-				updatePrompts( data );
-				$( '.custom__popover__back' ).addClass( 'hidden' );
-				$( '#custom__popover' ).removeClass( 'custom__popover__wrapper' );
+				updatePrompts(data);
+				$('.custom__popover__back').addClass('hidden');
+				$('#custom__popover').removeClass('custom__popover__wrapper');
 			},
-			error: function () { },
-		} );
-	} );
+			error: function () {
+			},
+		});
+	});
 
-	$( '#add_btn' ).on( 'click', function ( e ) {
-		$( '#custom__popover' ).addClass( 'custom__popover__wrapper' );
-		$( '.custom__popover__back' ).removeClass( 'hidden' );
+	$('#add_btn').on('click', function (e) {
+		$('#custom__popover').addClass('custom__popover__wrapper');
+		$('.custom__popover__back').removeClass('hidden');
 		e.stopPropagation();
-	} );
+	});
 
-	$( '.custom__popover__back' ).on( 'click', function () {
-		$( this ).addClass( 'hidden' );
-		$( '#custom__popover' ).removeClass( 'custom__popover__wrapper' );
-	} );
+	$('.custom__popover__back').on('click', function () {
+		$(this).addClass('hidden');
+		$('#custom__popover').removeClass('custom__popover__wrapper');
+	});
 
-	$( '#prompt_library' ).on( 'click', function ( e ) {
+	$('#prompt_library').on('click', function (e) {
 		e.preventDefault();
 
-		$( '#prompts' ).empty();
+		$('#prompts').empty();
 
-		$.ajax( {
+		$.ajax({
 			type: 'post',
 			url: '/dashboard/user/openai/chat/prompts',
-			success: function ( data ) {
+			success: function (data) {
 				filterType = 'all';
 				promptsData = data.promptData;
 				favData = data.favData;
-				updatePrompts( data.promptData );
-				$( '#modal' ).addClass( 'lqd-is-active' );
-				$( '.modal__back' ).removeClass( 'hidden' );
+				updatePrompts(data.promptData);
+				$('#modal').addClass('lqd-is-active');
+				$('.modal__back').removeClass('hidden');
 			},
-			error: function () { },
-		} );
+			error: function () {
+			},
+		});
 		e.stopPropagation();
-	} );
+	});
 
-	$( '.modal__back' ).on( 'click', function () {
-		$( this ).addClass( 'hidden' );
-		$( '#modal' ).removeClass( 'lqd-is-active' );
-	} );
+	$('.modal__back').on('click', function () {
+		$(this).addClass('hidden');
+		$('#modal').removeClass('lqd-is-active');
+	});
 
-	$( document ).on( 'click', '.prompt', function () {
-		const $promptInput = $( '#prompt' );
-		selectedPrompt = Number( $( this.querySelector( '.favbtn' ) ).attr( 'id' ) );
+	$(document).on('click', '.prompt', function () {
+		const $promptInput = $('#prompt');
+		selectedPrompt = Number($(this.querySelector('.favbtn')).attr('id'));
 		$promptInput.val(
-			promptsData.filter( item => item.id == selectedPrompt )[ 0 ].prompt,
+			promptsData.filter(item => item.id == selectedPrompt)[0].prompt,
 		);
-		$( '.modal__back' ).addClass( 'hidden' );
-		$( '#modal' ).removeClass( 'lqd-is-active' );
+		$('.modal__back').addClass('hidden');
+		$('#modal').removeClass('lqd-is-active');
 		selectedPrompt = -1;
-		$promptInput.css( 'height', '5px' );
-		$promptInput.css( 'height', $promptInput[ 0 ].scrollHeight + 'px' );
-	} );
+		$promptInput.css('height', '5px');
+		$promptInput.css('height', $promptInput[0].scrollHeight + 'px');
+	});
 
-	$( document ).on( 'click', '.filter_btn', function () {
-		$( '.filter_btn' ).removeClass( 'active' );
-		$( this ).addClass( 'active' );
-		filterType = $( this ).attr( 'filter' );
-		updatePrompts( promptsData );
-	} );
+	$(document).on('click', '.filter_btn', function () {
+		$('.filter_btn').removeClass('active');
+		$(this).addClass('active');
+		filterType = $(this).attr('filter');
+		updatePrompts(promptsData);
+	});
 
-	$( document ).on( 'click', '.favbtn', function ( e ) {
-		updateFav( Number( $( this ).attr( 'id' ) ) );
+	$(document).on('click', '.favbtn', function (e) {
+		updateFav(Number($(this).attr('id')));
 		e.stopPropagation();
-	} );
+	});
 
-	$( '#chat_add_image' ).click( function () {
-		$( '#selectImageInput' ).click();
-	} );
+	$('#chat_add_image').click(function () {
+		$('#selectImageInput').click();
+	});
 
-	$( '#selectImageInput' ).change( function () {
-		if ( this.files && this.files[ 0 ] ) {
-			for ( let i = 0; i < this.files.length; i++ ) {
-				let reader = new FileReader();
-				// Existing image handling code
-				reader.onload = function ( e ) {
-					var img = new Image();
-					img.src = e.target.result;
-					img.onload = function () {
-						var canvas = document.createElement( 'canvas' );
-						var ctx = canvas.getContext( '2d' );
-						canvas.height = ( img.height * 200 ) / img.width;
-						canvas.width = 200;
-						ctx.drawImage( img, 0, 0, canvas.width, canvas.height );
-						var base64 = canvas.toDataURL( 'image/png' );
-						addImagetoChat( base64 );
-					};
-				};
-				reader.readAsDataURL( this.files[ i ] );
-			}
+	$('#selectImageInput').change(function () {
+		this.files.forEach(file => {
+			let reader = new FileReader();
+
+			reader.onload = function (e) {
+				addFileToChat({data: e.target.result, name: file.name});
+			};
+
+			reader.readAsDataURL(file);
+		});
+
+		if (document.getElementById('mainupscale_src')) {
+			document.getElementById('mainupscale_src').style.display = 'none';
 		}
-		document.getElementById( 'mainupscale_src' ) &&
-			( document.getElementById( 'mainupscale_src' ).style.display = 'none' );
-	} );
+	});
 
-	$( '#upscale_src' ).change( function () {
-		if ( this.files && this.files[ 0 ] ) {
-			for ( let i = 0; i < this.files.length; i++ ) {
-				let reader = new FileReader();
+	$('#upscale_src').change(function () {
+		this.files.forEach(file => {
+			let reader = new FileReader();
 
-				reader.onload = function ( e ) {
-					addImagetoChat( e.target.result );
-					// $( "#selectImageInput" ).val( '' );
-				};
-				reader.readAsDataURL( this.files[ i ] );
-			}
+			reader.onload = function (e) {
+				addFileToChat({data: e.target.result, name: file.name});
+			};
+
+			reader.readAsDataURL(file);
+		});
+
+		if (document.getElementById('mainupscale_src')) {
+			document.getElementById('mainupscale_src').style.display = 'none';
 		}
-		document.getElementById( 'mainupscale_src' ) &&
-			( document.getElementById( 'mainupscale_src' ).style.display = 'none' );
-	} );
+	});
 
 	document
-		.querySelectorAll( '.lqd-chat-ai-bubble .chat-content' )
-		.forEach( el => {
-			el.classList.remove( '!whitespace-pre-wrap', 'whitespace-pre-wrap' );
+		.querySelectorAll('.lqd-chat-ai-bubble .chat-content')
+		.forEach(el => {
+			el.classList.remove('!whitespace-pre-wrap', 'whitespace-pre-wrap');
 			el.style.whiteSpace = 'normal';
 
-			if ( el.classList.contains('is-html') ) {
+			if (el.classList.contains('is-html')) {
 				const turndownService = new TurndownService();
 				const markdown = turndownService.turndown(el);
 
 				el.innerHTML = markdown;
 			}
 
-			el.innerHTML = formatString( el.innerHTML );
+			el.innerHTML = formatString(el.innerHTML);
 			throttledRefreshFsLightbox();
-		} );
+		});
 }
 
-async function saveResponseAsync( input, response, chat_id, imagePath, pdfName, pdfPath, outputImage = '', model = '', ) {
+async function saveResponseAsync(input, response, chat_id, imagePath, pdfName, pdfPath, outputImage = '', model = '',) {
 	var formData = new FormData();
 
-	if ( !response ) {
+	if (!response) {
 		response = '';
 	}
 
-	formData.append( 'chat_id', chat_id );
-	formData.append( 'input', input );
-	formData.append( 'response', response );
-	formData.append( 'images', imagePath );
-	formData.append( 'pdfName', pdfName );
-	formData.append( 'pdfPath', pdfPath );
-	formData.append( 'outputImage', outputImage );
-	formData.append( 'model', model );
+	formData.append('chat_id', chat_id);
+	formData.append('input', input);
+	formData.append('response', response);
+	formData.append('images', imagePath);
+	formData.append('pdfName', pdfName);
+	formData.append('pdfPath', pdfPath);
+	formData.append('outputImage', outputImage);
+	formData.append('model', model);
 
 	try {
-		const result = await jQuery.ajax( {
+		const result = await jQuery.ajax({
 			url: '/dashboard/user/openai/chat/low/chat_save',
 			type: 'POST',
 			headers: {
@@ -1641,17 +1747,17 @@ async function saveResponseAsync( input, response, chat_id, imagePath, pdfName, 
 			data: formData,
 			contentType: false,
 			processData: false,
-		} );
-		if ( result.status === 'error' ) {
-			toastr.error( result.message, 'Error' );
+		});
+		if (result.status === 'error') {
+			toastr.error(result.message, 'Error');
 		}
 
 		return result;
-	} catch ( error ) {
-		if ( error.responseJSON && error.responseJSON.message ) {
-			toastr.error( error.responseJSON.message, 'Error' );
+	} catch (error) {
+		if (error.responseJSON && error.responseJSON.message) {
+			toastr.error(error.responseJSON.message, 'Error');
 		} else {
-			toastr.error( 'An unexpected error occurred. Please try again.', 'Error' );
+			toastr.error('An unexpected error occurred. Please try again.', 'Error');
 		}
 	}
 	return false;
@@ -1663,95 +1769,95 @@ DO NOT FORGET TO ADD THE CHANGES TO BOTH FUNCTION makeDocumentReadyAgain and the
 
 */
 function makeDocumentReadyAgain() {
-	const chatsWrapper = document.querySelector( '.chats-wrap' );
-	const chatBubbles = chatsWrapper?.querySelectorAll( '.lqd-chat-ai-bubble, .lqd-chat-user-bubble' );
+	const chatsWrapper = document.querySelector('.chats-wrap');
+	const chatBubbles = chatsWrapper?.querySelectorAll('.lqd-chat-ai-bubble, .lqd-chat-user-bubble');
 
-	_.defer( () => {
+	_.defer(() => {
 		setChatsCssVars();
 		updateChatButtons();
-	} );
+	});
 
-	$( document ).ready( function () {
+	$(document).ready(function () {
 		'use strict';
 
-		const chat_id = $( '#chat_id' ).val();
-		$( `#chat_${ chat_id }` )
-			.addClass( 'active' )
+		const chat_id = $('#chat_id').val();
+		$(`#chat_${chat_id}`)
+			.addClass('active')
 			.siblings()
-			.removeClass( 'active' );
+			.removeClass('active');
 
 		scrollConversationArea();
 
 		handlePromptHistoryNavigate();
-	} );
+	});
 
-	if ( chatBubbles ) {
-		chatsWrapper.classList.toggle( 'conversation-not-started', chatBubbles.length <= 1 );
-		chatsWrapper.classList.toggle( 'conversation-started', chatBubbles.length > 1 );
+	if (chatBubbles) {
+		chatsWrapper.classList.toggle('conversation-not-started', chatBubbles.length <= 1);
+		chatsWrapper.classList.toggle('conversation-started', chatBubbles.length > 1);
 	}
 }
 
-function handlePromptHistory( prompt ) {
-	const promptHistory = localStorage.getItem( 'promptHistory' );
+function handlePromptHistory(prompt) {
+	const promptHistory = localStorage.getItem('promptHistory');
 
-	if ( !promptHistory ) {
-		return localStorage.setItem( 'promptHistory', JSON.stringify( [ prompt ] ) );
+	if (!promptHistory) {
+		return localStorage.setItem('promptHistory', JSON.stringify([prompt]));
 	}
 
-	const promptHistoryArray = JSON.parse( promptHistory );
+	const promptHistoryArray = JSON.parse(promptHistory);
 
-	if ( promptHistoryArray.includes( prompt ) ) {
-		promptHistoryArray.splice( promptHistoryArray.indexOf( prompt ), 1 );
+	if (promptHistoryArray.includes(prompt)) {
+		promptHistoryArray.splice(promptHistoryArray.indexOf(prompt), 1);
 	}
 
-	promptHistoryArray.push( prompt );
+	promptHistoryArray.push(prompt);
 
-	localStorage.setItem( 'promptHistory', JSON.stringify( promptHistoryArray ) );
+	localStorage.setItem('promptHistory', JSON.stringify(promptHistoryArray));
 }
 
 function removePromptHistoryHandler() {
-	const promptInput = document.querySelector( '.lqd-chat-form #prompt' );
+	const promptInput = document.querySelector('.lqd-chat-form #prompt');
 
-	promptInput?.removeEventListener( 'keydown', onPromptInputKeyUpDown );
+	promptInput?.removeEventListener('keydown', onPromptInputKeyUpDown);
 }
 
 function handlePromptHistoryNavigate() {
-	const promptInput = document.querySelector( '.lqd-chat-form #prompt' );
+	const promptInput = document.querySelector('.lqd-chat-form #prompt');
 
-	if ( !promptInput ) return;
+	if (!promptInput) return;
 
-	promptInput.addEventListener( 'keydown', onPromptInputKeyUpDown );
+	promptInput.addEventListener('keydown', onPromptInputKeyUpDown);
 }
 
-function onPromptInputKeyUpDown( e ) {
+function onPromptInputKeyUpDown(e) {
 	const promptInput = e.target;
-	const promptHistory = localStorage.getItem( 'promptHistory' ) || '[]';
-	const promptHistoryArray = JSON.parse( promptHistory );
+	const promptHistory = localStorage.getItem('promptHistory') || '[]';
+	const promptHistoryArray = JSON.parse(promptHistory);
 
-	if ( promptHistoryArray.length === 0 ) return;
+	if (promptHistoryArray.length === 0) return;
 
-	if ( promptInput.value !== '' && !navigatingInChatsHistory ) {
+	if (promptInput.value !== '' && !navigatingInChatsHistory) {
 		return;
 	}
 
 	const arrowsPressed = e.key === 'ArrowUp' || e.key === 'ArrowDown';
 
-	if ( e.key === 'ArrowUp' ) {
+	if (e.key === 'ArrowUp') {
 		navigatingInChatsHistory = true;
 
-		if ( selectedHistoryPrompt === -1 ) {
+		if (selectedHistoryPrompt === -1) {
 			selectedHistoryPrompt = promptHistoryArray.length - 1;
 		} else {
-			selectedHistoryPrompt = Math.max( 0, selectedHistoryPrompt - 1 );
+			selectedHistoryPrompt = Math.max(0, selectedHistoryPrompt - 1);
 		}
 
-		promptInput.value = promptHistoryArray[ selectedHistoryPrompt ];
+		promptInput.value = promptHistoryArray[selectedHistoryPrompt];
 	}
 
-	if ( e.key === 'ArrowDown' ) {
+	if (e.key === 'ArrowDown') {
 		navigatingInChatsHistory = true;
 
-		if ( selectedHistoryPrompt === -1 ) {
+		if (selectedHistoryPrompt === -1) {
 			selectedHistoryPrompt = 0;
 		} else {
 			selectedHistoryPrompt = Math.min(
@@ -1760,10 +1866,10 @@ function onPromptInputKeyUpDown( e ) {
 			);
 		}
 
-		promptInput.value = promptHistoryArray[ selectedHistoryPrompt ];
+		promptInput.value = promptHistoryArray[selectedHistoryPrompt];
 	}
 
-	if ( !arrowsPressed ) {
+	if (!arrowsPressed) {
 		navigatingInChatsHistory = false;
 		selectedHistoryPrompt = -1;
 	}
@@ -1771,38 +1877,38 @@ function onPromptInputKeyUpDown( e ) {
 
 handlePromptHistoryNavigate();
 
-function escapeHtml( html ) {
-	var text = document.createTextNode( html );
-	var div = document.createElement( 'div' );
-	div.appendChild( text );
+function escapeHtml(html) {
+	var text = document.createTextNode(html);
+	var div = document.createElement('div');
+	div.appendChild(text);
 	return div.innerHTML;
 }
 
-function openChatAreaContainer( chat_id, website_url = null ) {
+function openChatAreaContainer(chat_id, website_url = null) {
 
 	chatid = chat_id;
-	$( `#chat_${ chat_id }` ).addClass( 'active' ).siblings().removeClass( 'active' );
+	$(`#chat_${chat_id}`).addClass('active').siblings().removeClass('active');
 
 	var formData = new FormData();
 
-	formData.append( 'chat_id', chat_id );
+	formData.append('chat_id', chat_id);
 
-	if ( website_url != null && website_url != '' ) {
-		formData.append( 'website_url', website_url );
+	if (website_url != null && website_url != '') {
+		formData.append('website_url', website_url);
 	}
 
-	let openChatAreaContainerUrl = $( '#openChatAreaContainerUrl' ).val();
+	let openChatAreaContainerUrl = $('#openChatAreaContainerUrl').val();
 
-	$.ajax( {
+	$.ajax({
 		type: 'post',
 		url: openChatAreaContainerUrl,
 		data: formData,
 		contentType: false,
 		processData: false,
-		success: function ( data ) {
+		success: function (data) {
 			removePromptHistoryHandler();
 
-			$( '#load_chat_area_container > .lqd-card-body' ).html( data.html );
+			$('#load_chat_area_container > .lqd-card-body').html(data.html);
 
 			initChat();
 
@@ -1813,78 +1919,79 @@ function openChatAreaContainer( chat_id, website_url = null ) {
 				},
 			];
 
-			data.lastThreeMessage.forEach( message => {
-				messages.push( {
+			data.lastThreeMessage.forEach(message => {
+				messages.push({
 					role: 'user',
 					content: message.input,
-				} );
-				messages.push( {
+				});
+				messages.push({
 					role: 'assistant',
 					content: message.output,
-				} );
-			} );
+				});
+			});
 
 			makeDocumentReadyAgain();
-			if ( data.lastThreeMessage != '' ) {
-				document.getElementById( 'mainupscale_src' ) &&
-					( document.getElementById( 'mainupscale_src' ).style.display =
-						'none' );
-				document.getElementById( 'sugg' ) &&
-					( document.getElementById( 'sugg' ).style.display = 'none' );
+			if (data.lastThreeMessage != '') {
+				if (document.getElementById('mainupscale_src')) {
+					document.getElementById('mainupscale_src').style.display = 'none';
+				}
+				if (document.getElementById('sugg')) {
+					document.getElementById('sugg').style.display = 'none';
+				}
 			}
-			setTimeout( function () {
+			setTimeout(function () {
 				scrollConversationArea();
-			}, 750 );
+			}, 750);
 		},
-		error: function ( data ) {
+		error: function (data) {
 			var err = data.responseJSON.errors;
-			if ( err ) {
-				$.each( err, function ( index, value ) {
-					toastr.error( value );
-				} );
+			if (err) {
+				$.each(err, function (index, value) {
+					toastr.error(value);
+				});
 			} else {
-				toastr.error( data.responseJSON.message );
+				toastr.error(data.responseJSON.message);
 			}
 		},
-	} );
+	});
 
 	return false;
 }
 
-function startNewChat( category_id, local, website_url = null ) {
+function startNewChat(category_id, local, website_url = null) {
 	const formData = new FormData();
-	const chatsWrapper = document.querySelector( '.chats-wrap' );
-	formData.append( 'category_id', category_id );
+	const chatsWrapper = document.querySelector('.chats-wrap');
+	formData.append('category_id', category_id);
 
 	// let website_url = $("#website_url")?.val();
-	let createChatUrl = $( '#createChatUrl' )?.val();
+	let createChatUrl = $('#createChatUrl')?.val();
 
-	if ( website_url != null && website_url != '' ) {
-		formData.append( 'website_url', website_url );
+	if (website_url != null && website_url != '') {
+		formData.append('website_url', website_url);
 	}
 
 	let link = '/dashboard/user/openai/chat/start-new-chat';
 
-	if ( createChatUrl ) {
+	if (createChatUrl) {
 		link = createChatUrl;
 	}
 
-	return $.ajax( {
+	return $.ajax({
 		type: 'post',
 		url: link,
 		data: formData,
 		contentType: false,
 		processData: false,
-		success: function ( data ) {
+		success: function (data) {
 			removePromptHistoryHandler();
 
 			chatid = data.chat.id;
 
-			chatsWrapper.classList.remove( 'conversation-started' );
-			chatsWrapper.classList.add( 'conversation-not-started' );
+			chatsWrapper.classList.remove('conversation-started');
+			chatsWrapper.classList.add('conversation-not-started');
 
-			$( '#load_chat_area_container > .lqd-card-body' ).html( data.html );
-			$( '#chat_sidebar_container' ).html( data.html2 );
+			$('#load_chat_area_container > .lqd-card-body').html(data.html);
+			$('#chat_sidebar_container').html(data.html2);
 
 			initChat();
 
@@ -1897,85 +2004,85 @@ function startNewChat( category_id, local, website_url = null ) {
 
 			makeDocumentReadyAgain();
 
-			setTimeout( function () {
+			setTimeout(function () {
 				scrollConversationArea();
-			}, 750 );
+			}, 750);
 		},
-		error: function ( data ) {
+		error: function (data) {
 			var err = data.responseJSON.errors;
-			if ( err ) {
-				$.each( err, function ( index, value ) {
-					toastr.error( value );
-				} );
+			if (err) {
+				$.each(err, function (index, value) {
+					toastr.error(value);
+				});
 			} else {
-				toastr.error( data.responseJSON.message );
+				toastr.error(data.responseJSON.message);
 			}
 		},
-	} );
+	});
 }
 
-function deleteAllConv( category_id ) {
-	if ( confirm( 'Are you sure you want to remove all chats?' ) ) {
-		if ( category_id == 0 ) {
-			toastr.error( 'Please select a category' );
+function deleteAllConv(category_id) {
+	if (confirm('Are you sure you want to remove all chats?')) {
+		if (category_id == 0) {
+			toastr.error('Please select a category');
 			return false;
 		}
 
 		var formData = new FormData();
-		formData.append( 'category_id', category_id );
+		formData.append('category_id', category_id);
 		let link = '/dashboard/user/openai/chat/clear-chats';
-		$.ajax( {
+		$.ajax({
 			type: 'post',
 			url: link,
 			data: formData,
 			contentType: false,
 			processData: false,
-			success: function ( data ) {
+			success: function (data) {
 				// refresh page
 				location.reload();
 			},
-			error: function ( data ) {
+			error: function (data) {
 				var err = data.responseJSON.errors;
-				if ( err ) {
-					$.each( err, function ( index, value ) {
-						toastr.error( value );
-					} );
+				if (err) {
+					$.each(err, function (index, value) {
+						toastr.error(value);
+					});
 				} else {
-					toastr.error( data.responseJSON.message );
+					toastr.error(data.responseJSON.message);
 				}
 			},
-		} );
+		});
 		return false;
 	}
 }
 
-function startNewDocChat( file, type ) {
+function startNewDocChat(file, type) {
 	'use strict';
 
-	let category_id = $( '#chat_search_word' ).data( 'category-id' );
+	let category_id = $('#chat_search_word').data('category-id');
 
 	var formData = new FormData();
-	formData.append( 'category_id', category_id );
-	formData.append( 'doc', pdf );
-	formData.append( 'type', type );
+	formData.append('category_id', category_id);
+	formData.append('doc', pdf);
+	formData.append('type', type);
 
-	Alpine.store( 'appLoadingIndicator' ).show();
-	$( '.lqd-upload-doc-trigger' ).attr( 'disabled', true );
+	Alpine.store('appLoadingIndicator').show();
+	$('.lqd-upload-doc-trigger').attr('disabled', true);
 
-	$.ajax( {
+	$.ajax({
 		type: 'post',
 		url: '/dashboard/user/openai/chat/start-new-doc-chat',
 		data: formData,
 		contentType: false,
 		processData: false,
-		success: function ( data ) {
+		success: function (data) {
 			removePromptHistoryHandler();
-			Alpine.store( 'appLoadingIndicator' ).hide();
-			$( '.lqd-upload-doc-trigger' ).attr( 'disabled', false );
-			$( '#selectDocInput' ).val( '' );
+			Alpine.store('appLoadingIndicator').hide();
+			$('.lqd-upload-doc-trigger').attr('disabled', false);
+			$('#selectDocInput').val('');
 			chatid = data.chat.id;
-			$( '#load_chat_area_container > .lqd-card-body' ).html( data.html );
-			$( '#chat_sidebar_container' ).html( data.html2 );
+			$('#load_chat_area_container > .lqd-card-body').html(data.html);
+			$('#chat_sidebar_container').html(data.html2);
 
 			initChat();
 			messages = [
@@ -1985,60 +2092,60 @@ function startNewDocChat( file, type ) {
 				},
 			];
 			makeDocumentReadyAgain();
-			setTimeout( function () {
-				$( '.conversation-area' )
+			setTimeout(function () {
+				$('.conversation-area')
 					.stop()
 					.animate(
-						{ scrollTop: $( '.conversation-area' ).outerHeight() },
+						{scrollTop: $('.conversation-area').outerHeight()},
 						200,
 					);
-			}, 750 );
+			}, 750);
 
-			toastr.success( magicai_localize.analyze_file_finish );
+			toastr.success(magicai_localize.analyze_file_finish);
 		},
-		error: function ( data ) {
-			Alpine.store( 'appLoadingIndicator' ).hide();
-			$( '.lqd-upload-doc-trigger' ).attr( 'disabled', false );
-			$( '#selectDocInput' ).val( '' );
+		error: function (data) {
+			Alpine.store('appLoadingIndicator').hide();
+			$('.lqd-upload-doc-trigger').attr('disabled', false);
+			$('#selectDocInput').val('');
 			var err = data.responseJSON.errors;
-			if ( err ) {
-				$.each( err, function ( index, value ) {
-					toastr.error( value );
-				} );
+			if (err) {
+				$.each(err, function (index, value) {
+					toastr.error(value);
+				});
 			} else {
-				toastr.error( data.responseJSON.message );
+				toastr.error(data.responseJSON.message);
 			}
 		},
-	} );
+	});
 	return false;
 }
 
 function searchChatFunction() {
 	'use strict';
 
-	const categoryId = $( '#chat_search_word' ).data( 'category-id' );
+	const categoryId = $('#chat_search_word').data('category-id');
 	const formData = new FormData();
 	formData.append(
 		'_token',
-		document.querySelector( 'input[name=_token]' )?.value,
+		document.querySelector('input[name=_token]')?.value,
 	);
 	formData.append(
 		'search_word',
-		document.getElementById( 'chat_search_word' ).value,
+		document.getElementById('chat_search_word').value,
 	);
-	formData.append( 'category_id', categoryId );
+	formData.append('category_id', categoryId);
 
-	$.ajax( {
+	$.ajax({
 		type: 'POST',
 		url: '/dashboard/user/openai/chat/search',
 		data: formData,
 		contentType: false,
 		processData: false,
-		success: function ( result ) {
-			$( '#chat_sidebar_container' ).html( result.html );
-			$( document ).trigger( 'ready' );
+		success: function (result) {
+			$('#chat_sidebar_container').html(result.html);
+			$(document).trigger('ready');
 		},
-	} );
+	});
 }
 
 /**
@@ -2046,35 +2153,35 @@ function searchChatFunction() {
  * @param {'end' | number} opts.y
  * @param {boolean} opts.smooth
  */
-function scrollConversationArea( opts = {} ) {
+function scrollConversationArea(opts = {}) {
 	const options = {
 		y: 'end',
 		smooth: false,
 		...opts,
 	};
-	const el = document.querySelector( '.conversation-area' );
+	const el = document.querySelector('.conversation-area');
 
-	if ( !el ) return;
+	if (!el) return;
 
 	const y = options.y === 'end' ? el.scrollHeight + 200 : options.y;
 
-	el.scrollTo( {
-		top: Math.round( y ),
+	el.scrollTo({
+		top: Math.round(y),
 		left: 0,
 		behavior: options.smooth ? 'smooth' : 'auto',
-	} );
+	});
 }
 
-function saveResponse( input, response, chat_id, imagePath = '', pdfName = '', pdfPath = '', outputImage = '' ) {
+function saveResponse(input, response, chat_id, imagePath = '', pdfName = '', pdfPath = '', outputImage = '') {
 	var formData = new FormData();
-	formData.append( 'chat_id', chat_id );
-	formData.append( 'input', input );
-	formData.append( 'response', response );
-	formData.append( 'images', imagePath );
-	formData.append( 'pdfName', pdfName );
-	formData.append( 'pdfPath', pdfPath );
-	formData.append( 'outputImage', outputImage );
-	jQuery.ajax( {
+	formData.append('chat_id', chat_id);
+	formData.append('input', input);
+	formData.append('response', response);
+	formData.append('images', imagePath);
+	formData.append('pdfName', pdfName);
+	formData.append('pdfPath', pdfPath);
+	formData.append('outputImage', outputImage);
+	jQuery.ajax({
 		url: '/dashboard/user/openai/chat/low/chat_save',
 		type: 'POST',
 		headers: {
@@ -2083,69 +2190,61 @@ function saveResponse( input, response, chat_id, imagePath = '', pdfName = '', p
 		data: formData,
 		contentType: false,
 		processData: false,
-	} );
+	});
 	return false;
 }
 
-function addText( text ) {
-	var promptElement = document.getElementById( 'prompt' );
+function addText(text) {
+	var promptElement = document.getElementById('prompt');
 	var currentText = promptElement.value;
 	var newText = currentText + text;
 	promptElement.value = newText;
 }
 
-function dropHandler( ev, id ) {
-	// Prevent default behavior (Prevent file from being opened)
-
+function dropHandler(ev, id) {
 	ev.preventDefault();
-	const input = document.querySelector( `#${ id }` );
+	const input = document.querySelector(`#${id}`);
 	const fileNameEl =
-		input?.previousElementSibling?.querySelector( '.file-name' );
+		input?.previousElementSibling?.querySelector('.file-name');
 
-	if ( !input ) return;
+	if (!input) return;
 
 	input.files = ev.dataTransfer.files;
 
-	if ( fileNameEl ) {
-		fileNameEl.innerText = ev.dataTransfer.files[ 0 ].name;
+	if (fileNameEl) {
+		fileNameEl.innerText = ev.dataTransfer.files[0].name;
 	}
 
-	for ( let i = 0; i < ev.dataTransfer.files.length; i++ ) {
+	ev.dataTransfer.files.forEach(file => {
 		let reader = new FileReader();
-		// Existing image handling code
-		reader.onload = function ( e ) {
-			var img = new Image();
-			img.src = e.target.result;
-			img.onload = function () {
-				var canvas = document.createElement( 'canvas' );
-				var ctx = canvas.getContext( '2d' );
-				canvas.height = ( img.height * 200 ) / img.width;
-				canvas.width = 200;
-				ctx.drawImage( img, 0, 0, canvas.width, canvas.height );
-				var base64 = canvas.toDataURL( 'image/png' );
-				addImagetoChat( base64 );
-			};
+
+		reader.onload = function (e) {
+			addFileToChat({data: e.target.result, name: file.name});
 		};
-		reader.readAsDataURL( input.files[ i ] );
+
+		reader.readAsDataURL(file);
+	});
+
+	if (document.getElementById('mainupscale_src')) {
+		document.getElementById('mainupscale_src').style.display = 'none';
 	}
-	document.getElementById( 'mainupscale_src' ).style.display = 'none';
 }
 
-function dragOverHandler( ev ) {
+function dragOverHandler(ev) {
 	// Prevent default behavior (Prevent file from being opened)
 	ev.preventDefault();
 }
 
-function handleFileSelect( id ) {
-	$( '#' + id )
+function handleFileSelect(id) {
+	$('#' + id)
 		.prev()
-		.find( '.file-name' )
-		.text( $( '#' + id )[ 0 ].files[ 0 ].name );
+		.find('.file-name')
+		.text($('#' + id)[0].files[0].name);
 }
 
 function exportAsPdf() {
 	var win = window.open(
-		`/dashboard/user/openai/chat/generate-pdf?id=${ chatid }`,
+		`/dashboard/user/openai/chat/generate-pdf?id=${chatid}`,
 		'_blank',
 	);
 	win.focus();
@@ -2153,7 +2252,7 @@ function exportAsPdf() {
 
 function exportAsWord() {
 	var win = window.open(
-		`/dashboard/user/openai/chat/generate-word?id=${ chatid }`,
+		`/dashboard/user/openai/chat/generate-word?id=${chatid}`,
 		'_blank',
 	);
 	win.focus();
@@ -2161,335 +2260,336 @@ function exportAsWord() {
 
 function exportAsTxt() {
 	var win = window.open(
-		`/dashboard/user/openai/chat/generate-txt?id=${ chatid }`,
+		`/dashboard/user/openai/chat/generate-txt?id=${chatid}`,
 		'_blank',
 	);
 	win.focus();
 }
 
-$( document ).ready( function () {
+$(document).ready(function () {
 	'use strict';
 
 	initChat();
 
 	scrollConversationArea();
 
-	_.defer( updateChatButtons );
+	_.defer(updateChatButtons);
 
-	function saveChatNewTitle( chatId, newTitle ) {
+	function saveChatNewTitle(chatId, newTitle) {
 		var formData = new FormData();
-		formData.append( 'chat_id', chatId );
-		formData.append( 'title', newTitle );
+		formData.append('chat_id', chatId);
+		formData.append('title', newTitle);
 
-		$.ajax( {
+		$.ajax({
 			type: 'post',
 			url: '/dashboard/user/openai/chat/rename-chat',
 			data: formData,
 			contentType: false,
 			processData: false,
-		} );
+		});
 		return false;
 	}
 
-	function deleteChatItem( chatId, chatTitle ) {
-		if ( confirm( `Are you sure you want to remove ${ chatTitle }?` ) ) {
+	function deleteChatItem(chatId, chatTitle) {
+		if (confirm(`Are you sure you want to remove ${chatTitle}?`)) {
 			var formData = new FormData();
-			formData.append( 'chat_id', chatId );
+			formData.append('chat_id', chatId);
 
-			const chatTrigger = $( `#${ chatId }` );
-			const chatIsActive = chatTrigger.hasClass( 'active' );
-			let nextChatToActivate = chatTrigger.prevAll( ':visible' ).first();
-			const chatsContainer = document.querySelector( '.chats-container' );
+			const chatTrigger = $(`#${chatId}`);
+			const chatIsActive = chatTrigger.hasClass('active');
+			let nextChatToActivate = chatTrigger.prevAll(':visible').first();
+			const chatsContainer = document.querySelector('.chats-container');
 
-			if ( nextChatToActivate.length === 0 ) {
-				nextChatToActivate = chatTrigger.nextAll( ':visible' ).first();
+			if (nextChatToActivate.length === 0) {
+				nextChatToActivate = chatTrigger.nextAll(':visible').first();
 			}
 
-			$.ajax( {
+			$.ajax({
 				type: 'post',
 				url: '/dashboard/user/openai/chat/delete-chat',
 				data: formData,
 				contentType: false,
 				processData: false,
-				success: function ( data ) {
+				success: function (data) {
 					//Remove chat li
 					chatTrigger.hide();
-					if ( chatIsActive ) {
-						if ( chatsContainer ) {
+					if (chatIsActive) {
+						if (chatsContainer) {
 							chatsContainer.innerHTML = '';
 						}
 						nextChatToActivate
-							.children( '.chat-list-item-trigger' )
+							.children('.chat-list-item-trigger')
 							.click();
 					}
 					toastr.success(
 						magicai_localize.conversation_deleted_successfully,
 					);
 				},
-				error: function ( data ) {
+				error: function (data) {
 					var err = data.responseJSON.errors;
-					if ( err ) {
-						$.each( err, function ( index, value ) {
-							toastr.error( value );
-						} );
+					if (err) {
+						$.each(err, function (index, value) {
+							toastr.error(value);
+						});
 					} else {
-						toastr.error( data.responseJSON.message );
+						toastr.error(data.responseJSON.message);
 					}
 				},
-			} );
+			});
 			return false;
 		}
 	}
 
-	$( '#chat_sidebar_container' ).on( 'click', '.chat-item-delete', ev => {
+	$('#chat_sidebar_container').on('click', '.chat-item-delete', ev => {
 		const button = ev.currentTarget;
-		const parent = button.closest( 'li' );
-		const chatId = parent.getAttribute( 'id' );
-		const chatTitle = parent.querySelector( '.chat-item-title' ).innerText;
-		deleteChatItem( chatId, chatTitle );
-	} );
+		const parent = button.closest('li');
+		const chatId = parent.getAttribute('id');
+		const chatTitle = parent.querySelector('.chat-item-title').innerText;
+		deleteChatItem(chatId, chatTitle);
+	});
 
-	$( '#chat_sidebar_container' ).on( 'click', '.chat-item-update-title', ev => {
+	$('#chat_sidebar_container').on('click', '.chat-item-update-title', ev => {
 		const button = ev.currentTarget;
-		const parent = button.closest( '.chat-list-item' );
-		const title = parent.querySelector( '.chat-item-title' );
-		const chatId = parent.getAttribute( 'id' );
+		const parent = button.closest('.chat-list-item');
+		const title = parent.querySelector('.chat-item-title');
+		const chatId = parent.getAttribute('id');
 		const currentText = title.innerText;
 
-		function setEditMode( mode ) {
-			if ( mode === 'editStart' ) {
-				parent.classList.add( 'edit-mode' );
+		function setEditMode(mode) {
+			if (mode === 'editStart') {
+				parent.classList.add('edit-mode');
 
-				title.setAttribute( 'data-current-text', currentText );
-				title.setAttribute( 'contentEditable', true );
+				title.setAttribute('data-current-text', currentText);
+				title.setAttribute('contentEditable', true);
 				title.focus();
-				window.getSelection().selectAllChildren( title );
-			} else if ( mode === 'editEnd' ) {
-				parent.classList.remove( 'edit-mode' );
+				window.getSelection().selectAllChildren(title);
+			} else if (mode === 'editEnd') {
+				parent.classList.remove('edit-mode');
 
-				title.removeAttribute( 'contentEditable' );
-				title.removeAttribute( 'data-current-text' );
+				title.removeAttribute('contentEditable');
+				title.removeAttribute('data-current-text');
 			}
 		}
 
-		function keydownHandler( ev ) {
-			const { key } = ev;
+		function keydownHandler(ev) {
+			const {key} = ev;
 			const escapePressed = key === 'Escape';
 			const enterPressed = key === 'Enter';
 
-			if ( !escapePressed && !enterPressed ) return;
+			if (!escapePressed && !enterPressed) return;
 
 			ev.preventDefault();
 
-			if ( escapePressed ) {
+			if (escapePressed) {
 				title.innerText = currentText;
 			}
 
-			if ( enterPressed ) {
-				saveChatNewTitle( chatId, title.innerText );
+			if (enterPressed) {
+				saveChatNewTitle(chatId, title.innerText);
 			}
 
-			setEditMode( 'editEnd' );
-			document.removeEventListener( 'keydown', keydownHandler );
+			setEditMode('editEnd');
+			document.removeEventListener('keydown', keydownHandler);
 		}
 
 		// if alreay editting then turn the edit button to a save button
-		if ( title.hasAttribute( 'contentEditable' ) ) {
-			setEditMode( 'editEnd' );
-			document.removeEventListener( 'keydown', keydownHandler );
-			return saveChatNewTitle( chatId, title.innerText );
+		if (title.hasAttribute('contentEditable')) {
+			setEditMode('editEnd');
+			document.removeEventListener('keydown', keydownHandler);
+			return saveChatNewTitle(chatId, title.innerText);
 		}
 
-		$( '.chat-list-ul .edit-mode' ).each( ( i, el ) => {
-			const title = el.querySelector( '.chat-item-title' );
-			title.innerText = title.getAttribute( 'data-current-text' );
-			title.removeAttribute( 'data-current-text' );
-			title.removeAttribute( 'contentEditable' );
-			el.classList.remove( 'edit-mode' );
-		} );
+		$('.chat-list-ul .edit-mode').each((i, el) => {
+			const title = el.querySelector('.chat-item-title');
+			title.innerText = title.getAttribute('data-current-text');
+			title.removeAttribute('data-current-text');
+			title.removeAttribute('contentEditable');
+			el.classList.remove('edit-mode');
+		});
 
-		setEditMode( 'editStart' );
+		setEditMode('editStart');
 
-		document.addEventListener( 'keydown', keydownHandler );
+		document.addEventListener('keydown', keydownHandler);
 	});
 
-	$( '#chat_sidebar_container' ).on( 'click', '.chat-item-pin', ev => {
+	$('#chat_sidebar_container').on('click', '.chat-item-pin', ev => {
 		const button = ev.currentTarget;
-		const parent = button.closest( '.chat-list-item' );
-		const chatId = parent.getAttribute( 'id' );
-		const isPinned = parent.classList.contains( 'pin-mode' );
+		const parent = button.closest('.chat-list-item');
+		const chatId = parent.getAttribute('id');
+		const isPinned = parent.classList.contains('pin-mode');
 
 		function togglePinMode() {
-			parent.classList.toggle( 'pin-mode' );
-			const pinIcon = button.querySelector( '.tabler-pin' );
-			const pinnedIcon = button.querySelector( '.tabler-pinned' );
-			if ( pinIcon && pinnedIcon ) {
-				pinIcon.classList.toggle( 'hidden' );
-				pinnedIcon.classList.toggle( 'hidden' );
+			parent.classList.toggle('pin-mode');
+			const pinIcon = button.querySelector('.tabler-pin');
+			const pinnedIcon = button.querySelector('.tabler-pinned');
+			if (pinIcon && pinnedIcon) {
+				pinIcon.classList.toggle('hidden');
+				pinnedIcon.classList.toggle('hidden');
 			}
 		}
+
 		togglePinMode();
 
-		$.ajax( {
+		$.ajax({
 			type: 'post',
 			url: '/dashboard/user/openai/chat/pin-conversation',
-			data: JSON.stringify( { pinned: !isPinned, chat_id: chatId } ),
+			data: JSON.stringify({pinned: !isPinned, chat_id: chatId}),
 			contentType: 'application/json',
-			success: function ( data ) {
-				toastr.success( isPinned ? magicai_localize.conversation_unpinned : magicai_localize.conversation_pinned );
+			success: function (data) {
+				toastr.success(isPinned ? magicai_localize.conversation_unpinned : magicai_localize.conversation_pinned);
 			},
-			error: ( xhr, status, error ) => {
-				console.error( 'Error updating pin status:', error );
+			error: (xhr, status, error) => {
+				console.error('Error updating pin status:', error);
 				togglePinMode();
-				toastr.error( magicai_localize.conversation_pin_error );
+				toastr.error(magicai_localize.conversation_pin_error);
 			},
-		} );
+		});
 	});
 
-	$( '#chat_search_word' ).on( 'keyup', function () {
+	$('#chat_search_word').on('keyup', function () {
 		return searchChatFunction();
-	} );
+	});
 
-	$( 'body' ).on( 'input', '#prompt', ev => {
+	$('body').on('input', '#prompt', ev => {
 		const el = ev.target;
 		el.style.height = '5px';
 		el.style.height = el.scrollHeight + 'px';
-		const recordTrigger = $( '.lqd-chat-record-trigger' );
-		const chatsWrapper = $( '.chats-wrap' );
+		const recordTrigger = $('.lqd-chat-record-trigger');
+		const chatsWrapper = $('.chats-wrap');
 
 		// check if value is not empty and then hide .lqd-chat-record-trigger and .lqd-chat-record-stop-trigger elements
 		if (
 			el.value &&
 			el.value !== '' &&
-			!( Array.isArray( el.value ) && el.value.length === 0 ) &&
+			!(Array.isArray(el.value) && el.value.length === 0) &&
 			!(
 				typeof el.value === 'object' &&
-				Object.keys( el.value ).length === 0
+				Object.keys(el.value).length === 0
 			)
 		) {
 			recordTrigger.hide();
-			chatsWrapper.addClass( 'prompt-filled' );
+			chatsWrapper.addClass('prompt-filled');
 		} else {
 			recordTrigger.show();
-			chatsWrapper.removeClass( 'prompt-filled' );
+			chatsWrapper.removeClass('prompt-filled');
 		}
-	} );
+	});
 
-	$( '#selectDocInput' ).change( function () {
-		if ( this.files && this.files[ 0 ] ) {
+	$('#selectDocInput').change(function () {
+		if (this.files && this.files[0]) {
 			let reader = new FileReader();
-			pdf = this.files[ 0 ];
+			pdf = this.files[0];
 
-			toastr.success( magicai_localize.analyze_file_begin );
+			toastr.success(magicai_localize.analyze_file_begin);
 
-			startNewDocChat( pdf, this.files[ 0 ].type );
+			startNewDocChat(pdf, this.files[0].type);
 
-			document.getElementById( 'mainupscale_src' ) &&
-				( document.getElementById( 'mainupscale_src' ).style.display =
-					'none' );
+			if (document.getElementById('mainupscale_src')) {
+				document.getElementById('mainupscale_src').style.display = 'none';
+			}
 		}
-	} );
+	});
 
-	window.addEventListener( 'beforeunload', function ( e ) {
+	window.addEventListener('beforeunload', function (e) {
 		reduceOnStop();
-	} );
-} );
+	});
+});
 
-$( 'body' ).on( 'click', '.chat-download', event => {
+$('body').on('click', '.chat-download', event => {
 	const button = event.currentTarget;
 	const docType = button.dataset.docType;
 	const docName = button.dataset.docName || 'document';
 
-	const container = document.querySelector( '.chats-container' );
+	const container = document.querySelector('.chats-container');
 	let content = container?.parentElement?.innerHTML;
 	let html;
 
-	if ( !content ) return;
+	if (!content) return;
 
-	if ( docType === 'pdf' ) {
+	if (docType === 'pdf') {
 		return html2pdf()
-			.set( {
+			.set({
 				filename: docName,
-			} )
-			.from( content )
+			})
+			.from(content)
 			.toPdf()
 			.save();
 	}
 
-	if ( docType === 'txt' ) {
+	if (docType === 'txt') {
 		html = container.innerText;
 	} else {
 		html = `
-	<html ${ this.doctype === 'doc'
-		? 'xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
-		: ''
-}>
+	<html ${this.doctype === 'doc'
+			? 'xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"'
+			: ''
+		}>
 	<head>
 		<meta charset="utf-8" />
-		<title>${ docName }</title>
+		<title>${docName}</title>
 	</head>
 	<body>
-		${ content }
+		${content}
 	</body>
 	</html>`;
 	}
 
-	const url = `${ docType === 'doc'
+	const url = `${docType === 'doc'
 		? 'data:application/vnd.ms-word;charset=utf-8'
 		: 'data:text/plain;charset=utf-8'
-	},${ encodeURIComponent( html ) }`;
+	},${encodeURIComponent(html)}`;
 
-	const downloadLink = document.createElement( 'a' );
-	document.body.appendChild( downloadLink );
+	const downloadLink = document.createElement('a');
+	document.body.appendChild(downloadLink);
 	downloadLink.href = url;
-	downloadLink.download = `${ docName }.${ docType }`;
+	downloadLink.download = `${docName}.${docType}`;
 	downloadLink.click();
 
-	document.body.removeChild( downloadLink );
-} );
+	document.body.removeChild(downloadLink);
+});
 
-function changeChatTitle( responseId ) {
-	const $lqdChatUserBubblesLength = document.querySelectorAll( '.lqd-chat-user-bubble' ).length;
+function changeChatTitle(responseId) {
+	const $lqdChatUserBubblesLength = document.querySelectorAll('.lqd-chat-user-bubble').length;
 
-	if ( $lqdChatUserBubblesLength != 1 ) return;
+	if ($lqdChatUserBubblesLength != 1) return;
 
-	$.ajax( {
+	$.ajax({
 		type: 'post',
 		url: '/dashboard/change-chat-title',
 		data: {
 			streamed_message_id: responseId,
 		},
-		success: function ( data ) {
-			if ( data.changed ) {
+		success: function (data) {
+			if (data.changed) {
 				const chatTitleEl = document.querySelector(
-					`#chat_${ data.chat_id } .chat-item-title`,
+					`#chat_${data.chat_id} .chat-item-title`,
 				);
 
-				if ( !chatTitleEl ) return;
+				if (!chatTitleEl) return;
 
-				const newTitle = data.new_title.replaceAll( ' ', '\u00a0' );
-				const newTitleStringArray = newTitle.split( '' );
+				const newTitle = data.new_title.replaceAll(' ', '\u00a0');
+				const newTitleStringArray = newTitle.split('');
 
 				chatTitleEl.innerText = '';
 
-				const interval = setInterval( () => {
+				const interval = setInterval(() => {
 					chatTitleEl.innerText += newTitleStringArray.shift();
 
-					if ( !newTitleStringArray.length ) {
-						clearInterval( interval );
+					if (!newTitleStringArray.length) {
+						clearInterval(interval);
 					}
-				}, 30 );
+				}, 30);
 			}
 		},
-	} );
+	});
 }
 
 function setChatsCssVars() {
-	const chatsWrapper = document.querySelector( '.chats-wrap' );
-	const chatsContainer = document.querySelector( '.chats-container' );
-	const chatsHead = document.querySelector( '.lqd-chat-head' );
-	const chatsForm = document.querySelector( '.lqd-chat-form' );
-	const conversationArea = document.querySelector( '.conversation-area' );
+	const chatsWrapper = document.querySelector('.chats-wrap');
+	const chatsContainer = document.querySelector('.chats-container');
+	const chatsHead = document.querySelector('.lqd-chat-head');
+	const chatsForm = document.querySelector('.lqd-chat-form');
+	const conversationArea = document.querySelector('.conversation-area');
 
 	if (
 		chatsWrapper &&
@@ -2500,14 +2600,14 @@ function setChatsCssVars() {
 	) {
 		chatsWrapper.style.setProperty(
 			'--chats-container-height',
-			`${ conversationArea.offsetHeight - chatsHead.offsetHeight - chatsForm.offsetHeight }px`,
+			`${conversationArea.offsetHeight - chatsHead.offsetHeight - chatsForm.offsetHeight}px`,
 		);
 	}
 }
 
-( () => {
+(() => {
 	setChatsCssVars();
 
-	window.addEventListener( 'resize', _.debounce( setChatsCssVars, 150 ) );
-} )();
+	window.addEventListener('resize', _.debounce(setChatsCssVars, 150));
+})();
 

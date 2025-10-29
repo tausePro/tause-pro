@@ -4,18 +4,18 @@
             'label' => 'License',
             'value' => 'Lifetime',
         ],
-//        [
-//            'label' => 'Support & Updates',
-//            'value' => '6 months',
-//        ],
+        [
+            'label' => 'Support & Updates',
+            'value' => '6 months',
+        ],
         [
             'label' => 'Installation',
             'value' => 'One Click',
         ],
-//        [
-//            'label' => 'Recently Updated',
-//            'value' => 'Yes',
-//        ],
+        [
+            'label' => 'Recently Updated',
+            'value' => 'Yes',
+        ],
     ];
 @endphp
 

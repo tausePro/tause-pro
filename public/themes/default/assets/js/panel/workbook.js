@@ -1,3 +1,7 @@
+function isHTML(string) {
+	return Array.from(new DOMParser().parseFromString(string, 'text/html').body.childNodes).some(({ nodeType }) => nodeType == 1);
+}
+
 function editWorkbook(workbook_slug) {
 	'use strict';
 
@@ -540,6 +544,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 			} );
 
 			liquidTinyMCEThemeHandlerInit(editor);
+
+			editor.on('init', function (event) {
+				editor.dom.addStyle('#lqd-editor-emoji-el, #lqd-editor-cover-el { display: none !important }');
+			});
 		}
 	};
 

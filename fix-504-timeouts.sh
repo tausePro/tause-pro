@@ -99,3 +99,6 @@ echo ""
 echo "🔧 Para usar la configuración PHP personalizada:"
 echo "   php -c php-local-dev.ini artisan serve --host=0.0.0.0 --port=8001"
 echo ""
+
+
+

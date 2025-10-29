@@ -987,12 +987,106 @@
             button.textContent = '⏳ Creando orden...';
             
             try {
-                await this.createOrder();
+                const response = await fetch('{{ isset($routes) ? $routes['createOrder'] ?? '' : '' }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        product_id: this.selectedProduct.id,
+                        quantity: this.selectedProduct.quantity,
+                        first_name: this.customerData.first_name,
+                        last_name: this.customerData.last_name,
+                        email: this.customerData.email,
+                        phone: this.customerData.phone,
+                        department: this.customerData.department,
+                        city: this.customerData.city,
+                        address: this.customerData.address,
+                        address_type: this.customerData.address_type || 'Casa',
+                        address_complement: this.customerData.address_complement || '',
+                        notes: this.customerData.notes || ''
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Order response:', data);
+                
+                if (data.success && data.payment_link) {
+                    // Remove confirmation box
+                    button.closest('div[style*="background: linear-gradient"]')?.remove();
+                    
+                    // Show payment link
+                    this.showInlinePaymentLink(data.payment_link, data.order_id);
+                } else {
+                    button.disabled = false;
+                    button.textContent = '💳 Confirmar y Pagar →';
+                    alert(`Error: ${data.message || 'No se pudo crear la orden. Por favor intenta de nuevo.'}`);
+                }
             } catch (error) {
+                console.error('Error creating order:', error);
                 button.disabled = false;
                 button.textContent = '💳 Confirmar y Pagar →';
-                alert('Hubo un error. Por favor intenta de nuevo.');
+                alert('Hubo un problema técnico. Por favor intenta de nuevo.');
             }
+        },
+        
+        // Show inline payment link
+        showInlinePaymentLink(paymentLink, orderId) {
+            const lastElement = this.getLastFormElement();
+            if (!lastElement) return;
+            
+            const total = this.selectedProduct.price * this.selectedProduct.quantity;
+            
+            const paymentHTML = `
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #10b981; border-radius: 1rem; padding: 1.25rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: #065f46; margin-bottom: 1rem; text-align: center;">
+                        ✅ ¡Orden Creada Exitosamente!
+                    </div>
+                    <div style="background: white; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #064e3b; margin-bottom: 0.75rem;">
+                            📦 Orden #${orderId || 'N/A'}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #064e3b; line-height: 1.8;">
+                            <div><strong>Producto:</strong> ${this.escapeHtml(this.selectedProduct.name)}</div>
+                            <div><strong>Cantidad:</strong> ${this.selectedProduct.quantity}</div>
+                            <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #10b981;">
+                                <strong style="font-size: 1.1rem;">Total a Pagar:</strong> 
+                                <span style="font-size: 1.2rem; font-weight: 700; color: #10b981;">$${new Intl.NumberFormat('es-CO').format(total)} COP</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.85rem; color: #78350f; line-height: 1.6;">
+                            <strong>📍 Envío:</strong> El costo de envío se coordinará por WhatsApp después del pago.
+                        </div>
+                    </div>
+                    <a href="${paymentLink}" 
+                       target="_blank"
+                       style="display: block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-align: center; padding: 1rem 1.5rem; border-radius: 0.75rem; text-decoration: none; font-weight: 700; font-size: 1.05rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); transition: transform 0.2s; margin-bottom: 0.75rem;"
+                       onmouseover="this.style.transform='translateY(-2px)'"
+                       onmouseout="this.style.transform='translateY(0)'"
+                    >
+                        💳 Pagar Ahora con Wompi →
+                    </a>
+                    <div style="text-align: center; font-size: 0.75rem; color: #065f46; opacity: 0.8;">
+                        🔒 Pago 100% seguro • Wompi
+                    </div>
+                </div>
+            `;
+            
+            lastElement.insertAdjacentHTML('afterend', paymentHTML);
+            
+            // Scroll to payment link
+            setTimeout(() => {
+                const paymentBox = lastElement.nextElementSibling;
+                paymentBox?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            // Reset purchase mode
+            this.purchaseMode = false;
+            this.currentStep = null;
         },
         
         // Handle user message during purchase flow

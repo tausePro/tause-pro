@@ -29,7 +29,7 @@ function liquidTinyMCEThemeHandler( editor ) {
 		'--headings-color',
 	];
 
-	for( let i = 1; i <= 6; i++ ) {
+	for ( let i = 1; i <= 6; i++ ) {
 		cssFontPropsVar.push(`--h${i}-font-family`);
 		cssFontPropsVar.push(`--h${i}-font-size`);
 		cssFontPropsVar.push(`--h${i}-line-height`);
@@ -47,6 +47,9 @@ function liquidTinyMCEThemeHandler( editor ) {
 	cssFontPropsVar.forEach( prop => {
 		iframeBody.style.setProperty( prop, bodyStyle.getPropertyValue( prop ) );
 	});
+
+	iframeBody.style.setProperty( '--background', bodyStyle.getPropertyValue( '--background' ) );
+	iframeBody.style.setProperty( '--foreground', bodyStyle.getPropertyValue( '--foreground' ) );
 }
 
 function liquidTinyMCEThemeHandlerInit( editor ) {

@@ -19,6 +19,25 @@ namespace Google\Service\Aiplatform;
 
 class GoogleCloudAiplatformV1GoogleMaps extends \Google\Model
 {
+  /**
+   * @var bool
+   */
+  public $enableWidget;
+
+  /**
+   * @param bool
+   */
+  public function setEnableWidget($enableWidget)
+  {
+    $this->enableWidget = $enableWidget;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableWidget()
+  {
+    return $this->enableWidget;
+  }
 }
 
 // Adding a class alias for backwards compatibility with the previous class name.

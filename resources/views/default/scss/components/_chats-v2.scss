@@ -275,8 +275,9 @@
 	// }
 
 	.lqd-chat-ai-bubble,
-	.lqd-chat-user-bubble {
-		@apply relative w-full flex-col rounded-lg p-6 before:pointer-events-none before:absolute before:end-full before:top-0 before:z-0 before:h-full before:w-10 md:px-6 md:py-5 lg:mb-6;
+	.lqd-chat-user-bubble,
+	.lqd-chat-image-bubble {
+		@apply relative w-full flex-col rounded-[18px] p-6 before:pointer-events-none before:absolute before:end-full before:top-0 before:z-0 before:h-full before:w-10 md:px-6 md:py-5 lg:mb-6;
 
 		.chat-content-container {
 			@apply text-heading-foreground;
@@ -319,9 +320,9 @@
 		}
 	}
 
-	.lqd-chat-user-bubble {
-		@apply bg-[#EDEDEF] dark:bg-heading-foreground/10 transition-colors lg:max-w-[80%];
-		box-shadow: 0 2px 5px rgb(0 0 0 / 2.5%);
+	.lqd-chat-user-bubble,
+	.lqd-chat-image-bubble {
+		@apply bg-[#EDEDEF] dark:bg-heading-foreground/10 transition-colors lg:max-w-[80%] lg:w-auto lg:justify-self-end;
 
 		.lqd-chat-avatar {
 			@apply hidden;

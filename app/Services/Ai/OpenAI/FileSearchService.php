@@ -89,7 +89,7 @@ class FileSearchService
             'tools' => [
                 [
                     'type'             => 'file_search',
-                    'vector_store_ids' => [$chat?->openai_vector_id],
+                    'vector_store_ids' => [$chat?->openai_vector_id ?? ''],
                 ],
             ],
             'input' => $lastPrompt,

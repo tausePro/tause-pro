@@ -145,19 +145,18 @@
 </div>
 
 @if ($message->outputImage != null && $message->outputImage != '')
-    <div class="lqd-chat-image-bubble mb-2.5 flex gap-2 lg:ms-auto">
-        <div class="flex w-4/5 justify-end rounded-[2em] text-heading-foreground md:w-1/2">
-            <a
-                data-fslightbox="gallery"
-                data-type="image"
-                href="{{ $message->outputImage }}"
-            >
-                <img
-                    class="img-content rounded-3xl"
-                    loading="lazy"
-                    src={{ $message->outputImage }}
-                />
-            </a>
-        </div>
+    <div class="lqd-chat-image-bubble mb-2 flex !w-auto max-w-[50%] flex-row-reverse content-end gap-2 !px-3 !py-2.5 last:mb-0 lg:ms-auto lg:justify-self-end">
+        <a
+            class="flex items-center gap-1.5 underline underline-offset-2"
+            data-fslightbox="gallery"
+            data-type="image"
+            href="{{ $message->outputImage }}"
+        >
+            <img
+                class="img-content rounded-3xl"
+                loading="lazy"
+                src={{ $message->outputImage }}
+            />
+        </a>
     </div>
 @endif

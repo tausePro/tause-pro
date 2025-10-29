@@ -1,5 +1,5 @@
 @php
-	$userId = auth()->id();
+    $userId = auth()->id();
     $plan = Auth::user()->activePlan();
     $plan_type = 'regular';
     // $team = Auth::user()->getAttribute('team');
@@ -380,8 +380,7 @@
                             </x-button>
                         @endif
                     </form>
-
-				@else
+                @else
                     <h3 class="mb-6">
                         {{ __('How it Works') }}
                     </h3>

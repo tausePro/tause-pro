@@ -387,7 +387,7 @@ function dropHandler( ev, id ) {
 				canvas.width = 200;
 				ctx.drawImage( img, 0, 0, canvas.width, canvas.height );
 				var base64 = canvas.toDataURL( 'image/png' );
-				addImagetoChat( base64 );
+				addFileToChat( base64 );
 			};
 		};
 

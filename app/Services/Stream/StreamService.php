@@ -36,6 +36,8 @@ use OpenAI\Laravel\Facades\OpenAI;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
+use function Pest\Laravel\json;
+
 class StreamService
 {
     public bool $guest = false;
@@ -139,7 +141,21 @@ class StreamService
                 $this->guest = true;
             }
 
-            if ($ai_engine === EngineEnum::OPEN_AI->value && setting('ai_chat_pro_image_generation_feature', '0')) {
+            $pass = false;
+            if (MarketplaceHelper::isRegistered('ai-chat-pro-file-chat') && ((int) setting('chatpro_file_chat_allowed', 1) === 1)) {
+                $service = new \App\Extensions\AIChatProFileChat\System\Services\AIFileChatService(
+                    request()?->input('pdfpath'),
+                    request()?->input('chat_id')
+                );
+
+                $fileChat = $service->validateAndAnalyzeFile();
+                if ($fileChat) {
+                    $contain_images = false;
+                    $pass = true;
+                }
+            }
+
+            if (! $pass && $ai_engine === EngineEnum::OPEN_AI->value && setting('ai_chat_pro_image_generation_feature', '0')) {
                 return $this->openaiChatStream($chat_bot, $history, $main_message, $chat_type, $contain_images, tools: \App\Extensions\AIChatPro\System\Services\AiChatProService::tools());
             }
         }
@@ -1136,7 +1152,7 @@ class StreamService
 
             if ($contain_images) {
                 $options['max_output_tokens'] = 2000;
-                $options['model'] = EntityEnum::GPT_4_O;
+                $options['model'] = EntityEnum::GPT_4_O->value;
             }
 
             if (! empty($tools)) {
@@ -1146,7 +1162,7 @@ class StreamService
 
             $options['input'] = $history;
             if ($driver->enum()->isReasoningModel()) {
-                $options['reasoning']['effort'] = setting('openai_reasoning_models_effort', 'low');
+                $options['reasoning']['effort'] = EntityEnum::fromSlug($options['model']) === EntityEnum::GPT_5_PRO ? 'high' : setting('openai_reasoning_models_effort', 'low');
             }
             $stream = OpenAI::responses()->createStreamed($options);
 
@@ -1260,12 +1276,13 @@ class StreamService
 
             if ($contain_images) {
                 $options['max_output_tokens'] = 2000;
-                $options['model'] = EntityEnum::GPT_4_O;
+                $options['model'] = EntityEnum::GPT_4_O->value;
             } else {
                 $options['tools'] = [
                     [
                         'type'             => 'file_search',
-                        'vector_store_ids' => [$chat?->openai_vector_id],
+                        'vector_store_ids' => [$chat?->openai_vector_id ?? ''],
+                        'max_num_results'  => 1,
                     ],
                 ];
             }
@@ -1351,7 +1368,7 @@ class StreamService
                 'input'             => $history,
                 ...($driver->enum()->isReasoningModel() ? [
                     'reasoning' => [
-                        'effort' => setting('openai_reasoning_models_effort', 'low'),
+                        'effort' => $driver->enum() === EntityEnum::GPT_5_PRO ? 'high' : setting('openai_reasoning_models_effort', 'low'),
                     ],
                 ] : []),
                 ...(! in_array($driver->enum()->value, [EntityEnum::GPT_4_O_MINI_SEARCH_PREVIEW->value, EntityEnum::GPT_4_O_SEARCH_PREVIEW->value], true) ? [

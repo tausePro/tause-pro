@@ -204,9 +204,10 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                     ->group(function (Router $route) {
                         $route->get('ecommerce', 'index')->name('index');
                         $route->post('ecommerce/woocommerce', 'saveWooCommerceConfig')->name('woocommerce.save');
-                        $route->post('ecommerce/sync', 'syncProducts')->name('sync');
+                        $route->match(['get', 'post'], 'ecommerce/sync', 'syncProducts')->name('sync');
                         $route->post('ecommerce/wompi', 'saveWompiConfig')->name('wompi.save');
                         $route->post('ecommerce/sales-agent', 'saveSalesAgentConfig')->name('sales-agent.save');
+                        $route->post('ecommerce/generate-coupon', 'generateCoupon')->name('generate-coupon');
                         $route->post('ecommerce/product/{product}/toggle', 'toggleProduct')->name('product.toggle');
                         $route->delete('ecommerce/product/{product}', 'deleteProduct')->name('product.delete');
                     });

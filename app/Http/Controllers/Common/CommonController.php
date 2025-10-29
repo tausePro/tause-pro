@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Common;
 
 use App\Helpers\Classes\Helper;
 use App\Helpers\Classes\Localization;
+use App\Helpers\Classes\MarketplaceHelper;
 use App\Http\Controllers\Controller;
 use App\Models\SettingTwo;
 use Exception;
@@ -12,9 +13,12 @@ use Illuminate\Http\File;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use JsonException;
+use RuntimeException;
+use Throwable;
 
 class CommonController extends Controller
 {
@@ -164,6 +168,122 @@ class CommonController extends Controller
         }
 
         return response()->json(['path' => $paths]);
+    }
+
+    public function filesUpload(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $contentManagerActive = MarketplaceHelper::isRegistered('content-manager')
+            && setting('content_manager_enabled', '1');
+
+        $images = [];
+        $others = [];
+
+        foreach ($request->input('files', []) as $file) {
+            $name = $file['name'] ?? 'file';
+            $base64Data = $file['data'] ?? null;
+
+            if (! $base64Data) {
+                continue;
+            }
+
+            if (preg_match('/^data:([^;]+);base64,(.+)$/', $base64Data, $matches)) {
+                $mimeType = $matches[1];
+                $rawData = base64_decode($matches[2]);
+                $extension = mimeToExtension($mimeType);
+
+                if (! pathinfo($name, PATHINFO_EXTENSION)) {
+                    $name .= '.' . $extension;
+                }
+            } else {
+                continue;
+            }
+
+            // Decide type
+            $fileType = str_starts_with($mimeType, 'image/') ? 'image' : 'other';
+
+            // Directory per user
+            $relativePath = "uploads/media/{$fileType}/u-" . auth()->id();
+            $absoluteDir = public_path($relativePath);
+
+            if (! is_dir($absoluteDir) && ! mkdir($absoluteDir, 0775, true) && ! is_dir($absoluteDir)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $absoluteDir));
+            }
+
+            // Avoid duplicates only for "other" when content manager active
+            if ($fileType === 'other' && $contentManagerActive) {
+                $existingPath = $absoluteDir . '/' . $name;
+                if (file_exists($existingPath)) {
+                    $publicPath = '/' . $relativePath . '/' . $name;
+                    $uploadedFile = new File($existingPath);
+                    $this->checkOtherStorage($uploadedFile, $publicPath);
+
+                    $others[] = $publicPath;
+
+                    continue;
+                }
+            }
+
+            // File naming
+            $uniqueName = ($fileType === 'other' && $contentManagerActive)
+                ? $name
+                : Str::random(10) . '-' . time() . '-' . $name;
+
+            $absolutePath = $absoluteDir . '/' . $uniqueName;
+
+            try {
+                if (file_put_contents($absolutePath, $rawData) === false) {
+                    Log::error("Failed to save file: {$absolutePath}");
+
+                    continue;
+                }
+
+                $publicPath = '/' . $relativePath . '/' . $uniqueName;
+                $uploadedFile = new File($absolutePath);
+                $this->checkOtherStorage($uploadedFile, $publicPath);
+
+                if (! validateUploadedFile(public_path($publicPath), $extension)) {
+                    Storage::disk('public')->delete($publicPath);
+
+                    continue;
+                }
+
+                if ($fileType === 'image') {
+                    $images[] = $publicPath;
+                } else {
+                    $others[] = $publicPath;
+                }
+            } catch (Throwable $e) {
+                Log::error("Upload failed for {$uniqueName}: " . $e->getMessage());
+            }
+        }
+
+        // Priority: other > image
+        if (! empty($others)) {
+            return response()->json([
+                'type' => 'other',
+                'path' => $others,
+            ]);
+        }
+
+        return response()->json([
+            'type' => 'image',
+            'path' => $images,
+        ]);
+    }
+
+    private function checkOtherStorage($uploadedFile, &$path): void
+    {
+        try {
+            $disk = SettingTwo::getCache()->ai_image_storage;
+
+            if (in_array($disk, ['s3', 'r2'])) {
+                $awsPath = Storage::disk($disk)->putFile('', $uploadedFile);
+                unlink($uploadedFile->getPathname());
+                $path = Storage::disk($disk)->url($awsPath);
+            }
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+        }
     }
 
     public function imageUpload(Request $request)

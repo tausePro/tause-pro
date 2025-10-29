@@ -78,7 +78,6 @@ class MarketplaceServiceProvider extends ServiceProvider
         'chatbot-telegram'       => \App\Extensions\ChatbotTelegram\System\ChatbotTelegramServiceProvider::class,
         'chatbot-whatsapp'       => \App\Extensions\ChatbotWhatsapp\System\ChatbotWhatsappServiceProvider::class,
         'chatbot-messenger'      => \App\Extensions\ChatbotMessenger\System\ChatbotMessengerServiceProvider::class,
-        'chatbot-sales-agent'    => \App\Extensions\ChatbotSalesAgent\System\ChatbotSalesAgentServiceProvider::class,
         'marketing-bot'          => \App\Extensions\MarketingBot\System\MarketingBotServiceProvider::class,
         'migration'              => \App\Extensions\Migration\System\MigrationServiceProvider::class,
         'live-customizer'        => \App\Extensions\LiveCustomizer\System\LiveCustomizerServiceProvider::class,
@@ -95,6 +94,9 @@ class MarketplaceServiceProvider extends ServiceProvider
         'demo-extension'         => \App\Extensions\DemoExtension\System\DemoExtensionServiceProvider::class,
         'multi-model'            => \App\Extensions\MultiModel\System\MultiModelServiceProvider::class,
         'nano-banana'            => \App\Extensions\NanoBanana\System\NanoBananaServiceProvider::class,
+        'ai-chat-pro-file-chat'  => \App\Extensions\AIChatProFileChat\System\AIChatProFileChatServiceProvider::class,
+        'ai-music-pro'           => \App\Extensions\AiMusicPro\System\AiMusicProServiceProvider::class,
+        'see-dream-v4'           => \App\Extensions\SeeDreamV4\System\SeeDreamV4ServiceProvider::class,
     ];
 
     public function register(): void

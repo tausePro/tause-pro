@@ -158,6 +158,7 @@
                 @includeFirst(['flux-pro::flux-pro-tab', 'panel.user.openai.includes.flux-pro-tab', 'vendor.empty'])
                 @includeFirst(['ideogram::ideogram-tab', 'panel.user.openai.includes.ideogram-tab', 'vendor.empty'])
 				@includeIf('nano-banana::nano-banana-tab')
+				@includeIf('see-dream-v4::see-dream-v4-tab')
             @endif
         </div>
         <div class="max-sm:-order-1 max-sm:mb-4 max-sm:w-full md:min-w-96">
@@ -695,6 +696,7 @@
         @includeFirst(['flux-pro::flux-pro-tab-body', 'panel.user.openai.includes.flux-pro-tab-body', 'vendor.empty'])
         @includeFirst(['ideogram::ideogram-tab-body', 'panel.user.openai.includes.ideogram-tab-body', 'vendor.empty'])
 		@includeIf('nano-banana::nano-banana-tab-body')
+		@includeIf('see-dream-v4::see-dream-v4-tab-body')
     @endif
 
     @include('panel.user.openai_chat.components.prompt_library_modal')
@@ -1327,4 +1329,5 @@
     @includeFirst(['flux-pro::flux-pro-script', 'panel.user.openai.includes.flux-pro-script', 'vendor.empty'])
     @includeFirst(['ideogram::ideogram-script', 'panel.user.openai.includes.ideogram-script', 'vendor.empty'])
 	@includeIf('nano-banana::nano-banana-script')
+	@includeIf('see-dream-v4::see-dream-v4-script')
 @endpush

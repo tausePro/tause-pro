@@ -2981,6 +2981,7 @@ class ClientTest extends TestCase
                     'country_of_origin_code' => 'RU',
                     'customs_declaration_number' => '10714040/140917/0090376',
                     'excise' => '20.00',
+                    'planned_status'=> 6
                 ],
             ],
             'tax_system_code' => 1,
@@ -3023,6 +3024,7 @@ class ClientTest extends TestCase
             ],
             'vat_code' => 1,
             'payment_subject' => 'commodity',
+            'planned_status' => 6,
             'payment_mode' => 'full_prepayment',
             'product_code' => '00 00 00 01 00 21 FA 41 00 23 05 41 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12 00 AB 00',
             'country_of_origin_code' => 'RU',

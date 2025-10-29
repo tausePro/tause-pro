@@ -260,7 +260,152 @@
 
     <hr class="my-6">
 
-    {{-- Sección 4: Prompt Personalizado --}}
+    {{-- Sección 4: Negociación y Cupones Dinámicos --}}
+    <div class="space-y-4">
+        <h3 class="font-semibold text-lg">{{ __('Dynamic Negotiation & Coupons') }}</h3>
+        
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p class="text-sm text-blue-800">
+                💡 <strong>{{ __('How it works') }}:</strong> {{ __('When a customer hesitates about price, the AI can automatically generate a discount coupon to close the sale.') }}
+            </p>
+        </div>
+        
+        {{-- Enable Negotiation --}}
+        <div>
+            <label class="flex items-center">
+                <input 
+                    type="checkbox" 
+                    name="negotiation_enabled"
+                    value="1"
+                    {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'checked' : '' }}
+                    class="w-4 h-4"
+                    x-model="negotiationEnabled"
+                />
+                <span class="ml-2 text-sm font-medium">{{ __('Enable Dynamic Negotiation') }}</span>
+            </label>
+            <p class="text-xs text-gray-500 mt-1">
+                {{ __('Allow the AI to offer discounts when customers show price resistance') }}
+            </p>
+        </div>
+        
+        <div x-show="negotiationEnabled" class="space-y-4 mt-4">
+            {{-- Max Discount --}}
+            <div>
+                <label class="block text-sm font-medium mb-2">{{ __('Maximum Discount (%)') }}</label>
+                <input 
+                    type="number" 
+                    name="negotiation_max_discount"
+                    value="{{ old('negotiation_max_discount', $chatbot->negotiation_max_discount ?? 10) }}"
+                    min="5"
+                    max="50"
+                    step="5"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                    {{ __('Maximum discount the AI can offer (recommended: 10-15%)') }}
+                </p>
+            </div>
+            
+            {{-- Min Cart Value --}}
+            <div>
+                <label class="block text-sm font-medium mb-2">{{ __('Minimum Cart Value') }}</label>
+                <input 
+                    type="number" 
+                    name="negotiation_min_cart_value"
+                    value="{{ old('negotiation_min_cart_value', $chatbot->negotiation_min_cart_value ?? 50000) }}"
+                    min="0"
+                    step="10000"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                    {{ __('Minimum cart value to enable negotiation (in COP)') }}
+                </p>
+            </div>
+            
+            {{-- Coupon Duration --}}
+            <div>
+                <label class="block text-sm font-medium mb-2">{{ __('Coupon Duration (minutes)') }}</label>
+                <select 
+                    name="negotiation_coupon_duration"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="15" {{ old('negotiation_coupon_duration', $chatbot->negotiation_coupon_duration ?? 30) == 15 ? 'selected' : '' }}>15 {{ __('minutes') }}</option>
+                    <option value="30" {{ old('negotiation_coupon_duration', $chatbot->negotiation_coupon_duration ?? 30) == 30 ? 'selected' : '' }}>30 {{ __('minutes') }}</option>
+                    <option value="60" {{ old('negotiation_coupon_duration', $chatbot->negotiation_coupon_duration ?? 30) == 60 ? 'selected' : '' }}>1 {{ __('hour') }}</option>
+                    <option value="120" {{ old('negotiation_coupon_duration', $chatbot->negotiation_coupon_duration ?? 30) == 120 ? 'selected' : '' }}>2 {{ __('hours') }}</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    {{ __('How long the coupon will be valid after generation') }}
+                </p>
+            </div>
+            
+            {{-- Trigger Keywords --}}
+            <div x-data="{
+                triggers: {{ json_encode(old('negotiation_triggers', $chatbot->negotiation_triggers ?? ['caro', 'costoso', 'descuento', 'rebaja', 'oferta'])) }},
+                newTrigger: '',
+                addTrigger() {
+                    const trigger = this.newTrigger.trim().toLowerCase();
+                    if (trigger && !this.triggers.includes(trigger)) {
+                        this.triggers.push(trigger);
+                        this.newTrigger = '';
+                    }
+                },
+                removeTrigger(index) {
+                    this.triggers.splice(index, 1);
+                }
+            }">
+                <label class="block text-sm font-medium mb-2">{{ __('Negotiation Trigger Words') }}</label>
+                
+                <div class="flex gap-2 mb-2">
+                    <input 
+                        type="text"
+                        x-model="newTrigger"
+                        @keydown.enter.prevent="addTrigger"
+                        placeholder="{{ __('e.g., expensive, discount, cheaper...') }}"
+                        class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <button 
+                        type="button"
+                        @click="addTrigger"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                        {{ __('Add') }}
+                    </button>
+                </div>
+                
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="(trigger, index) in triggers" :key="index">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                            <span x-text="trigger"></span>
+                            <button 
+                                type="button"
+                                @click="removeTrigger(index)"
+                                class="ml-1 text-blue-600 hover:text-blue-800"
+                            >
+                                ✕
+                            </button>
+                            <input type="hidden" name="negotiation_triggers[]" :value="trigger">
+                        </span>
+                    </template>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-2">
+                    {{ __('Words that trigger the negotiation mode (e.g., "expensive", "discount", "cheaper")') }}
+                </p>
+            </div>
+            
+            {{-- Warning --}}
+            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <p class="text-sm text-amber-800">
+                    ⚠️ <strong>{{ __('Important') }}:</strong> {{ __('Coupons are generated automatically in WooCommerce. Make sure your store has the WooCommerce REST API enabled.') }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-6">
+
+    {{-- Sección 5: Prompt Personalizado --}}
     <div class="space-y-4">
         <h3 class="font-semibold text-lg">{{ __('Custom Prompt') }}</h3>
         
@@ -280,6 +425,10 @@
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Negotiation toggle
+    Alpine.data('negotiationToggle', () => ({
+        negotiationEnabled: {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'true' : 'false' }}
+    }));
     // Referencias a elementos del preview
     const previewCard = document.querySelector('.enhanced-product-card');
     const previewButton = previewCard?.querySelector('button');

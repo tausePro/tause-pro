@@ -763,6 +763,10 @@ class AIController extends Controller
      */
     public function codeOutput($prompt, $post, $user): JsonResponse
     {
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        ini_set('max_execution_time', 3600);
+        
         if (Helper::appIsDemo()) {
             $limiter = WordLimitRateLimiter::make('generator_ai_code_generator', 2000);
 
@@ -770,7 +774,6 @@ class AIController extends Controller
 
             if (! $result['allowed']) {
                 return response()->json([
-                    'salam'           => 'salam',
                     'type'            => 'error',
                     'status'          => 'error',
                     'message'         => __('You have reached the limit of Code Generator requests. Please try again later.'),
@@ -906,7 +909,7 @@ class AIController extends Controller
         }
 
         $engineCheck = match ($param['image_generator']) {
-            'flux-pro', 'ideogram', 'flux-pro-kontext', 'nano-banana' => EngineEnum::FAL_AI->value,
+            'flux-pro', 'ideogram', 'flux-pro-kontext', 'nano-banana', 'seedream/v4/text-to-image' => EngineEnum::FAL_AI->value,
             EntityEnum::MIDJOURNEY->value  => EngineEnum::PI_API->value,
             EntityEnum::GPT_IMAGE_1->value => EngineEnum::OPEN_AI->value,
             default                        => $param['image_generator'],
@@ -919,6 +922,8 @@ class AIController extends Controller
                 $model = $this->getKontextModel();
             } elseif ($param['image_generator'] === 'nano-banana') {
                 $model = EntityEnum::NANO_BANANA;
+            } elseif ($param['image_generator'] === EntityEnum::SEEDREAM_4->value) {
+                $model = EntityEnum::SEEDREAM_4;
             } else {
                 $model = $this->getDefaultModel($engine);
             }
@@ -1304,16 +1309,26 @@ class AIController extends Controller
     {
         if (! $request['message_id'] || ! $request['title']) {
             return response()->json([
-                'message' => trans('TItle is required'),
-            ]);
+                'status'  => 'error',
+                'message' => __('Title is required'),
+            ], 400);
         }
 
         $entry = UserOpenai::find($request->message_id);
+
+        if (! $entry) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => __('Entry not found'),
+            ], 404);
+        }
+
         $entry->title = request('title');
         $entry->save();
 
         return response()->json([
-            'message' => trans('Title updated'),
+            'status'  => 'success',
+            'message' => __('Title updated'),
         ]);
     }
 
@@ -1351,7 +1366,10 @@ class AIController extends Controller
             Entity::driver()->input($response)->calculateCredit()->decreaseCredit();
         }
 
-        return response()->json(['status' => 'success']);
+        return response()->json([
+            'status' => 'success',
+            'entry'  => $entry->only(['id', 'slug']),
+        ]);
     }
 
     public function lazyLoadImage(Request $request): JsonResponse
@@ -1510,6 +1528,7 @@ class AIController extends Controller
     private function processImageGeneration(?EngineEnum $engine, ?EntityEnum $model, array $param): array
     {
         return match (true) {
+            $engine === EngineEnum::FAL_AI && $model === EntityEnum::SEEDREAM_4   => $this->processFalAISeeDreamV4Image($model, $param),
             $engine === EngineEnum::FAL_AI && $model === EntityEnum::NANO_BANANA  => $this->processFalAINanoBananaImage($model, $param),
             $engine === EngineEnum::OPEN_AI && $model === EntityEnum::GPT_IMAGE_1 => $this->processOpenAIGptImage1($model, $param),
             $engine === EngineEnum::OPEN_AI                                       => $this->processOpenAIImage($model, $param),
@@ -1921,6 +1940,28 @@ class AIController extends Controller
     private function processFalAINanoBananaImage(?EntityEnum $model, array $param): array
     {
         $prompt = $param['description_nano_banana'] ?? $param['description'];
+
+        if (is_null($prompt)) {
+            throw new RuntimeException(__('You must provide a prompt'));
+        }
+
+        $requestId = FalAIService::generate($prompt, $model);
+
+        return [
+            'engine'                => EngineEnum::FAL_AI,
+            'requestId'             => $requestId,
+            'status'                => 'IN_QUEUE',
+            'output'                => asset(self::LOADING_GIF),
+            'prompt'                => $prompt,
+            'imageContent'          => null,
+            'model'                 => $model->value,
+            'nameOfImage'           => Str::random(12) . '-FLUX-' . Str::slug(explode(' ', mb_substr($prompt, 0, 15))[0]) . '.png',
+        ];
+    }
+
+    private function processFalAISeeDreamV4Image(?EntityEnum $model, array $param): array
+    {
+        $prompt = $param['description_seedream_v4'] ?? $param['description'];
 
         if (is_null($prompt)) {
             throw new RuntimeException(__('You must provide a prompt'));

@@ -627,8 +627,13 @@ function openaiSettingsSave() {
 	formData.append('hide_output_length_option', $("#hide_output_length_option").is(":checked") ? 1 : 0);
     formData.append('dalle_hidden', $("#dalle_hidden").is(":checked") ? 1 : 0);
     formData.append('realtime_voice_chat', $("#realtime_voice_chat").is(":checked") ? 1 : 0);
-	formData.append('openai_file_search', $("#openai_file_search").is(":checked") ? 1 : 0)
+	formData.append('openai_file_search', $("#openai_file_search").is(":checked") ? 1 : 0);
 	formData.append('openai_reasoning_models_effort', $("#openai_reasoning_models_effort").val());
+
+	const sora = $("#sora_active");
+	if (sora) {
+		formData.append('sora_active', sora.is(":checked") ? 1 : 0);
+	}
 
 	if ($('#enabled_gpt_image_1')) {
 		formData.append('enabled_gpt_image_1', $("#enabled_gpt_image_1").is(":checked") ? 1 : 0);

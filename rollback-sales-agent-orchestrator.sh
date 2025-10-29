@@ -33,3 +33,6 @@ echo "Para aplicar cambios en producción:"
 echo "1. Limpiar cache: php artisan cache:clear"
 echo "2. Limpiar vistas: php artisan view:clear"
 echo "3. Recargar la página del chatbot"
+
+
+

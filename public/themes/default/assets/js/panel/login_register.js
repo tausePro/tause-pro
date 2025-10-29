@@ -72,27 +72,33 @@ function LoginForm() {
 function RegisterForm() {
 	'use strict';
 
-	document.getElementById('RegisterFormButton').disabled = true;
-	document.getElementById('RegisterFormButton').innerHTML = magicai_localize.please_wait;
+	const btn = document.getElementById('RegisterFormButton');
+	btn.disabled = true;
+	btn.innerHTML = magicai_localize.please_wait;
 	Alpine.store('appLoadingIndicator').show();
 
-	var formData = new FormData();
+	let formData = new FormData();
 
-	formData.append('name', $('#name_register').val());
-
+	// Collect plan and affiliate
 	let plan = $('#plan').val();
 
 	formData.append('plan', plan);
 
-	formData.append('surname', $('#surname_register').val());
+	let affiliate = $('#affiliate_code').val();
+	formData.append('affiliate_code', affiliate !== 'undefined' ? affiliate : null);
+
+	// Dynamically collect optional fields (only if present in DOM)
+	['name', 'surname', 'phone', 'country'].forEach(field => {
+		let el = document.getElementById(field + '_register');
+		if (el) {
+			formData.append(field, el.value);
+		}
+	});
+
+	// Required fields
+	formData.append('email', $('#email_register').val());
 	formData.append('password', $('#password_register').val());
 	formData.append('password_confirmation', $('#password_confirmation_register').val());
-	formData.append('email', $('#email_register').val());
-	if ($('#affiliate_code').val() != 'undefined') {
-		formData.append('affiliate_code', $('#affiliate_code').val());
-	} else {
-		formData.append('affiliate_code', null);
-	}
 
 	let recaptcha = $('#recaptcha').val();
 
@@ -120,8 +126,9 @@ function RegisterForm() {
 			}, 1500);
 		},
 		error: function (data) {
-			var err = data.responseJSON.errors;
-			var type = data.responseJSON.type;
+			let err = data.responseJSON.errors;
+			let type = data.responseJSON.type;
+
 			$.each(err, function (index, value) {
 				toastr.error(value);
 			});
@@ -132,8 +139,8 @@ function RegisterForm() {
 					Alpine.store('appLoadingIndicator').hide();
 				}, 2500);
 			} else {
-				document.getElementById('RegisterFormButton').disabled = false;
-				document.getElementById('RegisterFormButton').innerHTML = magicai_localize.signup;
+				btn.disabled = false;
+				btn.innerHTML = magicai_localize.signup;
 				Alpine.store('appLoadingIndicator').hide();
 			}
 		}
@@ -159,7 +166,7 @@ function PasswordResetMailForm() {
 	}
 
 	var formData = new FormData();
-	formData.append('email',email);
+	formData.append('email', email);
 
 	$.ajax({
 		type: 'post',

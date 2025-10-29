@@ -828,6 +828,7 @@ class SettingsController extends Controller
                 'hide_output_length_option'      => $request->hide_output_length_option,
                 'dalle_hidden'                   => $request->dalle_hidden,
                 'realtime_voice_chat'            => $request->realtime_voice_chat,
+                'sora_active'                    => $request->sora_active,
                 'openai_file_search'             => $request->openai_file_search,
                 'enabled_gpt_image_1'            => $request->enabled_gpt_image_1,
                 'openai_reasoning_models_effort' => $request->openai_reasoning_models_effort,

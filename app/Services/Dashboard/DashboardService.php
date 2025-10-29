@@ -256,17 +256,27 @@ class DashboardService
     // cost management
     public function setCostManagement(): static
     {
+        // Get cached values safely
         $totalEarn = cache('total_sales') ?? 0;
         $totalUser = cache('total_users') ?? 0;
         $totalSpend = setting('total_spend', 0);
+
+        // Convert possible formatted numbers ("1,006.63") to float
+        $totalEarn = (float) str_replace(',', '', $totalEarn);
+        $totalSpend = (float) str_replace(',', '', $totalSpend);
+        $totalUser = (float) str_replace(',', '', $totalUser);
+
+        // Cache cost per user
         $this->cache('cost_per_user', function () use ($totalSpend, $totalUser) {
             return $totalUser == 0 ? 0 : round($totalSpend / $totalUser, 1);
         });
 
+        // Cache income per user
         $this->cache('income_per_user', function () use ($totalEarn, $totalUser) {
             return $totalUser == 0 ? 0 : round($totalEarn / $totalUser, 1);
         });
 
+        // Cache net profit
         $this->cache('net_profit', function () {
             return cache('income_per_user') - cache('cost_per_user');
         });

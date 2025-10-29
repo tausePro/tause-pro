@@ -146,6 +146,7 @@
                 </div>
             </div>
 
+			@includeIf('ai-video-pro::sora-setting')
             @includeIf('openai-realtime-chat::setting')
             @include('panel.admin.settings.particles.gpt-image-1')
 

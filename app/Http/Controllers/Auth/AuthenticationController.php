@@ -66,6 +66,21 @@ class AuthenticationController extends Controller
         return redirect('/dashboard/user');
     }
 
+    /**
+     * @throws ValidationException
+     */
+    public function login(LoginRequest $request): RedirectResponse
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
+        $user = Auth::user();
+        $ip = $request->ip();
+        $connection = $request->header('User-Agent');
+        event(new UsersActivityEvent($user?->email, $user?->type, $ip, $connection));
+
+        return redirect()->intended(RouteServiceProvider::HOME);
+    }
+
     public function googleCallback(Request $request): RedirectResponse
     {
         $googleUser = Socialite::driver('google')->user();
@@ -147,21 +162,6 @@ class AuthenticationController extends Controller
 
     }
 
-    /**
-     * @throws ValidationException
-     */
-    public function login(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
-        $request->session()->regenerate();
-        $user = Auth::user();
-        $ip = $request->ip();
-        $connection = $request->header('User-Agent');
-        event(new UsersActivityEvent($user?->email, $user?->type, $ip, $connection));
-
-        return redirect()->intended(RouteServiceProvider::HOME);
-    }
-
     public function registerCreate(Request $request): View
     {
         return view('panel.authentication.register', [
@@ -177,6 +177,7 @@ class AuthenticationController extends Controller
     {
         $settings = Setting::getCache();
 
+        // Recaptcha Validation
         if ($settings->recaptcha_register && ($settings->recaptcha_sitekey || $settings->recaptcha_secretkey)) {
             $client = new Client;
             $response = $client->post('https://www.google.com/recaptcha/api/siteverify', [
@@ -194,33 +195,80 @@ class AuthenticationController extends Controller
             }
         }
 
-        $request->validate([
-            'name'     => ['required', 'string', 'max:255', 'regex:/^(?!.*\b(?:[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b).*$/'],
-            'surname'  => ['required', 'string', 'max:255', 'regex:/^(?!.*\b(?:[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b).*$/'],
+        // Validation rules
+        $rules = [
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Password::defaults(), 'max:20'],
-        ], [
-            'name.regex'    => 'The name field must not contain a URL or domain.',
-            'surname.regex' => 'The surname field must not contain a URL or domain.',
-        ]);
+        ];
 
+        $messages = [];
+
+        // Optional fields controlled by settings
+        $optionalFields = [
+            'name'    => ['regex' => 'The name field must not contain a URL or domain.'],
+            'surname' => ['regex' => 'The surname field must not contain a URL or domain.'],
+            'phone'   => [],
+            'country' => [],
+        ];
+
+        // Dynamic validation for optional fields
+        foreach ($optionalFields as $field => $msg) {
+            if (setting("registration_fields_{$field}", 0)) {
+                $isRequired = setting("registration_fields_{$field}_required", 0);
+
+                // Base validation rules for optional fields
+                $fieldRules = ['string', 'max:255'];
+                if (in_array($field, ['name', 'surname'])) {
+                    $fieldRules[] = 'regex:/^(?!.*\b(?:[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b).*$/';  // Regex to prevent URLs or domains
+                }
+
+                if ($isRequired) {
+                    array_unshift($fieldRules, 'required'); // Add 'required' if field is required
+                } else {
+                    array_unshift($fieldRules, 'nullable'); // Add 'nullable' if field is not required
+                }
+
+                $rules[$field] = $fieldRules;
+
+                // Set custom error messages for regex validation
+                foreach ($msg as $key => $value) {
+                    $messages["{$field}.{$key}"] = $value;
+                }
+            }
+        }
+
+        // Perform validation
+        $request->validate($rules, $messages);
+
+        // Handle team invite
         $teamMember = TeamMember::query()
             ->with('team')
             ->where('email', $request->email)
             ->where('status', 'waiting')
             ->first();
 
+        // Affiliate code handling
         $affCode = null;
         if ($request->affiliate_code !== null) {
             $affUser = User::where('affiliate_code', $request->affiliate_code)->first();
             $affCode = $affUser?->id;
         }
 
+        // Normalize inputs for optional fields
+        $normalize = static fn ($val) => ($val === null || $val === '' || $val === 'undefined') ? null : $val;
+
+        // Fallback name and surname in case they are empty or undefined
+        $name = $normalize($request->input('name')) ?? 'u_' . Str::random(4);
+        $surname = $normalize($request->input('surname')) ?? 'l_' . Str::random(4);
+
+        // Create the user with the provided or default values
         $user = User::create([
             'team_id'                 => $teamMember?->team_id,
             'team_manager_id'         => $teamMember?->team?->user_id,
-            'name'                    => $request->name,
-            'surname'                 => $request->surname,
+            'name'                    => $name,
+            'surname'                 => $surname,
+            'phone'                   => $normalize($request->input('phone')),
+            'country'                 => $normalize($request->input('country')),
             'email'                   => $request->email,
             'email_confirmation_code' => Str::random(67),
             'password'                => Hash::make($request->password),
@@ -229,67 +277,70 @@ class AuthenticationController extends Controller
             'affiliate_code'          => Str::upper(Str::random(12)),
         ]);
 
+        // Update user credits
         $user->updateCredits(setting('freeCreditsUponRegistration', User::getFreshCredits()));
 
-        if ($teamMember) {
-            $teamMember->update([
-                'user_id'   => $user->id,
-                'status'    => 'active',
-                'joined_at' => now(),
-            ]);
-        }
+        // Update team member status to 'active' and set join date
+        $teamMember?->update([
+            'user_id'   => $user->id,
+            'status'    => 'active',
+            'joined_at' => now(),
+        ]);
 
-        // event(new Registered($user));
-        try { // attempt to send email confirmation
+        // Try sending email confirmation
+        try {
             EmailConfirmation::forUser($user)->send();
         } catch (Exception $e) {
+            // Handle exception silently (you can log it if necessary)
         }
 
+        // If login without email confirmation is allowed
         if ($settings->login_without_confirmation === 1) {
             Auth::login($user);
 
-            $ip = $request->ip();
-            $connection = $request->header('User-Agent');
-
-            event(new UsersActivityEvent($user->email, $user->type, $ip, $connection));
+            // Log user activity (for analytics or auditing)
+            event(new UsersActivityEvent($user->email, $user->type, $request->ip(), $request->header('User-Agent')));
         } else {
-            $data = [
+            return response()->json([
                 'errors' => ['We have sent you an email for account confirmation. Please confirm your account to continue.'],
                 'type'   => 'confirmation',
-            ];
-
-            return response()->json($data, 401);
+            ], 401);
         }
 
+        // External API Integrations (PapAffiliate, Mailchimp, Hubspot)
         if (class_exists('App\Classes\PapAffiliate')) {
             try {
                 (new \App\Classes\PapAffiliate)->addAffiliate([
                     'email'        => $user->email,
-                    'firstname'    => $request->name,
-                    'lastname'     => $request->surname,
+                    'firstname'    => $request->input('name'),
+                    'lastname'     => $request->input('surname'),
                     'password'     => $user->password,
                     'companyname'  => 'companyname',
                     'address1'     => 'Address 1',
                     'city'         => 'City',
                     'state'        => 'State',
-                    'country'      => 'Country',
+                    'country'      => $request->input('country'),
                     'userid'       => $user->id,
                     'refid'        => $user->affiliate_code,
                     'parentuserid' => $request->affiliate_code,
                 ]);
             } catch (Exception $e) {
+                // Handle exception silently
             }
         }
 
+        // Mailchimp integration (if configured)
         if (MarketplaceHelper::isRegistered('mailchimp-newsletter') && setting('mailchimp_register') === 1) {
             Newsletter::subscribeOrUpdate(
                 $request->email,
-                ['FNAME' => $request->name, 'LNAME' => $request->surname],
+                ['FNAME' => $request->input('name'), 'LNAME' => $request->input('surname')]
             );
         }
 
+        // Hubspot integration (if configured)
         if (MarketplaceHelper::isRegistered('hubspot') && setting('hubspot_crm_contact_register') === 1) {
-            (new \App\Extensions\Hubspot\System\Services\HubspotService)->createCrmContacts($request->email, $request->name, $request->surname);
+            (new \App\Extensions\Hubspot\System\Services\HubspotService)
+                ->createCrmContacts($request->email, $request->input('name'), $request->input('surname'));
         }
 
         return response()->json(['status' => 'OK']);

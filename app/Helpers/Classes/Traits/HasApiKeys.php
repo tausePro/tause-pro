@@ -4,6 +4,7 @@ namespace App\Helpers\Classes\Traits;
 
 use App\Helpers\Classes\Helper;
 use App\Models\Setting;
+use App\Models\SettingTwo;
 use Illuminate\Support\Arr;
 
 trait HasApiKeys
@@ -18,6 +19,11 @@ trait HasApiKeys
         $apiKeys = explode(',', setting('fal_ai_api_secret', 'empty'));
 
         return Arr::random($apiKeys);
+    }
+
+    public static function setElevenlabsKey($settingTwo = null): string
+    {
+        return ($settingTwo ?? SettingTwo::getCache())?->elevenlabs_api_key;
     }
 
     // set klap api key

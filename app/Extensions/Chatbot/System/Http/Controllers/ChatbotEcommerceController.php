@@ -247,5 +247,65 @@ class ChatbotEcommerceController extends Controller
         $status = $product->is_active ? 'activado' : 'desactivado';
         return back()->with('success', "✅ Producto {$status}");
     }
+
+    /**
+     * Generar cupón dinámico para negociación
+     */
+    public function generateCoupon(Request $request, Chatbot $chatbot)
+    {
+        // Validar que negotiation esté habilitado
+        if (!$chatbot->negotiation_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Negociación no habilitada para este chatbot',
+            ], 403);
+        }
+        
+        // Validar datos
+        $validator = Validator::make($request->all(), [
+            'cart_value' => 'required|numeric|min:0',
+            'reason' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+        
+        $cartValue = $request->get('cart_value');
+        
+        // Verificar valor mínimo del carrito
+        if ($cartValue < $chatbot->negotiation_min_cart_value) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El valor del carrito no alcanza el mínimo para negociar',
+                'min_required' => $chatbot->negotiation_min_cart_value,
+            ], 400);
+        }
+        
+        // Generar cupón
+        $result = $this->wooCommerceService->createDynamicCoupon($chatbot, [
+            'discount' => $chatbot->negotiation_max_discount,
+            'duration' => $chatbot->negotiation_coupon_duration,
+            'min_cart_value' => $chatbot->negotiation_min_cart_value,
+        ]);
+        
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'coupon' => $result['coupon'],
+                'message' => "¡Tengo algo especial para ti! 🎁\n\n" .
+                            "Cupón: **{$result['coupon']['code']}**\n" .
+                            "Descuento: **{$result['coupon']['discount']}%**\n" .
+                            "Válido por: **{$result['coupon']['expires_in_minutes']} minutos**\n\n" .
+                            "¡Aprovecha esta oferta exclusiva! ⏰"
+            ]);
+        }
+        
+        return response()->json($result, 500);
+    }
 }
 
