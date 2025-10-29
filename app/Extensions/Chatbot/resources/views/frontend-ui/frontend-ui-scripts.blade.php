@@ -831,6 +831,22 @@
                             this.onReceiveMessage(data, loaderMessage);
                         }
 
+                        // Handle negotiation if triggered
+                        if (data.negotiation_triggered && window.NegotiationHandler) {
+                            const couponHtml = await window.NegotiationHandler.handleNegotiationTrigger(data);
+                            if (couponHtml) {
+                                // Add coupon message after AI response
+                                this.messages.push({
+                                    id: 'coupon-' + new Date().getTime(),
+                                    message: couponHtml,
+                                    role: 'assistant',
+                                    created_at: new Date().toISOString(),
+                                    is_coupon: true
+                                });
+                                this.scrollMessagesToBottom();
+                            }
+                        }
+
                         @if (isset($chatbot))
                             let condition = '{{ $chatbot->interaction_type->value }}';
 

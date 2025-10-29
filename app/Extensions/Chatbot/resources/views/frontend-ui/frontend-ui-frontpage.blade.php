@@ -71,4 +71,15 @@
 
 @include('sales-agent::sales-agent-component', ['routes' => $routes ?? []])
 
+{{-- Negotiation Handler --}}
+@if(isset($chatbot) && $chatbot->negotiation_enabled)
+<script src="{{ asset('vendor/chatbot/js/negotiation-handler.js') }}"></script>
+<script>
+    // Initialize Negotiation Handler
+    if (window.NegotiationHandler && '{{ $chatbot->id ?? '' }}') {
+        window.NegotiationHandler.init('{{ $chatbot->id ?? '' }}');
+    }
+</script>
+@endif
+
 @include('chatbot::frontend-ui.frontend-ui-scripts', ['is_editor' => false])

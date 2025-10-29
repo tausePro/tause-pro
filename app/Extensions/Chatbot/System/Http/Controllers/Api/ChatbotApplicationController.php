@@ -429,6 +429,20 @@ class ChatbotApplicationController extends Controller
         }
         }
 
+        // Detectar negociación y generar cupón si aplica
+        $negotiationTriggered = false;
+        if ($chatbot->negotiation_enabled && $chatbot->sales_agent_enabled) {
+            $userPrompt = strtolower($request->validated('prompt'));
+            $triggers = $chatbot->negotiation_triggers ?? ['caro', 'costoso', 'descuento', 'rebaja', 'oferta'];
+            
+            foreach ($triggers as $trigger) {
+                if (str_contains($userPrompt, strtolower($trigger))) {
+                    $negotiationTriggered = true;
+                    break;
+                }
+            }
+        }
+
         $needsHuman = false;
         $needsHumanDirect = false;
 
@@ -482,6 +496,13 @@ class ChatbotApplicationController extends Controller
             'needs_human'                         => $needsHuman,
             'needs_human_direct'                  => $needsHumanDirect,
             'original_response'                   => $originalResponse,
+            'negotiation_triggered'               => $negotiationTriggered,
+            'negotiation_config'                  => $negotiationTriggered ? [
+                'enabled' => true,
+                'max_discount' => $chatbot->negotiation_max_discount,
+                'min_cart_value' => $chatbot->negotiation_min_cart_value,
+                'coupon_duration' => $chatbot->negotiation_coupon_duration,
+            ] : null,
         ]);
     }
 
