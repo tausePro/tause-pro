@@ -12,11 +12,14 @@ return new class extends Migration
     {
         Schema::table('ext_chatbots', function (Blueprint $table) {
             // Negociación con cupones dinámicos
-            $table->boolean('negotiation_enabled')->default(false)->after('sales_agent_card_config');
-            $table->integer('negotiation_max_discount')->default(10)->after('negotiation_enabled')->comment('Descuento máximo permitido en %');
-            $table->integer('negotiation_min_cart_value')->default(50000)->after('negotiation_max_discount')->comment('Valor mínimo del carrito para negociar');
-            $table->json('negotiation_triggers')->nullable()->after('negotiation_min_cart_value')->comment('Palabras que activan negociación');
-            $table->integer('negotiation_coupon_duration')->default(30)->after('negotiation_triggers')->comment('Duración del cupón en minutos');
+            // Agregar después de sales_agent_keywords si sales_agent_card_config no existe
+            if (!Schema::hasColumn('ext_chatbots', 'negotiation_enabled')) {
+                $table->boolean('negotiation_enabled')->default(false);
+                $table->integer('negotiation_max_discount')->default(10)->comment('Descuento máximo permitido en %');
+                $table->integer('negotiation_min_cart_value')->default(50000)->comment('Valor mínimo del carrito para negociar');
+                $table->json('negotiation_triggers')->nullable()->comment('Palabras que activan negociación');
+                $table->integer('negotiation_coupon_duration')->default(30)->comment('Duración del cupón en minutos');
+            }
         });
     }
 
