@@ -178,11 +178,129 @@ class EvolutionConversationService
                 ->setConversation($this->conversation)
                 ->setPrompt($message);
             
-            return $generatorService->generate();
+            $response = $generatorService->generate();
+            
+            // Integrar Sales Agent si está habilitado
+            if ($this->chatbot->sales_agent_enabled) {
+                $response = $this->enhanceWithSalesAgent($response, $message);
+            }
+            
+            return $response;
         } catch (\Exception $e) {
             Log::error('Evolution: Error generating response', [
                 'error' => $e->getMessage(),
                 'conversation_id' => $this->conversation->id ?? 'unknown'
+            ]);
+            return null;
+        }
+    }
+
+    protected function enhanceWithSalesAgent(string $aiResponse, string $userMessage): string
+    {
+        try {
+            $orchestrator = app(\App\Extensions\Chatbot\System\Services\ProductOrchestratorService::class);
+            
+            $result = $orchestrator->orchestrate(
+                chatbot: $this->chatbot,
+                aiResponse: $aiResponse,
+                userQuery: $userMessage
+            );
+            
+            // Si se detectaron productos
+            if ($result['show_sales_grid'] && !empty($result['products'])) {
+                $productsText = $this->formatProductsForWhatsApp($result['products']);
+                $aiResponse .= "\n\n" . $productsText;
+                
+                Log::info('Evolution: Products added to response', [
+                    'conversation_id' => $this->conversation->id,
+                    'products_count' => count($result['products'])
+                ]);
+            }
+            
+            // Si se activó negociación
+            if (($result['negotiation_triggered'] ?? false) && $this->chatbot->negotiation_enabled) {
+                $couponText = $this->generateCouponForWhatsApp();
+                if ($couponText) {
+                    $aiResponse .= "\n\n" . $couponText;
+                    
+                    Log::info('Evolution: Coupon added to response', [
+                        'conversation_id' => $this->conversation->id
+                    ]);
+                }
+            }
+            
+            return $aiResponse;
+            
+        } catch (\Exception $e) {
+            Log::error('Evolution: Error enhancing with Sales Agent', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $aiResponse; // Retornar respuesta original si falla
+        }
+    }
+
+    protected function formatProductsForWhatsApp(array $products): string
+    {
+        $text = "🛍️ *Productos disponibles:*\n\n";
+        
+        foreach (array_slice($products, 0, 5) as $index => $product) {
+            $num = $index + 1;
+            $text .= "*{$num}. {$product['name']}*\n";
+            $text .= "💰 Precio: \$" . number_format($product['price'], 0, ',', '.') . "\n";
+            
+            if (!empty($product['short_description'])) {
+                $description = strip_tags($product['short_description']);
+                $description = mb_substr($description, 0, 100);
+                if (mb_strlen($product['short_description']) > 100) {
+                    $description .= '...';
+                }
+                $text .= "📝 {$description}\n";
+            }
+            
+            if (!empty($product['product_url'])) {
+                $text .= "🔗 {$product['product_url']}\n";
+            }
+            
+            $text .= "\n";
+        }
+        
+        $text .= "Para más información sobre algún producto, escribe su número.";
+        
+        return $text;
+    }
+
+    protected function generateCouponForWhatsApp(): ?string
+    {
+        try {
+            if (!$this->chatbot->negotiation_enabled) {
+                return null;
+            }
+            
+            $wooCommerceService = app(\App\Extensions\Chatbot\System\Services\WooCommerceService::class);
+            
+            $result = $wooCommerceService->createDynamicCoupon($this->chatbot, [
+                'discount' => $this->chatbot->negotiation_max_discount,
+                'duration' => $this->chatbot->negotiation_coupon_duration,
+                'min_cart_value' => $this->chatbot->negotiation_min_cart_value,
+            ]);
+            
+            if ($result['success']) {
+                $coupon = $result['coupon'];
+                
+                return "🎁 *¡Cupón Especial Generado!*\n\n" .
+                       "📋 Código: *{$coupon['code']}*\n" .
+                       "💰 Descuento: *{$coupon['discount']}%*\n" .
+                       "⏰ Válido por: *{$coupon['expires_in_minutes']} minutos*\n\n" .
+                       "Copia este código y úsalo en el checkout para obtener tu descuento.";
+            }
+            
+            return null;
+            
+        } catch (\Exception $e) {
+            Log::error('Evolution: Error generating coupon', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return null;
         }
