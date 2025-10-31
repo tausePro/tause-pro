@@ -103,6 +103,8 @@
                         bubble_message: '{{ __('Hey there, How can I help you?') }}',
                         welcome_message: '{{ __('Hi, how can I help you?') }}',
                         connect_message: '{{ __('I’ve forwarded your request to a human agent. An agent will connect with you as soon as possible.') }}',
+                        human_agent_command: 'agente',
+                        human_agent_tip_message: '💡 **Tip:** En cualquier momento puedes escribir #agente para ser atendido por un asesor humano.',
                         instructions: '',
                         do_not_go_beyond_instructions: 0,
                         language: '',

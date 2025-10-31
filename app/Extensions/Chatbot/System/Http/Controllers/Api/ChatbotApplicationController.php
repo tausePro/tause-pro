@@ -14,6 +14,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Models\ChatbotKnowledgeBaseArticle;
 use App\Extensions\Chatbot\System\Services\GeneratorService;
 use App\Extensions\Chatbot\System\Services\ProactiveTriggerService;
+use App\Extensions\Chatbot\System\Services\AgentOrchestratorService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
 use App\Helpers\Classes\Helper;
 use App\Helpers\Classes\MarketplaceHelper;
@@ -490,6 +491,30 @@ class ChatbotApplicationController extends Controller
             ->where('role', '!=', 'user')
             ->count() === 2 && $customer;
 
+        // Orquestar agentes (Sales Agent, etc.)
+        $orchestration = null;
+        if ($chatbot->sales_agent_enabled) {
+            try {
+                $orchestrator = app(AgentOrchestratorService::class);
+                $orchestration = $orchestrator->orchestrate(
+                    chatbot: $chatbot,
+                    aiResponse: $messageToUser,
+                    userQuery: $request->validated('prompt')
+                );
+                
+                Log::info('Agent Orchestration', [
+                    'chatbot_id' => $chatbot->id,
+                    'agents_activated' => $orchestration['agents_activated'] ?? [],
+                    'user_query' => $request->validated('prompt')
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Agent Orchestration Error', [
+                    'error' => $e->getMessage(),
+                    'chatbot_id' => $chatbot->id
+                ]);
+            }
+        }
+
         return ChatbotHistoryResource::make($message)->additional([
             'connection'                          => 'ai',
             'collect_email'                       => $collectEmail && $chatbot->getAttribute('is_email_collect'),
@@ -503,6 +528,7 @@ class ChatbotApplicationController extends Controller
                 'min_cart_value' => $chatbot->negotiation_min_cart_value,
                 'coupon_duration' => $chatbot->negotiation_coupon_duration,
             ] : null,
+            'orchestration'                       => $orchestration,
         ]);
     }
 

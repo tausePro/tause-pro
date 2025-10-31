@@ -123,6 +123,82 @@
             </div>
         </div>
 
+        {{-- Human Agent --}}
+        <div class="rounded-xl border border-border p-4 transition-all hover:border-primary/30">
+            {{-- Agent Header --}}
+            <div class="mb-3 flex items-start justify-between gap-3">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">👤</span>
+                        <h3 class="font-semibold text-heading-foreground">@lang('Human Agent')</h3>
+                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-2xs font-medium text-green-700">
+                            @lang('Free')
+                        </span>
+                    </div>
+                    <p class="mt-1 text-xs text-heading-foreground/60">
+                        @lang('Allow users to connect with a live support agent')
+                    </p>
+                </div>
+            </div>
+
+            {{-- Agent Settings --}}
+            <div class="space-y-3 border-t border-border pt-3">
+                {{-- Command --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-heading-foreground">
+                        @lang('Comando de activación')
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-heading-foreground">#</span>
+                        <input
+                            type="text"
+                            class="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            x-model="activeChatbot.human_agent_command"
+                            @input="submitData()"
+                            placeholder="agente"
+                        >
+                    </div>
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Los usuarios escribirán #comando para hablar con un agente humano')
+                    </p>
+                </div>
+
+                {{-- Tip Message --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-heading-foreground">
+                        @lang('Mensaje informativo')
+                    </label>
+                    <textarea
+                        rows="3"
+                        class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        x-model="activeChatbot.human_agent_tip_message"
+                        @input="submitData()"
+                        placeholder="💡 **Tip:** En cualquier momento puedes escribir #agente para ser atendido por un asesor humano."
+                    ></textarea>
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Este mensaje se mostrará una sola vez al inicio de la conversación')
+                    </p>
+                </div>
+
+                {{-- Connect Message --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-heading-foreground">
+                        @lang('Mensaje de conexión')
+                    </label>
+                    <textarea
+                        rows="2"
+                        class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        x-model="activeChatbot.connect_message"
+                        @input="submitData()"
+                        placeholder="He transferido tu solicitud a un agente humano. Un agente se conectará contigo lo antes posible."
+                    ></textarea>
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Mensaje que se envía cuando el usuario se conecta con un agente')
+                    </p>
+                </div>
+            </div>
+        </div>
+
         {{-- Support Agent --}}
         <div class="rounded-xl border border-border p-4 transition-all hover:border-primary/30 relative">
             {{-- Pro Badge Overlay --}}

@@ -215,6 +215,7 @@ return [
          * Extensions Service Providers
          */
         App\Extensions\Chatbot\System\ChatbotServiceProvider::class,
+        App\Extensions\ChatbotSalesAgent\System\ChatbotSalesAgentServiceProvider::class,
         App\Extensions\BrainBrand\System\BrainBrandServiceProvider::class,
 
         /**

@@ -19,6 +19,7 @@ class EvolutionConversationService
     protected ?ChatbotConversation $conversation = null;
     protected ?ChatbotHistory $history = null;
     protected ?Chatbot $chatbot = null;
+    protected string $humanAgentCommand = 'humanagent';
     protected int $chatbotId;
     protected int $channelId;
     protected ?string $ipAddress = null;
@@ -103,46 +104,14 @@ class EvolutionConversationService
         $response = $this->generateResponse($messageBody) 
                  ?? trans("Sorry, I can't answer right now.");
 
-        Log::info('Evolution: Sending response to WhatsApp', [
-            'conversation_id' => $conversation->id,
-            'phone' => $phoneNumber,
-            'response_length' => strlen($response),
-            'full_response' => $response
-        ]);
+        if (!$conversation->connect_agent_at 
+            && $chatbot->interaction_type === InteractionType::SMART_SWITCH 
+            && MarketplaceHelper::isRegistered('chatbot-agent')) {
+            $response .= "\n\n\nTo speak with a live support agent, please enter the #{$this->humanAgentCommand} command.";
+        }
 
         $service->sendText($response, $phoneNumber);
         $this->insertMessage($conversation, $response, 'assistant', $chatbot->ai_model);
-        
-        // Enviar tip de agente humano solo la primera vez
-        $this->sendHumanAgentTipIfNeeded($conversation, $chatbot, $service, $phoneNumber);
-    }
-    
-    protected function sendHumanAgentTipIfNeeded(
-        ChatbotConversation $conversation,
-        Chatbot $chatbot,
-        EvolutionWhatsappService $service,
-        string $phoneNumber
-    ): void {
-        // Solo enviar si:
-        // 1. No está conectado a agente
-        // 2. Es modo SMART_SWITCH
-        // 3. Está registrado el módulo de agente
-        // 4. NO se ha enviado el tip antes
-        // 5. Es la primera interacción (menos de 2 mensajes en la conversación)
-        if ($conversation->connect_agent_at 
-            || $chatbot->interaction_type !== InteractionType::SMART_SWITCH 
-            || !MarketplaceHelper::isRegistered('chatbot-agent')
-            || $conversation->histories()->count() > 2) {
-            return;
-        }
-        
-        // Obtener mensaje personalizado o usar el default
-        $command = $chatbot->human_agent_command ?? 'humanagent';
-        $tipMessage = $chatbot->human_agent_tip_message 
-            ?? "💡 **Tip:** En cualquier momento puedes escribir #{$command} para ser atendido por un asesor humano.";
-        
-        $service->sendText($tipMessage, $phoneNumber);
-        $this->insertMessage($conversation, $tipMessage, 'assistant', $chatbot->ai_model);
     }
 
     protected function sendUnsupportedMessageType(
@@ -188,12 +157,11 @@ class EvolutionConversationService
 
     protected function isHumanAgentCommand(Chatbot $chatbot, string $messageBody): bool
     {
-        $command = $chatbot->human_agent_command ?? 'humanagent';
-        $commands = ['#' . $command, $command];
+        $commands = ['#' . $this->humanAgentCommand, $this->humanAgentCommand];
         $normalizedMessage = strtolower(trim($messageBody));
 
-        foreach ($commands as $cmd) {
-            if (str_contains($normalizedMessage, strtolower($cmd))) {
+        foreach ($commands as $command) {
+            if (str_contains($normalizedMessage, strtolower($command))) {
                 return true;
             }
         }
@@ -210,136 +178,11 @@ class EvolutionConversationService
                 ->setConversation($this->conversation)
                 ->setPrompt($message);
             
-            $response = $generatorService->generate();
-            
-            Log::info('Evolution: AI Response generated', [
-                'conversation_id' => $this->conversation->id,
-                'response_length' => strlen($response),
-                'response_preview' => substr($response, 0, 200)
-            ]);
-            
-            // Integrar Sales Agent si está habilitado
-            if ($this->chatbot->sales_agent_enabled) {
-                $response = $this->enhanceWithSalesAgent($response, $message);
-            }
-            
-            return $response;
+            return $generatorService->generate();
         } catch (\Exception $e) {
             Log::error('Evolution: Error generating response', [
                 'error' => $e->getMessage(),
                 'conversation_id' => $this->conversation->id ?? 'unknown'
-            ]);
-            return null;
-        }
-    }
-
-    protected function enhanceWithSalesAgent(string $aiResponse, string $userMessage): string
-    {
-        try {
-            $orchestrator = app(\App\Extensions\Chatbot\System\Services\ProductOrchestratorService::class);
-            
-            $result = $orchestrator->orchestrate(
-                chatbot: $this->chatbot,
-                aiResponse: $aiResponse,
-                userQuery: $userMessage
-            );
-            
-            // Si se detectaron productos
-            if ($result['show_sales_grid'] && !empty($result['products'])) {
-                $products = is_array($result['products']) ? $result['products'] : $result['products']->toArray();
-                $productsText = $this->formatProductsForWhatsApp($products);
-                $aiResponse .= "\n\n" . $productsText;
-                
-                Log::info('Evolution: Products added to response', [
-                    'conversation_id' => $this->conversation->id,
-                    'products_count' => count($result['products'])
-                ]);
-            }
-            
-            // Si se activó negociación
-            if (($result['negotiation_triggered'] ?? false) && $this->chatbot->negotiation_enabled) {
-                $couponText = $this->generateCouponForWhatsApp();
-                if ($couponText) {
-                    $aiResponse .= "\n\n" . $couponText;
-                    
-                    Log::info('Evolution: Coupon added to response', [
-                        'conversation_id' => $this->conversation->id
-                    ]);
-                }
-            }
-            
-            return $aiResponse;
-            
-        } catch (\Exception $e) {
-            Log::error('Evolution: Error enhancing with Sales Agent', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return $aiResponse; // Retornar respuesta original si falla
-        }
-    }
-
-    protected function formatProductsForWhatsApp(array $products): string
-    {
-        $text = "🛍️ *Productos disponibles:*\n\n";
-        
-        foreach (array_slice($products, 0, 5) as $index => $product) {
-            $num = $index + 1;
-            $text .= "*{$num}. {$product['name']}*\n";
-            $text .= "💰 Precio: \$" . number_format($product['price'], 0, ',', '.') . "\n";
-            
-            if (!empty($product['short_description'])) {
-                $description = strip_tags($product['short_description']);
-                $description = mb_substr($description, 0, 100);
-                if (mb_strlen($product['short_description']) > 100) {
-                    $description .= '...';
-                }
-                $text .= "📝 {$description}\n";
-            }
-            
-            if (!empty($product['product_url'])) {
-                $text .= "🔗 {$product['product_url']}\n";
-            }
-            
-            $text .= "\n";
-        }
-        
-        $text .= "Para más información sobre algún producto, escribe su número.";
-        
-        return $text;
-    }
-
-    protected function generateCouponForWhatsApp(): ?string
-    {
-        try {
-            if (!$this->chatbot->negotiation_enabled) {
-                return null;
-            }
-            
-            $wooCommerceService = app(\App\Extensions\Chatbot\System\Services\WooCommerceService::class);
-            
-            $result = $wooCommerceService->createDynamicCoupon($this->chatbot, [
-                'discount' => $this->chatbot->negotiation_max_discount,
-                'duration' => $this->chatbot->negotiation_coupon_duration,
-                'min_cart_value' => $this->chatbot->negotiation_min_cart_value,
-            ]);
-            
-            if ($result['success']) {
-                $coupon = $result['coupon'];
-                
-                return "🎁 *¡Cupón Especial Generado!*\n\n" .
-                       "📋 Código: *{$coupon['code']}*\n" .
-                       "💰 Descuento: *{$coupon['discount']}%*\n" .
-                       "⏰ Válido por: *{$coupon['expires_in_minutes']} minutos*\n\n" .
-                       "Copia este código y úsalo en el checkout para obtener tu descuento.";
-            }
-            
-            return null;
-            
-        } catch (\Exception $e) {
-            Log::error('Evolution: Error generating coupon', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
             return null;
         }

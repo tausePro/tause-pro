@@ -124,7 +124,7 @@ class QuickReplyService
             [
                 'type' => 'text',
                 'label' => '👤 Hablar con un agente',
-                'value' => '#humanagent',
+                'value' => '#' . ($chatbot->human_agent_command ?? 'humanagent'),
             ]
         ];
     }
@@ -180,7 +180,7 @@ class QuickReplyService
             [
                 'type' => 'text',
                 'label' => '👤 Agente humano',
-                'value' => '#humanagent',
+                'value' => '#' . ($chatbot->human_agent_command ?? 'humanagent'),
             ]
         ];
     }
@@ -222,7 +222,7 @@ class QuickReplyService
             [
                 'type' => 'text',
                 'label' => '👤 Agente',
-                'value' => '#humanagent',
+                'value' => '#' . ($chatbot->human_agent_command ?? 'humanagent'),
             ]
         ];
     }

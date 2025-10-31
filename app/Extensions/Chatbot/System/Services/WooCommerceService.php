@@ -392,6 +392,22 @@ class WooCommerceService
                         'key' => '_shipping_pending',
                         'value' => 'yes',
                     ],
+                    [
+                        'key' => '_wc_order_attribution_source_type',
+                        'value' => 'organic',
+                    ],
+                    [
+                        'key' => '_wc_order_attribution_referrer',
+                        'value' => 'TausePro - Chatbot',
+                    ],
+                    [
+                        'key' => '_wc_order_attribution_utm_source',
+                        'value' => 'tausepro',
+                    ],
+                    [
+                        'key' => '_created_via',
+                        'value' => 'TausePro Chatbot',
+                    ],
                 ],
             ];
 
