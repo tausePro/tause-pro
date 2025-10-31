@@ -12,6 +12,7 @@ use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
 use App\Helpers\Classes\MarketplaceHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class EvolutionConversationService
@@ -283,6 +284,9 @@ class EvolutionConversationService
                 return $aiResponse; // Retornar respuesta normal sin productos
             }
             
+            // Limpiar cache de productos anteriores cuando hay nueva búsqueda
+            Cache::forget("whatsapp_shown_products_{$this->conversation->id}");
+            
             $orchestrator = app(\App\Extensions\Chatbot\System\Services\ProductOrchestratorService::class);
             
             $result = $orchestrator->orchestrate(
@@ -291,15 +295,45 @@ class EvolutionConversationService
                 userQuery: $userMessage
             );
             
-            // Si se detectaron productos
+            // Si se detectaron productos, guardarlos en cache y formatear con números
             if ($result['show_sales_grid'] && !empty($result['products'])) {
                 $products = is_array($result['products']) ? $result['products'] : $result['products']->toArray();
-                $productsText = $this->formatProductsForWhatsApp($products);
-                $aiResponse .= "\n\n" . $productsText;
                 
-                Log::info('Evolution: Products added to response', [
+                // Guardar productos en cache (30 minutos)
+                Cache::forget("whatsapp_shown_products_{$this->conversation->id}");
+                Cache::put(
+                    "whatsapp_shown_products_{$this->conversation->id}",
+                    $products,
+                    now()->addMinutes(30)
+                );
+                
+                // Formatear productos con números claros
+                $productsText = "\n\n🛍️ *Productos disponibles:*\n\n";
+                foreach (array_slice($products, 0, 5) as $index => $product) {
+                    $num = $index + 1;
+                    $productsText .= "*{$num}. {$product['name']}*\n";
+                    $productsText .= "💰 Precio: \$" . number_format($product['price'], 0, ',', '.') . " COP\n";
+                    
+                    if (!empty($product['short_description'])) {
+                        $description = strip_tags($product['short_description']);
+                        $description = mb_substr($description, 0, 80);
+                        if (mb_strlen($product['short_description']) > 80) {
+                            $description .= '...';
+                        }
+                        $productsText .= "📝 {$description}\n";
+                    }
+                    $productsText .= "\n";
+                }
+                
+                $productsText .= "💡 *Escribe el número del producto para comprarlo*";
+                
+                // Agregar productos formateados a la respuesta
+                $aiResponse .= $productsText;
+                
+                Log::info('Evolution: Products cached and formatted', [
                     'conversation_id' => $this->conversation->id,
-                    'products_count' => count($result['products'])
+                    'products_count' => count($products),
+                    'products' => array_column($products, 'name')
                 ]);
             }
             
@@ -324,36 +358,6 @@ class EvolutionConversationService
             ]);
             return $aiResponse; // Retornar respuesta original si falla
         }
-    }
-
-    protected function formatProductsForWhatsApp(array $products): string
-    {
-        $text = "🛍️ *Productos disponibles:*\n\n";
-        
-        foreach (array_slice($products, 0, 5) as $index => $product) {
-            $num = $index + 1;
-            $text .= "*{$num}. {$product['name']}*\n";
-            $text .= "💰 Precio: \$" . number_format($product['price'], 0, ',', '.') . "\n";
-            
-            if (!empty($product['short_description'])) {
-                $description = strip_tags($product['short_description']);
-                $description = mb_substr($description, 0, 100);
-                if (mb_strlen($product['short_description']) > 100) {
-                    $description .= '...';
-                }
-                $text .= "📝 {$description}\n";
-            }
-            
-            if (!empty($product['product_url'])) {
-                $text .= "🔗 {$product['product_url']}\n";
-            }
-            
-            $text .= "\n";
-        }
-        
-        $text .= "Para más información sobre algún producto, escribe su número.";
-        
-        return $text;
     }
 
     protected function generateCouponForWhatsApp(): ?string
@@ -576,28 +580,29 @@ class EvolutionConversationService
         int $productNumber,
         $purchaseFlow
     ): string {
-        // Obtener productos del chatbot
-        $products = \App\Extensions\Chatbot\System\Models\ChatbotProduct::where('chatbot_id', $chatbot->id)
-            ->where('in_stock', true)
-            ->orderBy('name')
-            ->get();
+        // Obtener productos mostrados del cache
+        $cachedProducts = Cache::get("whatsapp_shown_products_{$conversation->id}");
         
-        if ($products->isEmpty()) {
-            return "❌ Lo siento, no tengo productos disponibles en este momento.";
+        if (!$cachedProducts || empty($cachedProducts)) {
+            return "❌ Lo siento, no encontré productos recientes. Por favor dime qué estás buscando.";
         }
         
         // Verificar que el número esté en rango
-        if ($productNumber < 1 || $productNumber > $products->count()) {
-            return "❌ Por favor selecciona un número válido entre 1 y {$products->count()}.";
+        if ($productNumber < 1 || $productNumber > count($cachedProducts)) {
+            return "❌ Por favor selecciona un número válido entre 1 y " . count($cachedProducts) . ".";
         }
         
-        // Obtener el producto (índice basado en 0)
-        $product = $products[$productNumber - 1];
+        // Obtener el producto del cache (índice basado en 0)
+        $productData = $cachedProducts[$productNumber - 1];
+        
+        if (!isset($productData['woocommerce_id'])) {
+            return "❌ Error al obtener el producto. Por favor intenta nuevamente.";
+        }
         
         // Iniciar flujo de compra
         return $purchaseFlow->startPurchaseFlow(
             $conversation,
-            $product->woocommerce_id,
+            $productData['woocommerce_id'],
             $chatbot
         );
     }
