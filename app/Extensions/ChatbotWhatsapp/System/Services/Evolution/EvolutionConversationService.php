@@ -278,6 +278,11 @@ class EvolutionConversationService
     protected function enhanceWithSalesAgent(string $aiResponse, string $userMessage): string
     {
         try {
+            // FILTRO: Solo procesar si hay intención clara de búsqueda/compra
+            if (!$this->hasProductSearchIntent($userMessage)) {
+                return $aiResponse; // Retornar respuesta normal sin productos
+            }
+            
             $orchestrator = app(\App\Extensions\Chatbot\System\Services\ProductOrchestratorService::class);
             
             $result = $orchestrator->orchestrate(
@@ -521,6 +526,45 @@ class EvolutionConversationService
         }
         
         return null;
+    }
+
+    /**
+     * Detectar si el mensaje tiene intención de búsqueda/compra de productos
+     */
+    protected function hasProductSearchIntent(string $message): bool
+    {
+        $message = strtolower(trim($message));
+        
+        // Excluir saludos simples
+        $greetings = [
+            'hola', 'hi', 'hello', 'buenos dias', 'buenas tardes', 'buenas noches',
+            'buen dia', 'buena tarde', 'buena noche', 'hey', 'saludos',
+            'que tal', 'como estas', 'como esta', 'alo', 'aló'
+        ];
+        
+        foreach ($greetings as $greeting) {
+            if ($message === $greeting || $message === $greeting . ' ali') {
+                return false;
+            }
+        }
+        
+        // Detectar palabras clave de búsqueda/compra
+        $searchKeywords = [
+            'quiero', 'necesito', 'busco', 'buscando', 'comprar', 'compra',
+            'vender', 'venta', 'precio', 'cuanto cuesta', 'cuánto cuesta',
+            'tienes', 'tienen', 'hay', 'venden', 'ofrecen', 'disponible',
+            'producto', 'productos', 'articulo', 'artículo', 'catalogo', 'catálogo',
+            'mostrar', 'ver', 'mirar', 'enseñar', 'recomendar', 'sugerir',
+            'informacion', 'información', 'detalles', 'caracteristicas', 'características'
+        ];
+        
+        foreach ($searchKeywords as $keyword) {
+            if (str_contains($message, $keyword)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
