@@ -100,6 +100,48 @@ class EvolutionConversationService
             return;
         }
 
+        // NUEVO: Verificar si está en flujo de compra de WhatsApp
+        if ($chatbot->sales_agent_enabled) {
+            $purchaseFlow = app(\App\Extensions\Chatbot\System\Services\WhatsAppPurchaseFlowService::class);
+            
+            // Si está en flujo de compra activo, procesar con el servicio de compra
+            if ($purchaseFlow->isInPurchaseFlow($conversation)) {
+                $response = $purchaseFlow->processUserResponse(
+                    $conversation,
+                    $messageBody,
+                    $chatbot,
+                    $phoneNumber
+                );
+                
+                $service->sendText($response, $phoneNumber);
+                $this->insertMessage($conversation, $response, 'assistant', $chatbot->ai_model);
+                
+                Log::info('Evolution: Purchase flow response sent', [
+                    'conversation_id' => $conversation->id,
+                    'state' => $purchaseFlow->getState($conversation)
+                ]);
+                
+                return;
+            }
+            
+            // Detectar si el usuario quiere comprar un producto (por número)
+            if ($this->isPurchaseIntent($messageBody)) {
+                $productNumber = $this->extractProductNumber($messageBody);
+                if ($productNumber) {
+                    $response = $this->startPurchaseFromProductNumber(
+                        $conversation,
+                        $chatbot,
+                        $productNumber,
+                        $purchaseFlow
+                    );
+                    
+                    $service->sendText($response, $phoneNumber);
+                    $this->insertMessage($conversation, $response, 'assistant', $chatbot->ai_model);
+                    return;
+                }
+            }
+        }
+
         $response = $this->generateResponse($messageBody) 
                  ?? trans("Sorry, I can't answer right now.");
 
@@ -427,6 +469,93 @@ class EvolutionConversationService
     {
         $this->payload = $payload;
         return $this;
+    }
+
+    /**
+     * Detectar si el mensaje es una intención de compra
+     */
+    protected function isPurchaseIntent(string $message): bool
+    {
+        $message = strtolower(trim($message));
+        
+        // Detectar números simples (1, 2, 3, etc.)
+        if (preg_match('/^[0-9]+$/', $message)) {
+            return true;
+        }
+        
+        // Detectar frases de compra
+        $purchaseKeywords = [
+            'quiero el',
+            'comprar el',
+            'me interesa el',
+            'dame el',
+            'quiero comprar',
+            'lo quiero',
+            'me lo llevo'
+        ];
+        
+        foreach ($purchaseKeywords as $keyword) {
+            if (str_contains($message, $keyword)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Extraer número de producto del mensaje
+     */
+    protected function extractProductNumber(string $message): ?int
+    {
+        $message = trim($message);
+        
+        // Si es solo un número
+        if (preg_match('/^([0-9]+)$/', $message, $matches)) {
+            return (int) $matches[1];
+        }
+        
+        // Si contiene "el 1", "número 2", etc.
+        if (preg_match('/(?:el|número|numero|#)\s*([0-9]+)/i', $message, $matches)) {
+            return (int) $matches[1];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Iniciar compra desde número de producto
+     */
+    protected function startPurchaseFromProductNumber(
+        ChatbotConversation $conversation,
+        Chatbot $chatbot,
+        int $productNumber,
+        $purchaseFlow
+    ): string {
+        // Obtener productos del chatbot
+        $products = \App\Extensions\Chatbot\System\Models\ChatbotProduct::where('chatbot_id', $chatbot->id)
+            ->where('in_stock', true)
+            ->orderBy('name')
+            ->get();
+        
+        if ($products->isEmpty()) {
+            return "❌ Lo siento, no tengo productos disponibles en este momento.";
+        }
+        
+        // Verificar que el número esté en rango
+        if ($productNumber < 1 || $productNumber > $products->count()) {
+            return "❌ Por favor selecciona un número válido entre 1 y {$products->count()}.";
+        }
+        
+        // Obtener el producto (índice basado en 0)
+        $product = $products[$productNumber - 1];
+        
+        // Iniciar flujo de compra
+        return $purchaseFlow->startPurchaseFlow(
+            $conversation,
+            $product->product_id,
+            $chatbot
+        );
     }
 }
 
