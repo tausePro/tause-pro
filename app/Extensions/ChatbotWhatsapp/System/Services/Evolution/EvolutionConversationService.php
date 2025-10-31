@@ -553,7 +553,7 @@ class EvolutionConversationService
         // Iniciar flujo de compra
         return $purchaseFlow->startPurchaseFlow(
             $conversation,
-            $product->product_id,
+            $product->woocommerce_id,
             $chatbot
         );
     }

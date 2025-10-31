@@ -105,7 +105,7 @@ class WhatsAppPurchaseFlowService
     ): string {
         // Obtener producto
         $product = ChatbotProduct::where('chatbot_id', $chatbot->id)
-            ->where('product_id', $productId)
+            ->where('woocommerce_id', $productId)
             ->first();
 
         if (!$product) {
@@ -366,6 +366,18 @@ class WhatsAppPurchaseFlowService
      */
     protected function createOrder(Chatbot $chatbot, array $data): array
     {
+        // Obtener el producto completo
+        $product = ChatbotProduct::where('chatbot_id', $chatbot->id)
+            ->where('woocommerce_id', $data['product_id'])
+            ->first();
+
+        if (!$product) {
+            return [
+                'success' => false,
+                'message' => 'Producto no encontrado.'
+            ];
+        }
+
         // Crear orden en WooCommerce
         $orderData = [
             'product_id' => $data['product_id'],
@@ -389,19 +401,20 @@ class WhatsAppPurchaseFlowService
             ];
         }
 
-        // Generar link de pago Wompi
-        $paymentData = [
-            'amount' => $data['total'],
-            'currency' => 'COP',
-            'customer_email' => $data['email'],
-            'reference' => 'ORDER-' . $orderResult['order_id'],
-            'customer_data' => [
-                'phone_number' => $data['phone'],
-                'full_name' => $data['first_name'] . ' ' . $data['last_name'],
-            ],
+        // Generar link de pago Wompi con el objeto producto
+        $customerData = [
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'full_name' => $data['first_name'] . ' ' . $data['last_name'],
         ];
 
-        $paymentResult = $this->wompiService->generatePaymentLink($chatbot, $paymentData);
+        $paymentResult = $this->wompiService->generatePaymentLink(
+            $chatbot,
+            $product,
+            $customerData,
+            $data['quantity'],
+            $orderResult['order_id']
+        );
 
         if (!$paymentResult['success']) {
             return [
