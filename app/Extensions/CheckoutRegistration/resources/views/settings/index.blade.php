@@ -32,7 +32,7 @@
 	<div class="mb-4">
 		<label class="form-label">
 			{{ __('Checkout Registration Payment Gateway') }}
-			<x-info-tooltip text="{{ __('Please select the payment gateway that will be used for registration. (only Stripe is available for now.') }}"/>
+			<x-info-tooltip text="{{ __('Please select the payment gateway that will be used for registration.') }}"/>
 		</label>
 		<select
 			class="form-select"
@@ -44,6 +44,11 @@
 				{{ setting('default_checkout_gateway', 'stripe') === 'stripe' ? 'selected' : '' }}
 			>
 			{{ __('Stripe') }}</option>
+			<option
+				value="wompi"
+				{{ setting('default_checkout_gateway', 'stripe') === 'wompi' ? 'selected' : '' }}
+			>
+			{{ __('Wompi') }}</option>
 {{--			<option--}}
 {{--				value="paypal"--}}
 {{--				{{ setting('default_checkout_gateway', 'stripe') === 'paypal' ? 'selected' : '' }}--}}
