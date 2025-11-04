@@ -302,18 +302,22 @@ class WompiService
         
         $amountInCents = (int) ($priceData['final_price'] * 100); // Wompi uses cents
         
+        // Use payment_links endpoint instead of transactions
+        // This generates a checkout page where user selects payment method
         $payload = [
-            'amount_in_cents' => $amountInCents,
+            'name' => $order->plan->name ?? 'Subscription Plan',
+            'description' => 'Suscripción a ' . ($order->plan->name ?? 'Plan'),
+            'single_use' => true,
+            'collect_shipping' => false,
             'currency' => $currency->code ?? 'COP',
-            'customer_email' => $user->email,
-            'reference' => $order->order_id,
+            'amount_in_cents' => $amountInCents,
             'redirect_url' => route('dashboard.user.payment.succesful'),
         ];
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . self::getPrivateKey(),
+            'Authorization' => 'Bearer ' . self::getPublicKey(), // Use public key for payment links
             'Content-Type' => 'application/json',
-        ])->post(self::getApiUrl() . '/transactions', $payload);
+        ])->post(self::getApiUrl() . '/payment_links', $payload);
 
         if (!$response->successful()) {
             throw new Exception('Wompi API Error: ' . $response->body());
@@ -321,14 +325,14 @@ class WompiService
 
         $data = $response->json()['data'] ?? [];
         
-        // Store transaction ID in order
+        // Store payment link ID in order
         $order->payment_id = $data['id'] ?? null;
         $order->save();
 
         return [
             'id' => $data['id'],
-            'checkout_url' => $data['payment_link_url'] ?? '',
-            'payment_link' => $data['payment_link_url'] ?? '',
+            'checkout_url' => $data['url'] ?? '',
+            'payment_link' => $data['url'] ?? '',
         ];
     }
 
