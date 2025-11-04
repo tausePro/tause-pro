@@ -549,4 +549,19 @@ class WompiService
             'BANCOLOMBIA_QR' => 'QR Bancolombia',
         ];
     }
+
+    /**
+     * Save all products (compatibility method)
+     * Wompi doesn't require pre-creating products like Stripe
+     * This method exists for compatibility with the gateway interface
+     * 
+     * @return bool
+     */
+    public static function saveAllProducts(): bool
+    {
+        // Wompi no requiere crear productos previamente
+        // Los pagos se crean on-demand con el monto y descripción
+        Log::info('WompiService::saveAllProducts() - No action needed, Wompi creates payments on-demand');
+        return true;
+    }
 }
