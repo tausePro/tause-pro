@@ -326,6 +326,7 @@ Route::middleware(['auth', 'updateUserActivity'])
                         Route::post('iyzico/prepaid/callback', [PaymentProcessController::class, 'iyzicoPrepaidCallback'])->name('iyzico.prepaid.callback');
                         Route::post('iyzico/subscribe/callback', [PaymentProcessController::class, 'iyzicoSubscribeCallback'])->name('iyzico.subscribe.callback');
                         Route::get('iyzico/products', [PaymentProcessController::class, 'iyzicoProductsList'])->name('iyzico.products');
+                        Route::post('/subscription/wompi/process', [PaymentProcessController::class, 'processWompiSubscription'])->name('subscription.wompi.process');
 
                         Route::get('succesful', [PaymentProcessController::class, 'successful'])->name('succesful');
                         Route::post('/user-subscribe-cancel/{id}', [PaymentProcessController::class, 'cancelActiveSubscriptionByAdmin'])->name('cancelActiveSubscriptionByAdmin');

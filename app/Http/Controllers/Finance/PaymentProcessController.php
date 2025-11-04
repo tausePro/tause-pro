@@ -876,4 +876,42 @@ class PaymentProcessController extends Controller
             return back()->with(['message' => Str::before($th->getMessage(), ':'), 'type' => 'error']);
         }
     }
+
+    /**
+     * Process Wompi subscription payment
+     * Creates transaction and redirects to Wompi checkout
+     */
+    public function processWompiSubscription(Request $request)
+    {
+        try {
+            $planId = $request->input('plan_id');
+            $couponCode = $request->input('coupon');
+            
+            $plan = Plan::findOrFail($planId);
+            $user = Auth::user();
+            
+            // Use WompiService to create transaction
+            $wompiService = new \App\Services\PaymentGateways\WompiService();
+            
+            // Calculate final price with discounts
+            $priceData = $wompiService::calculateFinalPrice($plan, $couponCode, $user);
+            
+            // Create order in database
+            $order = $wompiService::createOrder($user, $plan, $priceData);
+            
+            // Create Wompi transaction
+            $transaction = $wompiService::createTransaction($user, $order, $priceData);
+            
+            // Redirect to Wompi checkout
+            return redirect($transaction['payment_link']);
+            
+        } catch (Exception $e) {
+            Log::error('Wompi Process Subscription Error: ' . $e->getMessage());
+            
+            return back()->with([
+                'message' => 'Error al procesar pago con Wompi: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
 }

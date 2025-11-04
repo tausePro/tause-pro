@@ -92,36 +92,43 @@ class WompiService
     /**
      * Subscribe user to a plan
      * Compatible with PaymentProcessController interface
+     * Returns view with payment button like PayPal/Stripe
      *
      * @param Plan $plan
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      * @throws Exception
      */
     public static function subscribe($plan)
     {
+        $gateway = self::getGateway();
         $user = Auth::user();
-        $couponCode = request()->input('coupon');
+        $coupon = checkCouponInRequest();
         
         try {
-            DB::beginTransaction();
+            // Calculate prices
+            $newDiscountedPrice = $plan->price;
+            if ($coupon) {
+                $newDiscountedPrice = $plan->price - ($plan->price * ($coupon->discount / 100));
+                if ($newDiscountedPrice != floor($newDiscountedPrice)) {
+                    $newDiscountedPrice = number_format($newDiscountedPrice, 2);
+                }
+            }
             
-            // Calculate final price with discounts
-            $priceData = self::calculateFinalPrice($plan, $couponCode, $user);
+            $taxRate = $gateway->tax ?? 0;
+            $taxValue = taxToVal($newDiscountedPrice, $taxRate);
+            $finalPrice = $newDiscountedPrice;
             
-            // Create order in database
-            $order = self::createOrder($user, $plan, $priceData);
-            
-            // Create Wompi transaction
-            $transaction = self::createTransaction($user, $order, $priceData);
-            
-            DB::commit();
-            
-            // Redirect to Wompi checkout
-            return redirect($transaction['payment_link']);
+            // Return view with payment form
+            return view('panel.user.finance.subscription.' . self::$GATEWAY_CODE, compact(
+                'plan',
+                'gateway',
+                'finalPrice',
+                'taxValue',
+                'taxRate',
+                'coupon'
+            ));
             
         } catch (Exception $e) {
-            DB::rollBack();
-            
             Log::error('Wompi Subscribe Error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
@@ -129,7 +136,7 @@ class WompiService
             ]);
             
             return back()->with([
-                'message' => 'Error al crear suscripción con Wompi: ' . $e->getMessage(),
+                'message' => 'Error al preparar pago con Wompi: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
@@ -143,7 +150,7 @@ class WompiService
      * @param User $user
      * @return array
      */
-    private static function calculateFinalPrice(Plan $plan, ?string $couponCode, User $user): array
+    public static function calculateFinalPrice(Plan $plan, ?string $couponCode, User $user): array
     {
         $originalPrice = $plan->price;
         $discountAmount = 0;
@@ -228,7 +235,7 @@ class WompiService
      * @param array $priceData
      * @return UserOrder
      */
-    private static function createOrder(User $user, Plan $plan, array $priceData): UserOrder
+    public static function createOrder(User $user, Plan $plan, array $priceData): UserOrder
     {
         $orderId = 'WMP-' . strtoupper(Str::random(13));
         
@@ -261,7 +268,7 @@ class WompiService
      * @return array
      * @throws Exception
      */
-    private static function createTransaction(User $user, UserOrder $order, array $priceData): array
+    public static function createTransaction(User $user, UserOrder $order, array $priceData): array
     {
         $currency = Currency::where('id', setting('default_currency', 'USD'))->first();
         $amountInCents = (int) ($priceData['final_price'] * 100); // Wompi uses cents
