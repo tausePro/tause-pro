@@ -53,7 +53,9 @@ class WompiService
      */
     private static function getPublicKey(): string
     {
-        return self::getGateway()->live_client_id ?? '';
+        $gateway = self::getGateway();
+        $mode = $gateway->mode ?? 'sandbox';
+        return $mode === 'live' ? ($gateway->live_client_id ?? '') : ($gateway->sandbox_client_id ?? '');
     }
 
     /**
@@ -61,7 +63,9 @@ class WompiService
      */
     private static function getPrivateKey(): string
     {
-        return self::getGateway()->live_client_secret ?? '';
+        $gateway = self::getGateway();
+        $mode = $gateway->mode ?? 'sandbox';
+        return $mode === 'live' ? ($gateway->live_client_secret ?? '') : ($gateway->sandbox_client_secret ?? '');
     }
 
     /**
@@ -69,7 +73,9 @@ class WompiService
      */
     private static function getEventsKey(): string
     {
-        return self::getGateway()->live_app_id ?? '';
+        $gateway = self::getGateway();
+        $mode = $gateway->mode ?? 'sandbox';
+        return $mode === 'live' ? ($gateway->live_app_id ?? '') : ($gateway->sandbox_app_id ?? '');
     }
 
     /**
