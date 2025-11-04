@@ -315,7 +315,7 @@ class WompiService
         ];
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . self::getPublicKey(), // Use public key for payment links
+            'Authorization' => 'Bearer ' . self::getPrivateKey(), // Use private key for payment links
             'Content-Type' => 'application/json',
         ])->post(self::getApiUrl() . '/payment_links', $payload);
 
