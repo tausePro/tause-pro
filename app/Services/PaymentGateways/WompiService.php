@@ -105,13 +105,24 @@ class WompiService
         $coupon = checkCouponInRequest();
         
         try {
+            // Get gateway currency
+            $gatewayCurrency = Currency::where('id', $gateway->currency)->first();
+            
+            // If gateway is in COP, use plan price as-is (no conversion needed)
+            // If gateway is in another currency, convert to COP
+            $priceInCOP = $plan->price;
+            
+            if ($gatewayCurrency && $gatewayCurrency->code !== 'COP') {
+                // Plan is in different currency, convert to COP
+                // Fixed exchange rate: 1 USD = 4000 COP
+                $exchangeRate = 4000;
+                $priceInCOP = $plan->price * $exchangeRate;
+            }
+            
             // Calculate prices
-            $newDiscountedPrice = $plan->price;
+            $newDiscountedPrice = $priceInCOP;
             if ($coupon) {
-                $newDiscountedPrice = $plan->price - ($plan->price * ($coupon->discount / 100));
-                if ($newDiscountedPrice != floor($newDiscountedPrice)) {
-                    $newDiscountedPrice = number_format($newDiscountedPrice, 2);
-                }
+                $newDiscountedPrice = $priceInCOP - ($priceInCOP * ($coupon->discount / 100));
             }
             
             $taxRate = $gateway->tax ?? 0;
@@ -152,7 +163,18 @@ class WompiService
      */
     public static function calculateFinalPrice(Plan $plan, ?string $couponCode, User $user): array
     {
+        $gateway = self::getGateway();
+        $gatewayCurrency = Currency::where('id', $gateway->currency)->first();
+        
+        // If gateway is in COP, use plan price as-is
         $originalPrice = $plan->price;
+        
+        if ($gatewayCurrency && $gatewayCurrency->code !== 'COP') {
+            // Convert to COP if needed
+            $exchangeRate = 4000; // 1 USD = 4000 COP
+            $originalPrice = $plan->price * $exchangeRate;
+        }
+        
         $discountAmount = 0;
         $finalPrice = $originalPrice;
         $coupon = null;
