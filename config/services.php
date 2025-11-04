@@ -103,6 +103,10 @@ return [
         'class' => App\Services\PaymentGateways\CoingateService::class,
     ],
 
+    'wompi' => [
+        'class' => App\Services\PaymentGateways\WompiService::class,
+    ],
+
     'paddle' => [
         'class' => App\Services\PaymentGateways\PaddleService::class,
     ],

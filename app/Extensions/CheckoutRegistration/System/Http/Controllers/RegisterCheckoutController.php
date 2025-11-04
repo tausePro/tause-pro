@@ -5,6 +5,7 @@ namespace App\Extensions\CheckoutRegistration\System\Http\Controllers;
 use App\Actions\EmailConfirmation;
 use App\Extensions\CheckoutRegistration\System\Http\Services\Finance\PaypalService;
 use App\Extensions\CheckoutRegistration\System\Http\Services\Finance\StripeService;
+use App\Extensions\CheckoutRegistration\System\Http\Services\Finance\WompiService as CheckoutWompiService;
 use App\Helpers\Classes\MarketplaceHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
@@ -122,11 +123,12 @@ class RegisterCheckoutController extends Controller
     /**
      * @throws Exception
      */
-    private function chooseService(): StripeService|PaypalService|Exception
+    private function chooseService(): StripeService|PaypalService|CheckoutWompiService|Exception
     {
         return match (setting('default_checkout_gateway', 'stripe')) {
             'stripe' => new StripeService,
             'paypal' => new PaypalService,
+            'wompi'  => new CheckoutWompiService,
             default  => throw new Exception('Gateway not found'),
         };
     }
