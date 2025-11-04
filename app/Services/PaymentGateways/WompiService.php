@@ -85,16 +85,20 @@ class WompiService
 
     /**
      * Subscribe user to a plan
+     * Compatible with PaymentProcessController interface
      *
-     * @param User $user
      * @param Plan $plan
-     * @param string|null $couponCode
-     * @return array
+     * @return \Illuminate\Http\RedirectResponse
      * @throws Exception
      */
-    public static function subscribe(User $user, Plan $plan, ?string $couponCode = null): array
+    public static function subscribe($plan)
     {
+        $user = Auth::user();
+        $couponCode = request()->input('coupon');
+        
         try {
+            DB::beginTransaction();
+            
             // Calculate final price with discounts
             $priceData = self::calculateFinalPrice($plan, $couponCode, $user);
             
@@ -104,22 +108,24 @@ class WompiService
             // Create Wompi transaction
             $transaction = self::createTransaction($user, $order, $priceData);
             
-            return [
-                'success' => true,
-                'order_id' => $order->order_id,
-                'transaction_id' => $transaction['id'],
-                'checkout_url' => $transaction['checkout_url'],
-                'payment_link' => $transaction['payment_link'],
-            ];
+            DB::commit();
+            
+            // Redirect to Wompi checkout
+            return redirect($transaction['payment_link']);
             
         } catch (Exception $e) {
+            DB::rollBack();
+            
             Log::error('Wompi Subscribe Error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
                 'trace' => $e->getTraceAsString()
             ]);
             
-            throw new Exception('Error al crear suscripción con Wompi: ' . $e->getMessage());
+            return back()->with([
+                'message' => 'Error al crear suscripción con Wompi: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
         }
     }
 
