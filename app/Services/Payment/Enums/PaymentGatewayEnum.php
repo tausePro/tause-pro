@@ -25,6 +25,7 @@ enum PaymentGatewayEnum: string implements WithStringBackedEnum
     case Razorpay = 'razorpay';
     case CryptoMus = 'cryptomus';
     case Midtrans = 'midtrans';
+    case Wompi = 'wompi';
 
     public function label(): string
     {
@@ -42,6 +43,7 @@ enum PaymentGatewayEnum: string implements WithStringBackedEnum
             self::Razorpay     => __('Razorpay'),
             self::CryptoMus    => __('CryptoMus'),
             self::Midtrans     => __('Midtrans'),
+            self::Wompi        => __('Wompi'),
         };
     }
 
@@ -183,6 +185,17 @@ enum PaymentGatewayEnum: string implements WithStringBackedEnum
             self::CryptoMus => class_exists(\App\Extensions\Cryptomus\System\Services\CryptomusService::class)
                 ? array_merge($base, \App\Extensions\Cryptomus\System\Services\CryptomusService::gatewayDefinitionArray())
                 : null,
+            self::Wompi => array_merge($base, [
+                'link'              => 'https://wompi.co/',
+                'img'               => '/assets/img/payments/wompi.svg',
+                'live_app_id'       => 1, // Events Key for webhooks
+                'sandbox_app_id'    => 1,
+                'base_url'          => 1,
+                'sandbox_url'       => 1,
+                'notify_url'        => 1,
+                'currency'          => 1,
+                'currency_locale'   => 1,
+            ]),
         };
     }
 }
