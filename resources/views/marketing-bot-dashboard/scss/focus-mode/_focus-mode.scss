@@ -1,0 +1,11 @@
+@media (min-width: theme('screens.lg')) {
+
+	.focus-mode {
+
+		.lqd-page-wrapper {
+			@apply lg:ps-[--body-padding];
+		}
+
+		@import './components/chat';
+	}
+}

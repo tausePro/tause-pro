@@ -1,0 +1,109 @@
+body:not(.navbar-shrinked) {
+	.lqd-navbar-expander {
+		@apply ms-auto;
+	}
+
+	.lqd-navbar {
+		@apply bg-background shadow-2xl;
+	}
+}
+
+.lqd-navbar {
+	@apply pt-6;
+
+	.lqd-navbar-inner {
+		scrollbar-width: none;
+	}
+
+	.lqd-navbar-ul-focus-middle {
+
+		.lqd-navbar-link {
+
+			&.active {
+
+				&:before {
+					@apply absolute bg-transparent top-0 h-full rounded-none bg-gradient-to-b from-transparent via-[#468EA6] to-transparent;
+					content: '';
+					inset-inline-start: calc((var(--navbar-ps) + 4px) * -1);
+					width: 3px;
+				}
+			}
+		}
+	}
+}
+
+@media (min-width: theme("screens.lg")) {
+	.lqd-navbar-logo {
+		@apply hidden;
+	}
+
+	.lqd-navbar {
+		top: 0 !important;
+		bottom: 0 !important;
+	}
+
+	.navbar-shrinked {
+		--navbar-background-hover: 0 0% 0% / 0%;
+		--navbar-foreground-hover: var(--navbar-foreground);
+		--navbar-background-active: 0 0% 0% / 0%;
+		--navbar-foreground-active: var(--navbar-foreground);
+		--navbar-icon-background-hover: 214 5% 26% / 10%;
+		--navbar-icon-background-active: var(--navbar-icon-background-hover);
+		--navbar-width: var(--navbar-fixed-width);
+
+		.lqd-navbar-item {
+			--dropdown-bottom-diff: clamp(calc(var(--dropdown-height) * -1),
+					calc((100vh - (var(--item-y) + var(--dropdown-height)) - 1.5rem)),
+					calc(var(--item-height) - var(--item-height)));
+		}
+
+		.lqd-navbar-link {
+			@apply p-0 gap-0 flex-col items-center text-center before:absolute before:h-8 before:w-[3px] before:rounded-e before:bg-current before:top-1.5 before:-start-navbar-ps before:opacity-0 dark:before:w-[3px] dark:before:h-8 dark:before:top-1.5;
+
+			&.active {
+				@apply before:opacity-100;
+			}
+		}
+
+		.lqd-nav-link-label {
+			@apply visible relative justify-center start-auto top-auto w-full transform-none bg-transparent p-0 text-4xs font-medium text-heading-foreground opacity-100 shadow-none;
+			margin: 0 !important;
+		}
+
+		.lqd-nav-link-icon {
+			@apply size-11 inline-grid place-items-center rounded-[10px] transition;
+		}
+
+		.lqd-navbar-dropdown {
+			@apply bg-background;
+
+			&:before {
+				width: calc(var(--label-offset) + 1.5rem);
+				inset-inline-start: calc((var(--label-offset) + 1.5rem) * -1);
+			}
+
+			.lqd-navbar-link {
+				@apply p-2 before:content-none;
+			}
+
+			.lqd-nav-link-label {
+				@apply text-start justify-start text-2xs;
+			}
+		}
+
+		&.theme-dark {
+			--navbar-icon-background-hover: 0 0% 90% / 10%;
+			--navbar-icon-background-active: var(--navbar-icon-background-hover);
+		}
+	}
+}
+
+.ai-tools-list {
+
+	.lqd-navbar-link {
+
+		&:before {
+			content: none !important;
+		}
+	}
+}

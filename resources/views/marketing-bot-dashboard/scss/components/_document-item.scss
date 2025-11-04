@@ -1,0 +1,11 @@
+.lqd-posts-item {
+
+	[data-view-mode=grid] & {
+		@apply p-6 border rounded-card;
+		box-shadow: 0 2px 5px rgb(0 0 0 / 7%);
+	}
+}
+
+.lqd-posts-item-type {
+	@apply rounded-full;
+}

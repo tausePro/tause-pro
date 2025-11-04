@@ -1,0 +1,33 @@
+.lqd-input-switcher {
+	@apply border-border;
+}
+
+.lqd-input-label {
+	--label: var(--foreground);
+}
+
+.lqd-input-container {
+
+	.lqd-input {
+		@apply focus:ring-1;
+
+		&.lqd-input-switcher {
+
+			@apply dark:checked:bg-accent dark:checked:border-accent;
+		}
+	}
+}
+
+
+.theme-dark {
+
+	.lqd-input {
+
+		&:checked {
+
+			~.lqd-input-checkbox-custom-wrap {
+				@apply bg-foreground;
+			}
+		}
+	}
+}

@@ -1,0 +1,15 @@
+.lqd-modal-head,
+.lqd-modal-content {
+	@apply bg-surface-background;
+}
+
+.lqd-modal-modal {
+	--input-background: 90 8% 95%;
+}
+
+.theme-dark {
+
+	.lqd-modal-modal {
+		--input-background: 0 0% 27%;
+	}
+}

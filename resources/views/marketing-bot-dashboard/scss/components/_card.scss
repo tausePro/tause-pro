@@ -1,0 +1,17 @@
+.lqd-card {
+	--input-background: 90 8% 95%;
+}
+
+.lqd-card-solid {
+
+	.lqd-card-solid {
+		@apply border border-card-border;
+	}
+}
+
+.theme-dark {
+
+	.lqd-card {
+		--input-background: 0 0% 30%;
+	}
+}

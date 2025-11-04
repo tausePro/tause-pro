@@ -1,0 +1,149 @@
+.chats-wrap {
+	@apply gap-2.5;
+
+	.conversation-area-wrap,
+	.chats-list-container {
+		@apply rounded-card;
+	}
+
+	.chats-list-container {
+		@apply max-md:bg-card-background;
+	}
+
+	.chats-search {
+		@apply items-center md:flex md:items-center md:h-auto md:pt-6 md:pb-3 md:px-5 md:border-none;
+	}
+
+	.chats-search-form {
+
+		.lqd-input {
+			@apply md:rounded-md md:ps-4 md:h-11;
+		}
+
+		>svg {
+			@apply md:start-auto md:end-4 md:size-4;
+		}
+	}
+
+	.chats-new,
+	.chats-list {
+		@apply md:px-5;
+	}
+
+	.chat-list-item {
+		@apply border-none rounded-md before:content-none;
+
+		.chat-list-item-actions {
+
+			&:before {
+				--background: var(--card-background);
+			}
+		}
+
+		&.pin-mode {
+
+			.lqd-chat-item-trigger-icons {
+				@apply flex;
+			}
+		}
+
+		&.active {
+			@apply bg-foreground/5;
+		}
+	}
+
+	.chat-list-item-trigger {
+		@apply md:px-3.5 md:py-4;
+	}
+
+	.chat-item-date,
+	.lqd-chat-item-trigger-icons {
+		@apply hidden;
+	}
+
+	.chats-new {
+		@apply md:pb-6;
+	}
+
+	.lqd-new-chat-trigger {
+		@apply md:py-3 md:bg-secondary md:text-secondary-foreground;
+	}
+
+	.lqd-chat-form,
+	.lqd-chat-head {
+		@apply md:bg-card-background/70 md:backdrop-blur-lg;
+	}
+
+	.lqd-chat-category-name {
+		@apply md:bg-transparent md:rounded-none md:text-xs md:font-medium md:p-0;
+	}
+
+	.lqd-chat-category-role {
+		@apply hidden;
+	}
+
+	.lqd-chat-form {
+		@apply md:py-4 md:px-6;
+	}
+
+	.lqd-chat-ai-bubble {
+
+		.chat-content-container {
+			@apply md:!bg-transparent md:border before:!content-none;
+		}
+	}
+
+	.lqd-chat-form-inputs-container {
+
+		.lqd-input {
+			@apply placeholder:text-foreground sm:text-sm focus:ring-0 focus-visible:ring-0;
+		}
+	}
+
+	.lqd-chat-send-btn {
+		@apply md:bg-secondary md:text-secondary-foreground md:size-[50px];
+	}
+
+	.lqd-chat-actions {
+		@apply gap-1;
+
+		>div {
+			@apply gap-1;
+		}
+
+		.lqd-btn,
+		button {
+			@apply md:border md:text-foreground md:size-[42px] md:bg-transparent md:hover:bg-secondary md:hover:text-secondary-foreground;
+		}
+	}
+}
+
+.lqd-chat-item {
+	@apply p-6 hover:-translate-y-1;
+
+	.lqd-fav-btn {
+		@apply start-auto end-5 size-[28px] bg-card-background opacity-0;
+	}
+
+	.lqd-chat-item-avatar {
+		@apply border-none;
+		box-shadow: 0 33px 44px hsl(0 0% 0% / 6%);
+	}
+
+	&:hover {
+
+		.lqd-fav-btn {
+			@apply opacity-100;
+		}
+	}
+}
+
+.page-user-openai-chat-chat {
+
+	.lqd-titlebar-actions {
+
+		.lqd-btn-primary {
+			@apply hidden;
+		}
+	}
+}

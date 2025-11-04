@@ -1,0 +1,21 @@
+.lqd-chat-v2 {
+
+	.chats-wrap {
+
+		.chat-content-container {
+			@apply border-none rounded-none;
+		}
+
+		.lqd-chat-form {
+			@apply p-0 bg-transparent backdrop-blur-none;
+		}
+
+		.lqd-chat-send-btn {
+			@apply md:size-11;
+		}
+	}
+
+	&.theme-dark {
+		--border: 0 0% 100% / 5%;
+	}
+}

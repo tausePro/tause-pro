@@ -1,0 +1,136 @@
+.lqd-generator-item {
+	@apply 2xl:!p-6 p-6;
+
+	.lqd-icon {
+		@apply size-11 mb-16 shadow-none;
+	}
+
+	h4 {
+		@apply mb-3;
+	}
+
+	p {
+		@apply line-clamp-3 text-ellipsis;
+	}
+
+	.lqd-fav-btn {
+		@apply size-7 opacity-0 bg-card-background;
+	}
+
+	&:hover {
+		@apply -translate-y-1;
+
+		.lqd-fav-btn {
+			@apply opacity-100;
+		}
+	}
+}
+
+.lqd-video-generator,
+.lqd-image-generator,
+.lqd-voiceover-generator {
+	@apply bg-foreground/5;
+	background-image: url('@themeAssets/marketing-bot-dashboard/assets/img/misc/generators-bg.png');
+	background-size: 800px;
+	background-position: bottom center;
+	background-repeat: no-repeat;
+
+	.lqd-image-generator-prompt {
+		box-shadow: 0 20px 50px hsl(0 0% 0% / 5%);
+	}
+}
+
+.lqd-video-generator,
+.lqd-image-generator {
+
+	.lqd-input {
+		@apply bg-card-background;
+	}
+}
+
+div.image-results {
+	@apply xl:grid-cols-4;
+}
+
+.lqd-image-generator-flux-pro-form,
+.lqd-image-generator-ideogram-form {
+
+	>h3 {
+		@apply hidden;
+	}
+}
+
+.lqd-image-generator-tabs-nav {
+
+	.lqd-image-generator-tabs-trigger {
+		@apply text-xs/none font-medium px-4 py-2.5 rounded-full [&.active]:bg-secondary [&.active]:text-secondary-foreground;
+	}
+}
+
+.lqd-image-generator-prompt {
+	@apply h-16 pt-5;
+}
+
+.lqd-image-generator-inputs-wrap {
+
+	.lqd-btn[type=submit] {
+		@apply size-11 inline-grid place-items-center overflow-hidden -indent-96 text-left !bg-foreground/5;
+		background-image: url('data:image/svg+xml,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M15.8327 0.167384C15.9923 0.327064 16.043 0.565806 15.9619 0.776576L10.2476 15.6337C10.165 15.8486 9.96142 15.9929 9.73127 15.9998C9.50112 16.0066 9.28936 15.8746 9.19408 15.665L6.80441 10.4078L10.3204 6.89181C10.6551 6.55707 10.6551 6.01435 10.3204 5.67962C9.98565 5.34489 9.44293 5.34489 9.10819 5.67962L5.59222 9.1956L0.334971 6.80594C0.125361 6.71066 -0.0065895 6.49889 0.000253997 6.26874C0.00709753 6.03861 0.151399 5.83504 0.366299 5.75239L15.2234 0.0381047C15.4342 -0.0429607 15.6729 0.00770375 15.8327 0.167384Z" fill="%23343434"/></svg>');
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 16px 16px;
+
+		svg {
+			@apply invisible;
+		}
+
+		.theme-dark & {
+			background-image: url('data:image/svg+xml,<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M15.8327 0.167384C15.9923 0.327064 16.043 0.565806 15.9619 0.776576L10.2476 15.6337C10.165 15.8486 9.96142 15.9929 9.73127 15.9998C9.50112 16.0066 9.28936 15.8746 9.19408 15.665L6.80441 10.4078L10.3204 6.89181C10.6551 6.55707 10.6551 6.01435 10.3204 5.67962C9.98565 5.34489 9.44293 5.34489 9.10819 5.67962L5.59222 9.1956L0.334971 6.80594C0.125361 6.71066 -0.0065895 6.49889 0.000253997 6.26874C0.00709753 6.03861 0.151399 5.83504 0.366299 5.75239L15.2234 0.0381047C15.4342 -0.0429607 15.6729 0.00770375 15.8327 0.167384Z" fill="%23FFFFFF"/></svg>');
+		}
+	}
+}
+
+.openai_generator_button,
+#openai_generator_button {
+	@apply bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground;
+}
+
+.lqd-adv-editor-enhance-grid-item {
+	@apply bg-card-background;
+}
+
+.lqd-adv-img-editor-form {
+
+	.lqd-input-container {
+
+		.lqd-input {
+			@apply focus:ring-0 focus-visible:ring-0;
+		}
+	}
+}
+
+#generator_sidebar_table {
+
+	>h2 {
+		@apply border-b pb-5 mb-8;
+	}
+}
+
+
+.lqd-page-generator-v2 {
+
+	.lqd-generator-item {
+		@apply flex !p-2.5;
+
+		h4 {
+			@apply mb-0;
+		}
+	}
+}
+
+.lqd-generator-search-form {
+
+	.lqd-input {
+		@apply bg-surface-background;
+	}
+}

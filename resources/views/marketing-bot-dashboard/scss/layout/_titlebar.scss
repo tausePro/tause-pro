@@ -1,0 +1,44 @@
+.lqd-titlebar {
+	@apply pt-2.5 pb-4;
+
+	.lqd-titlebar-col-nav {
+		@apply lg:w-5/12;
+	}
+
+	.lqd-titlebar-col-actions {
+		@apply lg:w-7/12;
+
+		.lqd-remaining-credit {
+			@apply ms-0 me-6 hidden lg:flex;
+		}
+	}
+}
+
+.lqd-titlebar-container {
+	@apply gap-y-2;
+}
+
+.lqd-titlebar-pretitle,
+.lqd-titlebar-subtitle {
+	@apply hidden;
+}
+
+.lqd-titlebar-title-wrap {
+	@apply flex flex-wrap gap-3 items-center;
+}
+
+.lqd-titlebar-actions {
+	@apply lg:gap-5;
+
+	.lqd-btn-primary {
+		@apply relative bg-background text-foreground before:pointer-events-none before:absolute before:-inset-1 before:-z-2 before:rounded-[inherit] before:transition-all after:absolute after:inset-0 after:-z-1 after:rounded-[inherit] after:bg-background hover:before:-inset-1.5;
+
+		&:before {
+			background: linear-gradient(to right, var(--gradient-stops));
+		}
+	}
+
+	.lqd-btn-ghost-shadow {
+		@apply p-0 shadow-none dark:bg-transparent dark:shadow-none hover:bg-transparent hover:text-current hover:transform-none hover:underline hover:shadow-none dark:hover:bg-transparent dark:hover:shadow-none dark:hover:text-foreground focus-visible:bg-transparent focus-visible:border-transparent focus-visible:text-current;
+	}
+}
