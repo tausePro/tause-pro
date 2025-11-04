@@ -270,37 +270,22 @@ class WompiService
      */
     public static function createTransaction(User $user, UserOrder $order, array $priceData): array
     {
-        $currency = Currency::where('id', setting('default_currency', 'USD'))->first();
-        $amountInCents = (int) ($priceData['final_price'] * 100); // Wompi uses cents
+        $gateway = self::getGateway();
         
-        // Prepare customer data with defaults
-        $phone = $user->phone ?? '3001234567'; // Default Colombian phone
-        $address = $user->address ?? 'Calle 123 #45-67'; // Default address
-        $city = $user->city ?? 'Bogotá';
-        $region = $user->state ?? 'Cundinamarca';
-        $country = $user->country ?? 'CO';
+        // Get currency from gateway settings (COP for Wompi)
+        $currency = Currency::where('id', $gateway->currency)->first();
+        if (!$currency) {
+            $currency = Currency::where('code', 'COP')->first();
+        }
+        
+        $amountInCents = (int) ($priceData['final_price'] * 100); // Wompi uses cents
         
         $payload = [
             'amount_in_cents' => $amountInCents,
             'currency' => $currency->code ?? 'COP',
             'customer_email' => $user->email,
             'reference' => $order->order_id,
-            'redirect_url' => route('dashboard.user.payment.subscription'),
-        ];
-        
-        // Add customer data (required by Wompi)
-        $payload['customer_data'] = [
-            'phone_number' => '+57' . ltrim($phone, '+57'), // Ensure Colombian format
-            'full_name' => trim($user->name . ' ' . ($user->surname ?? '')),
-        ];
-        
-        // Add shipping address (required by Wompi)
-        $payload['shipping_address'] = [
-            'address_line_1' => strlen($address) >= 4 ? $address : 'Calle 123 #45-67',
-            'city' => strlen($city) >= 2 ? $city : 'Bogotá',
-            'region' => strlen($region) >= 2 ? $region : 'Cundinamarca',
-            'country' => $country,
-            'phone_number' => '+57' . ltrim($phone, '+57'),
+            'redirect_url' => route('dashboard.user.payment.succesful'),
         ];
 
         $response = Http::withHeaders([

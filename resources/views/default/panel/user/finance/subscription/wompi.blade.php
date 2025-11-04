@@ -36,7 +36,7 @@
                                 
                                 <button type="submit" class="btn btn-primary btn-lg w-100" id="wompi-button">
                                     <i class="ti ti-credit-card me-2"></i>
-                                    {{ __('Pay with Wompi') }} - {{ currency()->symbol }}{{ number_format($finalPrice + $taxValue, 2) }}
+                                    {{ __('Pay with Wompi') }} - ${{ number_format($finalPrice + $taxValue, 0, ',', '.') }} COP
                                 </button>
                             </form>
 
