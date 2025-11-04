@@ -41,6 +41,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:clear-ai-realtime-image')->daily();
 
         $schedule->command('app:test-command')->everyMinute();
+
+        // Process trial subscriptions ending (Wompi)
+        $schedule->command('trial:process')->daily();
     }
 
     // $schedule->command(RunHealthChecksCommand::class)->everyFiveMinutes();
