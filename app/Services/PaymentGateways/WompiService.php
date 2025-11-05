@@ -574,6 +574,24 @@ class WompiService
     }
 
     /**
+     * Save product to Wompi
+     * Wompi doesn't require pre-creating products like Stripe
+     * Products are created on-demand when payment link is generated
+     *
+     * @param Plan $plan
+     * @return void
+     */
+    public static function saveProduct($plan): void
+    {
+        // Wompi doesn't need to pre-create products
+        // Payment links are created on-demand with plan details
+        Log::info('WompiService::saveProduct() - No action needed, Wompi creates payments on-demand', [
+            'plan_id' => $plan->id,
+            'plan_name' => $plan->name,
+        ]);
+    }
+
+    /**
      * Get payment methods available in Wompi
      *
      * @return array
