@@ -39,6 +39,8 @@ class Plan extends Model
         'frequency',
         'is_featured',
         'stripe_product_id',
+        'total_words',
+        'total_images',
         'ai_name',
         'max_tokens',
         'can_create_ai_images',
