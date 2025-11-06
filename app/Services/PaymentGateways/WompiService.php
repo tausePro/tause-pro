@@ -79,6 +79,26 @@ class WompiService
     }
 
     /**
+     * Get Wompi integrity secret for widget signature
+     */
+    private static function getIntegritySecret(): string
+    {
+        $gateway = self::getGateway();
+        return $gateway->integrity_secret ?? '';
+    }
+
+    /**
+     * Generate integrity signature for Wompi Widget
+     * Format: hash("sha256", reference + amountInCents + currency + integritySecret)
+     */
+    private static function generateIntegritySignature(string $reference, int $amountInCents, string $currency = 'COP'): string
+    {
+        $integritySecret = self::getIntegritySecret();
+        $concatenated = $reference . $amountInCents . $currency . $integritySecret;
+        return hash('sha256', $concatenated);
+    }
+
+    /**
      * Get gateway instance
      */
     public static function getGateway(): ?Gateways
@@ -129,14 +149,70 @@ class WompiService
             $taxValue = taxToVal($newDiscountedPrice, $taxRate);
             $finalPrice = $newDiscountedPrice;
             
-            // Return view with payment form
+            // Generate unique reference for this transaction
+            $reference = 'WMP-' . strtoupper(Str::random(13));
+            
+            // Amount in cents (Wompi requirement)
+            $amountInCents = (int) ($finalPrice * 100);
+            
+            // Generate integrity signature for Widget
+            $integritySignature = self::generateIntegritySignature($reference, $amountInCents, 'COP');
+            
+            // Prepare widget data
+            $publicKey = self::getPublicKey();
+            
+            Log::info('Wompi Widget Data Preparation', [
+                'public_key' => $publicKey,
+                'gateway_mode' => $gateway->mode,
+                'reference' => $reference,
+                'amount_in_cents' => $amountInCents
+            ]);
+            
+            $widgetData = [
+                'public_key' => $publicKey,
+                'currency' => 'COP',
+                'amount_in_cents' => $amountInCents,
+                'reference' => $reference,
+                'integrity_signature' => $integritySignature,
+                'redirect_url' => route('dashboard.user.payment.succesful'),
+            ];
+            
+            // Create order in database with status 'Waiting'
+            $order = new UserOrder();
+            $order->order_id = $reference;
+            $order->plan_id = $plan->id;
+            $order->user_id = $user->id;
+            $order->payment_type = self::$GATEWAY_CODE;
+            $order->price = $finalPrice;
+            $order->affiliate_earnings = ($finalPrice * Helper::setting('affiliate_commission_percentage')) / 100;
+            $order->status = 'Waiting';
+            $order->country = $user->country ?? 'CO';
+            $order->tax_rate = $taxRate;
+            $order->tax_value = $taxValue;
+            
+            if ($coupon) {
+                $order->coupon_id = $coupon->id;
+            }
+            
+            $order->save();
+            
+            Log::info('Wompi Widget Payment Prepared', [
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'reference' => $reference,
+                'amount_in_cents' => $amountInCents,
+                'order_id' => $order->id
+            ]);
+            
+            // Return view with Widget
             return view('panel.user.finance.subscription.' . self::$GATEWAY_CODE, compact(
                 'plan',
                 'gateway',
                 'finalPrice',
                 'taxValue',
                 'taxRate',
-                'coupon'
+                'coupon',
+                'widgetData'
             ));
             
         } catch (Exception $e) {
@@ -388,18 +464,75 @@ class WompiService
      */
     private static function verifyWebhookSignature(Request $request): bool
     {
-        $signature = $request->header('X-Wompi-Signature');
-        $timestamp = $request->header('X-Wompi-Timestamp');
+        // Wompi uses x-event-checksum header for webhook validation
+        $checksum = $request->header('x-event-checksum');
         $payload = $request->getContent();
         
-        if (!$signature || !$timestamp) {
+        // Log full payload for debugging
+        $payloadData = json_decode($payload, true);
+        
+        Log::info('Wompi Webhook Signature Verification', [
+            'checksum_received' => $checksum,
+            'payload_length' => strlen($payload),
+            'payload_preview' => substr($payload, 0, 200),
+            'payload_data' => $payloadData,
+            'headers' => $request->headers->all()
+        ]);
+        
+        if (!$checksum) {
+            Log::warning('Wompi: Missing x-event-checksum header');
             return false;
         }
 
+        // Get events key (secret for webhook validation)
         $eventsKey = self::getEventsKey();
-        $expectedSignature = hash_hmac('sha256', $timestamp . $payload, $eventsKey);
+        
+        if (empty($eventsKey)) {
+            Log::error('Wompi: Events key not configured');
+            return false;
+        }
+        
+        Log::info('Wompi Events Key Info', [
+            'events_key_length' => strlen($eventsKey),
+            'events_key_prefix' => substr($eventsKey, 0, 15)
+        ]);
+        
+        // According to Wompi docs: checksum is calculated using specific properties
+        // Extract signature properties from payload
+        $signatureProperties = $payloadData['signature']['properties'] ?? [];
+        $timestamp = $payloadData['timestamp'] ?? '';
+        
+        // Build concatenated string from signature properties
+        $concatenatedValues = '';
+        $transaction = $payloadData['data']['transaction'] ?? [];
+        
+        foreach ($signatureProperties as $property) {
+            // Handle nested properties like "transaction.id"
+            $keys = explode('.', $property);
+            $value = $transaction;
+            
+            foreach ($keys as $key) {
+                if ($key === 'transaction') continue; // Skip 'transaction' prefix
+                $value = $value[$key] ?? '';
+            }
+            
+            $concatenatedValues .= $value;
+        }
+        
+        // Calculate checksum: SHA256(concatenated_values + timestamp + events_secret)
+        $expectedChecksum = hash('sha256', $concatenatedValues . $timestamp . $eventsKey);
+        $matched = hash_equals($expectedChecksum, $checksum);
+        
+        Log::info('Wompi Checksum Comparison', [
+            'timestamp' => $timestamp,
+            'signature_properties' => $signatureProperties,
+            'concatenated_values' => $concatenatedValues,
+            'expected_checksum' => $expectedChecksum,
+            'received' => $checksum,
+            'matched' => $matched
+        ]);
 
-        return hash_equals($expectedSignature, $signature);
+        return $matched;
     }
 
     /**
@@ -472,7 +605,7 @@ class WompiService
             // Create or update subscription
             $subscription = Subscription::where('user_id', $user->id)
                 ->where('plan_id', $plan->id)
-                ->where('status', 'active')
+                ->where('stripe_status', 'active')
                 ->first();
 
             if (!$subscription) {
@@ -486,21 +619,35 @@ class WompiService
             $subscription->stripe_price = $order->price;
             $subscription->paid_with = self::$GATEWAY_CODE;
             $subscription->plan_id = $plan->id;
-            $subscription->ends_at = null;
-
-            // Calculate next billing date
-            if ($plan->frequency == FrequencyEnum::MONTHLY->value) {
-                $subscription->auto_renewal_at = Carbon::now()->addMonth();
-            } elseif ($plan->frequency == FrequencyEnum::YEARLY->value) {
-                $subscription->auto_renewal_at = Carbon::now()->addYear();
+            $subscription->auto_renewal = 0; // Wompi doesn't have automatic recurring
+            $subscription->name = $plan->name;
+            $subscription->quantity = 1;
+            
+            // Set trial period if plan has it
+            if ($plan->trial_days > 0) {
+                $subscription->trial_ends_at = Carbon::now()->addDays($plan->trial_days);
+                $subscription->ends_at = Carbon::now()->addDays($plan->trial_days);
             } else {
-                $subscription->auto_renewal_at = Carbon::now()->addMonth();
+                // Set ends_at based on plan frequency (default to monthly = 30 days)
+                $frequency = $plan->frequency ?? 'monthly';
+                $daysToAdd = match($frequency) {
+                    'monthly' => 30,
+                    'yearly', 'annual' => 365,
+                    'weekly' => 7,
+                    'daily' => 1,
+                    'lifetime' => 3650, // 10 years
+                    default => 30
+                };
+                $subscription->ends_at = Carbon::now()->addDays($daysToAdd);
             }
 
             $subscription->save();
 
-            // Update user credits
-            self::updateUserCredits($user, $plan);
+            // Clear cache to ensure getCurrentActiveSubscription picks up the new subscription
+            cache()->forget('active_subscription_' . $user->id);
+            
+            // Update user credits using trait method
+            self::creditIncreaseSubscribePlan($user, $plan);
 
             // Mark coupon as used
             if ($order->coupon_id) {
@@ -560,6 +707,97 @@ class WompiService
             ]);
             return false;
         }
+    }
+
+    /**
+     * Get subscription status
+     *
+     * @param int|null $incomingUserId
+     * @return bool
+     */
+    public static function getSubscriptionStatus($incomingUserId = null)
+    {
+        if ($incomingUserId != null) {
+            $user = User::where('id', $incomingUserId)->first();
+        } else {
+            $user = Auth::user();
+        }
+        
+        $sub = getCurrentActiveSubscription($user->id);
+        if ($sub != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get subscription days left
+     *
+     * @return int
+     */
+    public static function getSubscriptionDaysLeft()
+    {
+        $user = Auth::user();
+        $sub = getCurrentActiveSubscription($user->id);
+        
+        if ($sub) {
+            return Carbon::now()->diffInDays($sub->ends_at);
+        } else {
+            Log::error('WompiService: getSubscriptionDaysLeft() - No active subscription found');
+            return 0;
+        }
+    }
+
+    /**
+     * Check if subscription is in trial period
+     *
+     * @return bool
+     */
+    public static function checkIfTrial()
+    {
+        $user = Auth::user();
+        $activeSub = getCurrentActiveSubscription($user->id);
+        
+        if ($activeSub != null) {
+            if ($activeSub->trial_ends_at != null) {
+                return Carbon::now()->lessThan(Carbon::parse($activeSub->trial_ends_at));
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Cancel user subscription (called from user dashboard)
+     *
+     * @param User|null $internalUser
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public static function subscribeCancel($internalUser = null)
+    {
+        $user = $internalUser ?? Auth::user();
+        $activeSub = getCurrentActiveSubscription($user->id);
+        
+        if ($activeSub != null) {
+            $plan = Plan::where('id', $activeSub->plan_id)->first();
+
+            self::creditDecreaseCancelPlan($user, $plan);
+
+            $activeSub->stripe_status = 'cancelled';
+            $activeSub->ends_at = Carbon::now();
+            $activeSub->save();
+
+            CreateActivity::for($user, 'cancelled', $plan->name);
+            
+            if ($internalUser != null) {
+                return back()->with(['message' => __('User subscription is cancelled succesfully.'), 'type' => 'success']);
+            }
+
+            return redirect()->route('dashboard.user.index')->with(['message' => __('Your subscription is cancelled succesfully.'), 'type' => 'success']);
+        }
+
+        return back()->with(['message' => __('Could not find active subscription. Nothing changed!'), 'type' => 'error']);
     }
 
     /**

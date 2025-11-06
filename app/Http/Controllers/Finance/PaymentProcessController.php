@@ -683,7 +683,7 @@ class PaymentProcessController extends Controller
             } else {
                 // Cancel subscription
                 try {
-                    if (! in_array($activeSub->paid_with, ['razorpay', 'yokassa'])) {
+                    if (! in_array($activeSub->paid_with, ['razorpay', 'yokassa', 'wompi'])) {
                         $tmp = self::cancelActiveSubscription();
                     }
                 } catch (Exception $ex) {
