@@ -34,6 +34,8 @@
     </div>
 
     @include('chatbot::frontend-ui.components.trigger-button')
+
+    @include('chatbot::frontend-ui.components.gdpr-modal')
 </div>
 
 <link
@@ -49,6 +51,12 @@
 <script src="{{ custom_theme_url('/assets/libs/markdown-it.min.js') }}"></script>
 <script src="{{ custom_theme_url('/assets/libs/turndown.js') }}"></script>
 <script src="{{ custom_theme_url('/assets/libs/picmo/picmo.min.js') }}"></script>
+<script>
+    // Initialize Proactive Triggers
+    if (window.ChatbotProactiveTriggers && '{{ $chatbot->uuid ?? '' }}') {
+        window.ChatbotProactiveTriggers.init('{{ $chatbot->uuid ?? '' }}');
+    }
+</script>
 <script
     defer
     src="{{ asset('vendor/chatbot/js/alpine.min.js') }}"
@@ -59,6 +67,19 @@
         src="https://cdn.ably.com/lib/ably.min-1.js"
         type="text/javascript"
     ></script>
+@endif
+
+@include('sales-agent::sales-agent-component', ['routes' => $routes ?? []])
+
+{{-- Negotiation Handler --}}
+@if(isset($chatbot) && $chatbot->negotiation_enabled)
+<script src="{{ asset('vendor/chatbot/js/negotiation-handler.js') }}"></script>
+<script>
+    // Initialize Negotiation Handler
+    if (window.NegotiationHandler && '{{ $chatbot->id ?? '' }}') {
+        window.NegotiationHandler.init('{{ $chatbot->id ?? '' }}');
+    }
+</script>
 @endif
 
 @include('chatbot::frontend-ui.frontend-ui-scripts', ['is_editor' => false])

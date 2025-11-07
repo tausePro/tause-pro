@@ -12,8 +12,9 @@ use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
 use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Models\ChatbotKnowledgeBaseArticle;
-use App\Extensions\Chatbot\System\Services\AgentOrchestratorService;
 use App\Extensions\Chatbot\System\Services\GeneratorService;
+use App\Extensions\Chatbot\System\Services\ProactiveTriggerService;
+use App\Extensions\Chatbot\System\Services\AgentOrchestratorService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
 use App\Helpers\Classes\Helper;
 use App\Helpers\Classes\MarketplaceHelper;
@@ -40,6 +41,16 @@ class ChatbotApplicationController extends Controller
     public function index(Chatbot $chatbot): ChatbotResource
     {
         return ChatbotResource::make($chatbot);
+    }
+
+    public function triggers(Chatbot $chatbot): JsonResponse
+    {
+        $triggerService = app(ProactiveTriggerService::class);
+        $triggers = $triggerService->getActiveTriggers((string) $chatbot->id);
+
+        return response()->json([
+            'triggers' => $triggers,
+        ]);
     }
 
     public function enableSound(Chatbot $chatbot, string $sessionId): JsonResponse
@@ -202,6 +213,27 @@ class ChatbotApplicationController extends Controller
             'email'   => $customer->email,
         ]);
 
+    }
+
+    public function saveGdprConsent(Chatbot $chatbot, string $sessionId, Request $request): JsonResponse
+    {
+        $request->validate([
+            'consent' => 'required|boolean',
+        ]);
+
+        $customer = ChatbotCustomer::query()->where('session_id', $sessionId)
+            ->where('chatbot_id', $chatbot->getAttribute('id'))
+            ->firstOrFail();
+
+        $customer->update([
+            'gdpr_consent'    => $request->get('consent'),
+            'gdpr_consent_at' => $request->get('consent') ? now() : null,
+        ]);
+
+        return response()->json([
+            'message' => 'GDPR consent saved successfully.',
+            'consent' => $customer->gdpr_consent,
+        ]);
     }
 
     public function indexSession(Chatbot $chatbot, string $sessionId): ChatbotResource
@@ -385,40 +417,30 @@ class ChatbotApplicationController extends Controller
         if (Helper::appIsDemo() && ! $rateLimiter->attempt($clientIp)) {
             $response = 'This feature is disabled in the demo version. You have reached the maximum request limit for today.';
         } else {
-            $response = $this->service
-                ->setChatbot($chatbot)
-                ->setConversation($chatbotConversation)
-                ->setPrompt(
-                    $request->validated('prompt')
-                )
-                ->generate();
+        $response = $this->service
+            ->setChatbot($chatbot)
+            ->setConversation($chatbotConversation)
+            ->setPrompt(
+                $request->validated('prompt')
+            )
+            ->generate();
 
-            if (empty($response)) {
-                $response = trans('Sorry, I can\'t answer right now.');
-            }
+        if (empty($response)) {
+            $response = trans('Sorry, I can\'t answer right now.');
+        }
         }
 
-        // Orquestar agentes si están habilitados
-        $orchestration = null;
-        if ($chatbot->sales_agent_enabled) {
-            try {
-                $orchestrator = app(AgentOrchestratorService::class);
-                $orchestration = $orchestrator->orchestrate(
-                    chatbot: $chatbot,
-                    userQuery: $request->validated('prompt'),
-                    aiResponse: $response
-                );
-                
-                Log::info('Agent Orchestration', [
-                    'chatbot_id' => $chatbot->id,
-                    'agents_activated' => $orchestration['agents_activated'] ?? [],
-                    'user_query' => $request->validated('prompt')
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Agent Orchestration Error', [
-                    'error' => $e->getMessage(),
-                    'chatbot_id' => $chatbot->id
-                ]);
+        // Detectar negociación y generar cupón si aplica
+        $negotiationTriggered = false;
+        if ($chatbot->negotiation_enabled && $chatbot->sales_agent_enabled) {
+            $userPrompt = strtolower($request->validated('prompt'));
+            $triggers = $chatbot->negotiation_triggers ?? ['caro', 'costoso', 'descuento', 'rebaja', 'oferta'];
+            
+            foreach ($triggers as $trigger) {
+                if (str_contains($userPrompt, strtolower($trigger))) {
+                    $negotiationTriggered = true;
+                    break;
+                }
             }
         }
 
@@ -469,12 +491,43 @@ class ChatbotApplicationController extends Controller
             ->where('role', '!=', 'user')
             ->count() === 2 && $customer;
 
+        // Orquestar agentes (Sales Agent, etc.)
+        $orchestration = null;
+        if ($chatbot->sales_agent_enabled) {
+            try {
+                $orchestrator = app(AgentOrchestratorService::class);
+                $orchestration = $orchestrator->orchestrate(
+                    chatbot: $chatbot,
+                    aiResponse: $messageToUser,
+                    userQuery: $request->validated('prompt')
+                );
+                
+                Log::info('Agent Orchestration', [
+                    'chatbot_id' => $chatbot->id,
+                    'agents_activated' => $orchestration['agents_activated'] ?? [],
+                    'user_query' => $request->validated('prompt')
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Agent Orchestration Error', [
+                    'error' => $e->getMessage(),
+                    'chatbot_id' => $chatbot->id
+                ]);
+            }
+        }
+
         return ChatbotHistoryResource::make($message)->additional([
             'connection'                          => 'ai',
             'collect_email'                       => $collectEmail && $chatbot->getAttribute('is_email_collect'),
             'needs_human'                         => $needsHuman,
             'needs_human_direct'                  => $needsHumanDirect,
             'original_response'                   => $originalResponse,
+            'negotiation_triggered'               => $negotiationTriggered,
+            'negotiation_config'                  => $negotiationTriggered ? [
+                'enabled' => true,
+                'max_discount' => $chatbot->negotiation_max_discount,
+                'min_cart_value' => $chatbot->negotiation_min_cart_value,
+                'coupon_duration' => $chatbot->negotiation_coupon_duration,
+            ] : null,
             'orchestration'                       => $orchestration,
         ]);
     }
@@ -516,5 +569,188 @@ class ChatbotApplicationController extends Controller
         }
 
         return $chatbotHistory;
+    }
+
+    /**
+     * Obtener productos del chatbot (para Sales Agent)
+     */
+    public function getProducts(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        if (!$chatbot->sales_agent_enabled || !$chatbot->woocommerce_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sales Agent no está habilitado',
+            ], 403);
+        }
+
+        $query = $chatbot->products()->active()->inStock();
+
+        // Filtros opcionales
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('category')) {
+            $category = $request->input('category');
+            $query->whereJsonContains('categories', ['name' => $category]);
+        }
+
+        $products = $query->latest('last_synced_at')->paginate(12);
+
+        return response()->json([
+            'success' => true,
+            'products' => $products->items(),
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Generar Payment Link para un producto
+     */
+    public function generatePaymentLink(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        if (!$chatbot->wompi_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wompi no está habilitado',
+            ], 403);
+        }
+
+        $request->validate([
+            'product_id' => 'required|exists:ext_chatbot_products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'customer_email' => 'required|email',
+            'customer_name' => 'nullable|string',
+        ]);
+
+        $product = $chatbot->products()->findOrFail($request->product_id);
+
+        if (!$product->in_stock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto agotado',
+            ], 400);
+        }
+
+        $wompiService = app(\App\Extensions\Chatbot\System\Services\WompiService::class);
+
+        $result = $wompiService->generatePaymentLink(
+            $chatbot,
+            $product,
+            [
+                'email' => $request->customer_email,
+                'name' => $request->customer_name,
+            ],
+            $request->quantity ?? 1
+        );
+
+        return response()->json($result);
+    }
+
+    /**
+     * Create order in WooCommerce and generate Wompi payment link
+     */
+    public function createOrder(Chatbot $chatbot, Request $request): JsonResponse
+    {
+        // Verificar permisos
+        if (!$chatbot->sales_agent_enabled || !$chatbot->woocommerce_enabled || !$chatbot->wompi_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sales Agent, WooCommerce o Wompi no están habilitados',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:ext_chatbot_products,id',
+            'quantity' => 'required|integer|min:1',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:50',
+            'department' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'address' => 'required|string|max:500',
+            'address_type' => 'required|string|in:Casa,Apartamento,Oficina',
+            'address_complement' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        // Obtener producto
+        $product = $chatbot->products()->findOrFail($request->product_id);
+
+        // Verificar stock
+        if (!$product->in_stock || ($product->stock_quantity && $product->stock_quantity < $validated['quantity'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Producto sin stock suficiente',
+            ], 400);
+        }
+
+        // Preparar dirección completa
+        $fullAddress = $validated['address'];
+        if (!empty($validated['address_complement'])) {
+            $fullAddress .= ', ' . $validated['address_complement'];
+        }
+
+        // Crear orden en WooCommerce
+        $wooCommerceService = app(\App\Extensions\Chatbot\System\Services\WooCommerceService::class);
+        $orderResult = $wooCommerceService->createOrder($chatbot, [
+            'product_id' => $product->woocommerce_id,
+            'quantity' => $validated['quantity'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'address' => $fullAddress,
+            'city' => $validated['city'],
+            'state' => $validated['department'],
+            'address_type' => $validated['address_type'],
+            'notes' => $validated['notes'] ?? '',
+        ]);
+
+        if (!$orderResult['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $orderResult['message'],
+            ], 500);
+        }
+
+        // Generar payment link con Wompi
+        $wompiService = app(\App\Extensions\Chatbot\System\Services\WompiService::class);
+        $paymentLinkResult = $wompiService->generatePaymentLink(
+            $chatbot,
+            $product,
+            [
+                'email' => $validated['email'],
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'phone' => $validated['phone'],
+            ],
+            $validated['quantity'],
+            $orderResult['order_id'] ?? null
+        );
+
+        if (!$paymentLinkResult['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar link de pago: ' . $paymentLinkResult['message'],
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'payment_link' => $paymentLinkResult['payment_link'],
+            'order_id' => $orderResult['order_id'],
+            'reference' => $paymentLinkResult['reference'] ?? null,
+        ]);
     }
 }

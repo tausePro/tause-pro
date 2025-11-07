@@ -62,30 +62,6 @@
                             ></a>
                         </template>
 
-                        {{-- Sales Agent: Product Grid --}}
-                        <template x-if="message.products && message.products.length > 0">
-                            <div class="mt-3 flex gap-3 overflow-x-auto pb-2" style="scroll-snap-type: x mandatory;">
-                                <template x-for="product in message.products" :key="product.id">
-                                    <div class="min-w-[240px] max-w-[240px] rounded-lg bg-white shadow-md overflow-hidden" style="scroll-snap-align: start;">
-                                        <img :src="product.image_url" :alt="product.name" class="w-full h-32 object-cover">
-                                        <div class="p-3">
-                                            <h4 class="font-semibold text-sm mb-1" x-text="product.name"></h4>
-                                            <p class="text-xs text-gray-600 mb-2 line-clamp-2" x-text="product.description"></p>
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-lg font-bold text-green-600" x-text="'$' + product.price.toLocaleString() + ' COP'"></span>
-                                                <button 
-                                                    @click="startPurchaseFlow(product)"
-                                                    class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition"
-                                                >
-                                                    🛒 Comprar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-
                         <template x-if="message.role === 'loader'">
                             <span class="lqd-ext-chatbot-window-conversation-message-loader inline-flex items-center gap-1">
                                 <span class="inline-block size-1 rounded-full bg-current"></span>
@@ -97,7 +73,7 @@
                         <template x-if="message.role === 'collect-email'">
                             <div>
                                 <p class="mb-3.5 text-balance">
-                                    {{ __('In case we lose contact, may I have your email address so we can follow up?') }}
+                                    En caso de que perdamos contacto, ¿podrías darme tu dirección de correo para hacer seguimiento?
                                 </p>
                                 <form
                                     class="relative mb-0 w-full"

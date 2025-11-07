@@ -30,6 +30,10 @@
                 showingArticle: null,
                 showOptionsDropdown: false,
                 soundEnabled: {{ isset($chatbot) ? $chatbot->getAttribute('enable_sound') ?? 'true' : 'true' }},
+                showGdprModal: false,
+                gdprProcessing: false,
+                gdprConsented: false,
+                pendingConversationStart: false,
 
                 init() {
                     this.windowState = this.$el.getAttribute('data-window-state');
@@ -366,6 +370,51 @@
                         case 'lqd-ext-chatbot-request-styling':
                             this.handleStylingResponse(event);
                             break;
+                        case 'lqd-ext-chatbot-inject-trigger':
+                            this.handleProactiveTrigger(event);
+                            break;
+                    }
+                },
+
+                handleProactiveTrigger(event) {
+                    console.log('[Chatbot] Received proactive trigger via postMessage:', event.data.data);
+                    
+                    const triggerMessage = event.data.data;
+                    
+                    // Ensure we have an active conversation
+                    if (!this.activeConversation) {
+                        console.log('[Chatbot] No active conversation, starting new one...');
+                        this.startNewConversation().then(() => {
+                            // Inject trigger after conversation is created
+                            if (this.messages && Array.isArray(this.messages)) {
+                                this.messages.push(triggerMessage);
+                                console.log('[Chatbot] ✅ Trigger message injected into chat');
+                                this.scrollMessagesToBottom();
+                            }
+                        });
+                        return;
+                    }
+                    
+                    if (this.messages && Array.isArray(this.messages)) {
+                        this.messages.push(triggerMessage);
+                        console.log('[Chatbot] ✅ Trigger message injected into chat');
+                        
+                        // Open chatbot if closed
+                        if (this.windowState === 'close') {
+                            console.log('[Chatbot] Opening chatbot window for trigger');
+                            this.toggleWindowState('open');
+                        }
+                        
+                        // Switch to conversation view
+                        if (this.currentView !== 'conversation-messages') {
+                            this.toggleView('conversation-messages');
+                        }
+                        
+                        setTimeout(() => {
+                            this.scrollMessagesToBottom();
+                        }, 100);
+                    } else {
+                        console.error('[Chatbot] Cannot inject trigger - messages array not found');
                     }
                 },
 
@@ -457,6 +506,15 @@
                     this.fetching = false;
                 },
                 async startNewConversation() {
+                    // Check GDPR consent first
+                    @if (!$is_editor)
+                        if (this.activeChatbot?.gdpr_enabled && !this.gdprConsented) {
+                            this.pendingConversationStart = true;
+                            this.showGdprModal = true;
+                            return;
+                        }
+                    @endif
+
                     this.showConnectButtonsStepOne = true;
                     this.showConnectButtonsStepTwo = false;
 
@@ -638,6 +696,17 @@
 
                     if (!messageString && !mediaFiles?.length) return;
 
+                    @if (!$is_editor)
+                        // Check if Sales Agent should handle this message (during purchase flow)
+                        if (window.SalesAgent && window.SalesAgent.handlePurchaseMessage && window.SalesAgent.handlePurchaseMessage(messageString)) {
+                            // Message was handled by Sales Agent, don't send to AI
+                            this.$refs.message.value = '';
+                            this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
+                            this.$refs.sendBtn.classList.remove('active');
+                            return;
+                        }
+                    @endif
+
                     this.$refs.message.value = '';
                     this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
 
@@ -762,6 +831,22 @@
                             this.onReceiveMessage(data, loaderMessage);
                         }
 
+                        // Handle negotiation if triggered
+                        if (data.negotiation_triggered && window.NegotiationHandler) {
+                            const couponHtml = await window.NegotiationHandler.handleNegotiationTrigger(data);
+                            if (couponHtml) {
+                                // Add coupon message after AI response
+                                this.messages.push({
+                                    id: 'coupon-' + new Date().getTime(),
+                                    message: couponHtml,
+                                    role: 'assistant',
+                                    created_at: new Date().toISOString(),
+                                    is_coupon: true
+                                });
+                                this.scrollMessagesToBottom();
+                            }
+                        }
+
                         @if (isset($chatbot))
                             let condition = '{{ $chatbot->interaction_type->value }}';
 
@@ -858,15 +943,6 @@
                     messageToReplace.showConnectButtonsWhenTypingDone = data.needs_human;
                     messageToReplace.connectToHumanAgentDirectlyWhenTypingDone = data.needs_human_direct;
 
-                    // Sales Agent: Procesar orquestación de agentes
-                    if (data.orchestration && data.orchestration.agents_activated) {
-                        const salesAgent = data.orchestration.agents_activated.find(agent => agent.agent_type === 'sales');
-                        if (salesAgent && salesAgent.data) {
-                            messageToReplace.products = salesAgent.data.products || [];
-                            messageToReplace.show_product_grid = salesAgent.data.show_product_grid || false;
-                        }
-                    }
-
                     if (data.collect_email) {
                         this.activeChatbot.showCollectEmail = true;
                     }
@@ -874,6 +950,124 @@
                     this.playBubbleSound();
 
                     this.scrollMessagesToBottom();
+                    
+                    @if (!$is_editor)
+                        // ✨ ORQUESTADOR: Integrar con Sales Agent Component
+                        if (data.orchestration && data.orchestration.agents_activated && window.SalesAgent) {
+                            setTimeout(() => {
+                                console.log('🎯 Orquestador Backend: Procesando agentes activados...');
+                                
+                                // Buscar Sales Agent en los agentes activados
+                                const salesAgent = data.orchestration.agents_activated.find(
+                                    agent => agent.agent_type === 'sales'
+                                );
+                                
+                                if (salesAgent && salesAgent.data && salesAgent.data.show_product_grid && salesAgent.data.products) {
+                                    console.log('✅ Sales Agent activado con', salesAgent.data.total_products, 'productos del backend');
+                                    console.log('   Productos:', salesAgent.data.products);
+                                    
+                                    // Inyectar productos del backend en el Sales Agent Component
+                                    window.SalesAgent.products = salesAgent.data.products;
+                                    window.SalesAgent.productsLoaded = true;
+                                    
+                                    const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
+                                    if (assistantMessages.length > 0) {
+                                        const lastMessageEl = assistantMessages[assistantMessages.length - 1];
+                                        const contentWrap = lastMessageEl.querySelector('.lqd-ext-chatbot-window-conversation-message-content-wrap');
+                                        
+                                        if (contentWrap) {
+                                            // Usar el método del Sales Agent Component para renderizar con botones de compra
+                                            window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
+                                            console.log('✅ Productos renderizados con flujo de compra integrado');
+                                            
+                                            // Asegurar que los event listeners estén registrados
+                                            setTimeout(() => {
+                                                const buyButtons = contentWrap.querySelectorAll('.product-buy-btn');
+                                                console.log('🔍 Botones de compra encontrados:', buyButtons.length);
+                                                buyButtons.forEach((btn, idx) => {
+                                                    const productId = parseInt(btn.dataset.productId);
+                                                    console.log(`   Botón ${idx + 1}: Product ID ${productId}`);
+                                                    
+                                                    // Verificar que el producto existe
+                                                    const product = window.SalesAgent.products.find(p => p.id === productId);
+                                                    if (product) {
+                                                        console.log(`   ✅ Producto encontrado: ${product.name}`);
+                                                    } else {
+                                                        console.error(`   ❌ Producto ${productId} NO encontrado en array`);
+                                                        console.log('   IDs disponibles:', window.SalesAgent.products.map(p => p.id));
+                                                    }
+                                                });
+                                            }, 500);
+                                        }
+                                    }
+                                } else {
+                                    console.log('ℹ️ Sales Agent no activado o sin productos para mostrar');
+                                }
+                            }, 1500);
+                        }
+                        
+                        // Sales Agent: Make product links functional (inline purchase flow)
+                        if (window.SalesAgent && window.SalesAgent.enabled) {
+                            // Wait for message to be rendered
+                            setTimeout(() => {
+                                console.log('🔍 Looking for product links in assistant messages...');
+                                const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
+                                console.log(`   - Found ${assistantMessages.length} assistant messages`);
+                                
+                                if (assistantMessages.length > 0) {
+                                    const lastMessage = assistantMessages[assistantMessages.length - 1];
+                                    
+                                    // Try multiple selectors to find product links
+                                    let productLinks = lastMessage.querySelectorAll('a[href*="/producto"]');
+                                    if (productLinks.length === 0) {
+                                        productLinks = lastMessage.querySelectorAll('a[href*="aliviate"]');
+                                    }
+                                    if (productLinks.length === 0) {
+                                        // Find all links in the message
+                                        productLinks = lastMessage.querySelectorAll('a[href]');
+                                    }
+                                    
+                                    console.log(`   - Found ${productLinks.length} links total`);
+                                    
+                                    productLinks.forEach((link, idx) => {
+                                        console.log(`   - Link ${idx + 1}: ${link.textContent} -> ${link.href}`);
+                                        
+                                        // Store original href and remove it to prevent navigation
+                                        const originalHref = link.href;
+                                        link.dataset.originalHref = originalHref;
+                                        link.removeAttribute('href');
+                                        
+                                        // Make it look like a link still
+                                        link.style.color = 'inherit';
+                                        link.style.textDecoration = 'underline';
+                                        link.style.cursor = 'pointer';
+                                        
+                                        // Add multiple event listeners for maximum compatibility
+                                        const handleClick = (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            e.stopImmediatePropagation();
+                                            console.log('🛒 Product link clicked!');
+                                            console.log('   - Text:', link.textContent);
+                                            console.log('   - Original URL:', originalHref);
+                                            window.SalesAgent.startPurchaseFromLink(link);
+                                            return false;
+                                        };
+                                        
+                                        link.addEventListener('click', handleClick, true); // Capture phase
+                                        link.addEventListener('touchstart', handleClick, { passive: false });
+                                        link.onclick = handleClick; // Fallback
+                                    });
+                                    
+                                    if (productLinks.length > 0) {
+                                        console.log(`✅ Made ${productLinks.length} product links functional`);
+                                    } else {
+                                        console.log('⚠️ No product links found in message');
+                                    }
+                                }
+                            }, 2000); // Increased timeout
+                        }
+                    @endif
                 },
                 scrollMessagesToBottom(smooth = false) {
                     this.$nextTick(() => {
@@ -1249,6 +1443,101 @@
 
                         this.soundEnabled = soundEnabled;
                     @endif
+                },
+
+                async acceptGdprConsent() {
+                    @if ($is_editor)
+                        this.gdprConsented = true;
+                        this.showGdprModal = false;
+                        if (this.pendingConversationStart) {
+                            this.pendingConversationStart = false;
+                            this.startNewConversation();
+                        }
+                    @else
+                        this.gdprProcessing = true;
+
+                        try {
+                            const res = await fetch('{{ isset($routes) ? $routes['gdpr-consent'] : '' }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    consent: true
+                                })
+                            });
+
+                            const data = await res.json();
+
+                            if (res.ok) {
+                                this.gdprConsented = true;
+                                this.showGdprModal = false;
+
+                                if (this.pendingConversationStart) {
+                                    this.pendingConversationStart = false;
+                                    await this.startNewConversation();
+                                }
+                            } else {
+                                console.error('GDPR consent error:', data);
+                                this.setWidgetStatus({
+                                    type: 'error',
+                                    message: data.message || '{{ __('Error saving consent. Please try again.') }}'
+                                });
+                            }
+                        } catch (error) {
+                            console.error('GDPR consent error:', error);
+                            this.setWidgetStatus({
+                                type: 'error',
+                                message: '{{ __('Error saving consent. Please try again.') }}'
+                            });
+                        } finally {
+                            this.gdprProcessing = false;
+                        }
+                    @endif
+                },
+
+                async rejectGdprConsent() {
+                    @if ($is_editor)
+                        this.showGdprModal = false;
+                        this.pendingConversationStart = false;
+                    @else
+                        if (this.activeChatbot?.gdpr_required) {
+                            // If consent is required, just close and don't proceed
+                            this.showGdprModal = false;
+                            this.pendingConversationStart = false;
+                            return;
+                        }
+
+                        this.gdprProcessing = true;
+
+                        try {
+                            const res = await fetch('{{ isset($routes) ? $routes['gdpr-consent'] : '' }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    consent: false
+                                })
+                            });
+
+                            this.showGdprModal = false;
+                            this.pendingConversationStart = false;
+                        } catch (error) {
+                            console.error('GDPR consent error:', error);
+                        } finally {
+                            this.gdprProcessing = false;
+                        }
+                    @endif
+                },
+
+                closeGdprModal() {
+                    if (!this.activeChatbot?.gdpr_required) {
+                        this.showGdprModal = false;
+                        this.pendingConversationStart = false;
+                    }
                 }
             }));
         });
