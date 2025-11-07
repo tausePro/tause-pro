@@ -181,6 +181,11 @@
 
                             <hr class="inline-block h-6 w-px bg-heading-foreground/10" />
                         @endif
+                    @else
+                        <div
+                            class="flex [&_.label-added_.select-model-label]:hidden [&_.lqd-modal>.lqd-btn>span]:w-full [&_.lqd-modal>.lqd-btn>span]:overflow-hidden [&_.lqd-modal>.lqd-btn>span]:text-ellipsis [&_.lqd-modal>.lqd-btn]:w-32 [&_.lqd-modal>.lqd-btn]:justify-start [&_.lqd-modal>.lqd-btn]:overflow-hidden [&_.lqd-modal>.lqd-btn]:text-ellipsis [&_.lqd-modal>.lqd-btn]:whitespace-nowrap [&_.lqd-modal>.lqd-btn]:bg-transparent [&_.lqd-modal>.lqd-btn]:p-0 [&_.lqd-modal>.lqd-btn]:text-heading-foreground [&_.lqd-modal>.lqd-btn]:shadow-none [&_.lqd-modal>.lqd-btn]:hover:translate-y-0 [&_.lqd-modal>.lqd-btn]:hover:text-heading-foreground [&_.lqd-modal>.lqd-btn_svg]:shrink-0">
+                            @includeWhen(!$isOtherCategories, 'components.select-ai-model-list-un-auth')
+                        </div>
                     @endauth
 
                     <x-dropdown.dropdown

@@ -216,7 +216,9 @@ return [
          */
         App\Extensions\Chatbot\System\ChatbotServiceProvider::class,
         App\Extensions\ChatbotSalesAgent\System\ChatbotSalesAgentServiceProvider::class,
-        App\Extensions\BrainBrand\System\BrainBrandServiceProvider::class,
+        // App\Extensions\BrainBrand\System\BrainBrandServiceProvider::class,
+        App\Extensions\MarketingBot\System\MarketingBotServiceProvider::class,
+        App\Extensions\DiscountManager\System\DiscountManagerServiceProvider::class,
 
         /**
          * Laravel Json Localization Manager

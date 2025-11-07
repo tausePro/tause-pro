@@ -14,7 +14,6 @@ use App\Extensions\Chatbot\System\Services\ChatbotService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForFrameEventAbly;
 use App\Extensions\ChatbotTelegram\System\Services\Telegram\TelegramService;
 use App\Extensions\ChatbotWhatsapp\System\Services\Twillio\TwilioWhatsappService;
-use App\Extensions\ChatbotWhatsapp\System\Services\Evolution\EvolutionWhatsappService;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
 use Exception;
@@ -232,24 +231,12 @@ class ChatbotAgentController extends Controller
 
                 if ($chatbotChannel) {
                     if ($chatbotChannel?->channel === 'whatsapp' && $chatbotConversation->getAttribute('customer_channel_id')) {
-                        // Detectar si usa Evolution o Twilio
-                        $provider = data_get($chatbotChannel['credentials'], 'provider', 'twilio');
-                        
-                        if ($provider === 'evolution') {
-                            app(EvolutionWhatsappService::class)
-                                ->setChatbotChannel($chatbotChannel)
-                                ->sendText(
-                                    $request['message'],
-                                    $chatbotConversation->getAttribute('customer_channel_id')
-                                );
-                        } else {
-                            app(TwilioWhatsappService::class)
-                                ->setChatbotChannel($chatbotChannel)
-                                ->sendText(
-                                    $request['message'],
-                                    $chatbotConversation->getAttribute('customer_channel_id')
-                                );
-                        }
+                        app(TwilioWhatsappService::class)
+                            ->setChatbotChannel($chatbotChannel)
+                            ->sendText(
+                                $request['message'],
+                                $chatbotConversation->getAttribute('customer_channel_id')
+                            );
                     }
                     if ($chatbotChannel?->channel === 'telegram') {
                         app(TelegramService::class)

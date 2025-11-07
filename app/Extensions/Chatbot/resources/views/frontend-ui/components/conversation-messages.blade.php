@@ -73,7 +73,7 @@
                         <template x-if="message.role === 'collect-email'">
                             <div>
                                 <p class="mb-3.5 text-balance">
-                                    En caso de que perdamos contacto, ¿podrías darme tu dirección de correo para hacer seguimiento?
+                                    {{ __('In case we lose contact, may I have your email address so we can follow up?') }}
                                 </p>
                                 <form
                                     class="relative mb-0 w-full"

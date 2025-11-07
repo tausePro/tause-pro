@@ -52,28 +52,6 @@ class ChatbotCustomizeRequest extends FormRequest
             'header_bg_gradient'            => ['sometimes', 'nullable', 'string'],
             'header_bg_image_blob'          => ['sometimes', 'nullable'],
             'human_agent_conditions'        => ['sometimes', 'nullable', 'array'],
-            // GDPR
-            'gdpr_enabled'                  => ['sometimes', 'nullable', 'boolean'],
-            'gdpr_message'                  => ['sometimes', 'nullable', 'string'],
-            'gdpr_required'                 => ['sometimes', 'nullable', 'boolean'],
-            // WooCommerce
-            'woocommerce_url'               => ['sometimes', 'nullable', 'url'],
-            'woocommerce_key'               => ['sometimes', 'nullable', 'string'],
-            'woocommerce_secret'            => ['sometimes', 'nullable', 'string'],
-            'woocommerce_enabled'           => ['sometimes', 'nullable', 'boolean'],
-            // Wompi
-            'wompi_public_key'              => ['sometimes', 'nullable', 'string'],
-            'wompi_private_key'             => ['sometimes', 'nullable', 'string'],
-            'wompi_enabled'                 => ['sometimes', 'nullable', 'boolean'],
-            'wompi_environment'             => ['sometimes', 'nullable', 'string', Rule::in(['test', 'production'])],
-            // Sales Agent
-            'sales_agent_enabled'           => ['sometimes', 'nullable', 'boolean'],
-            'sales_agent_keywords'          => ['sometimes', 'nullable', 'array'],
-            // Advanced Customization
-            'custom_bg_image_url'           => ['sometimes', 'nullable', 'string', 'url'],
-            'welcome_text'                  => ['sometimes', 'nullable', 'string'],
-            'initial_prompt_text'           => ['sometimes', 'nullable', 'string'],
-            'cta_button_text'               => ['sometimes', 'nullable', 'string'],
         ];
     }
 

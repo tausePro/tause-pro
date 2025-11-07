@@ -7,7 +7,7 @@
         alt="{{ $setting->site_name }}"
     >
     <p class="m-0">
-        @lang('Desarrollado por')
+        @lang('Powered by')
         <u class="underline-offset-2">
             <a
                 href="{{ $chatbot->footer_link ?? request()->getSchemeAndHttpHost() }}"

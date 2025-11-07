@@ -5,13 +5,13 @@
         $user_avatar = '/' . $user_avatar;
     }
     $human_agent_conditions = [
-        __('When the issue is too complex or ambiguous.'),
-        __('When the customer is frustrated or dissatisfied.'),
-        __('When sensitive topics (legal, financial, medical, etc.) are involved.'),
-        __('When the AI fails to understand after repeated attempts.'),
-        __('When empathy or emotional intelligence is required.'),
-        __('When the request is outside the AI\'s scope or permissions.'),
-        __('When the customer explicitly requests a human.'),
+        'When the issue is too complex or ambiguous.',
+        'When the customer is frustrated or dissatisfied.',
+        'When sensitive topics (legal, financial, medical, etc.) are involved.',
+        'When the AI fails to understand after repeated attempts.',
+        'When empathy or emotional intelligence is required.',
+        'When the request is outside the AI’s scope or permissions.',
+        'When the customer explicitly requests a human.',
     ];
 @endphp
 
@@ -21,14 +21,6 @@
     {{ __('View and manage external chatbots') }}
 @endsection
 @section('titlebar_actions')
-    <x-button
-        href="{{ route('dashboard.chatbot.analytics.index') }}"
-        variant="ghost-shadow"
-    >
-        <x-tabler-chart-bar class="size-4" />
-        @lang('Analytics')
-    </x-button>
-
     <x-button
         href="#"
         variant="ghost-shadow"
@@ -103,8 +95,6 @@
                         bubble_message: '{{ __('Hey there, How can I help you?') }}',
                         welcome_message: '{{ __('Hi, how can I help you?') }}',
                         connect_message: '{{ __('I’ve forwarded your request to a human agent. An agent will connect with you as soon as possible.') }}',
-                        human_agent_command: 'agente',
-                        human_agent_tip_message: '💡 **Tip:** En cualquier momento puedes escribir #agente para ser atendido por un asesor humano.',
                         instructions: '',
                         do_not_go_beyond_instructions: 0,
                         language: '',
@@ -129,22 +119,6 @@
                         is_emoji: true,
                         is_articles: true,
                         is_links: true,
-                        gdpr_enabled: false,
-                        gdpr_message: 'We collect and process your data according to GDPR regulations. By continuing, you consent to our data processing practices.',
-                        gdpr_required: true,
-                        // WooCommerce
-                        woocommerce_url: '',
-                        woocommerce_key: '',
-                        woocommerce_secret: '',
-                        woocommerce_enabled: false,
-                        // Wompi
-                        wompi_public_key: '',
-                        wompi_private_key: '',
-                        wompi_enabled: false,
-                        wompi_environment: 'test',
-                        // Sales Agent
-                        sales_agent_enabled: false,
-                        sales_agent_keywords: ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'],
                         header_bg_type: 'color',
                         header_bg_color: '',
                         header_bg_gradient: '',
@@ -292,7 +266,7 @@
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             },
-                            body: JSON.stringify({ id: id })
+                            body: this.getFormData(this.chatbots.data.at(chatbotIndex))
                         });
 
                         if (!res.ok) {

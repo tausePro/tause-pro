@@ -1,0 +1,6 @@
+{
+    "name": "Whatsapp Telegram",
+    "type": "extension",
+    "version": "1.4.0",
+    "description": "External voice Telegram Chatbot extension for magicai"
+}

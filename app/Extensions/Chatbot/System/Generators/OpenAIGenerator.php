@@ -164,14 +164,6 @@ class OpenAIGenerator extends Generator
             'content' => 'Limit all responses to a maximum of 1500 characters. Maintain clarity and informativeness, but prioritize conciseness. Avoid unnecessary elaboration.',
         ];
 
-        // Modo estricto: No ir más allá de las instrucciones
-        if ($this->chatbot->do_not_go_beyond_instructions) {
-            $histories[] = [
-                'role'    => 'system',
-                'content' => $this->strictModeInstruction(),
-            ];
-        }
-
         if ($this->chatbot->getAttribute('interaction_type') === InteractionType::SMART_SWITCH) {
             $histories[] = [
                 'role'    => 'system',
@@ -197,21 +189,6 @@ class OpenAIGenerator extends Generator
             'When the request is outside the AI’s scope or permissions.',
             'When the customer explicitly requests a human.',
         ];
-    }
-
-    protected function strictModeInstruction(): string
-    {
-        return "SYSTEM INSTRUCTION — STRICT MODE ENABLED
-
-Goal: You must ONLY respond to questions and requests that are directly related to the products, services, and business scope defined in your main instructions.
-
-Rules:
-- ONLY answer questions about: products in the catalog, purchasing process, shipping, payments, product features, availability, prices, and customer service related to the business.
-- DO NOT answer questions about: programming, general knowledge, unrelated topics, personal advice, technical tutorials, or anything outside the business scope.
-- If a question is clearly outside your scope, politely decline with a message like: 'Lo siento, solo puedo ayudarte con información sobre nuestros productos y servicios. ¿Hay algo relacionado con nuestra tienda en lo que pueda ayudarte?'
-- If the question is ambiguous or you're unsure if it's within scope, err on the side of declining and append ` [human-agent]` to connect them with a human.
-- Never provide code examples, technical tutorials, or step-by-step guides for topics unrelated to the business.
-- Stay focused on your role as a sales and customer service assistant for this specific business.";
     }
 
     protected function humanAgentInstruction(): string

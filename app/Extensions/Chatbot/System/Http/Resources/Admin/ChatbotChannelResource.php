@@ -26,7 +26,10 @@ class ChatbotChannelResource extends JsonResource
     private function getWebhook(): ?string
     {
         return match ($this->channel) {
-            'whatsapp' => $this->getWhatsappWebhook(),
+            'whatsapp' => Route::has('api.v2.chatbot.channel.twilio.post.handle') ? route('api.v2.chatbot.channel.twilio.post.handle', [
+                'chatbotId' => $this->chatbot_id,
+                'channelId' => $this->id,
+            ]) : null,
             'telegram' => Route::has('api.v2.chatbot.channel.telegram.post.handle') ? route('api.v2.chatbot.channel.telegram.post.handle', [
                 'chatbotId' => $this->chatbot_id,
                 'channelId' => $this->id,
@@ -39,49 +42,13 @@ class ChatbotChannelResource extends JsonResource
         };
     }
 
-    private function getWhatsappWebhook(): ?string
-    {
-        // Detectar si usa Evolution API o Twilio
-        $provider = data_get($this->credentials, 'provider', 'twilio');
-        
-        if ($provider === 'evolution') {
-            return Route::has('api.v2.chatbot.channel.evolution.post.handle') 
-                ? route('api.v2.chatbot.channel.evolution.post.handle', [
-                    'chatbotId' => $this->chatbot_id,
-                    'channelId' => $this->id,
-                ]) 
-                : null;
-        }
-        
-        // Default: Twilio
-        return Route::has('api.v2.chatbot.channel.twilio.post.handle') 
-            ? route('api.v2.chatbot.channel.twilio.post.handle', [
-                'chatbotId' => $this->chatbot_id,
-                'channelId' => $this->id,
-            ]) 
-            : null;
-    }
-
     private function channelId(): ?string
     {
         return match ($this->channel) {
-            'whatsapp'  => $this->getWhatsappChannelId(),
+            'whatsapp'  => data_get($this->credentials, 'whatsapp_phone'),
             'telegram'  => data_get($this->credentials, 'telegram_bot_name'),
             'messenger' => data_get($this->credentials, 'page_name'),
             default     => null,
         };
-    }
-
-    private function getWhatsappChannelId(): ?string
-    {
-        $provider = data_get($this->credentials, 'provider', 'twilio');
-        
-        if ($provider === 'evolution') {
-            // Para Evolution API, el channel ID es el nombre de la instancia
-            return data_get($this->credentials, 'evolution_instance');
-        }
-        
-        // Para Twilio, es el número de teléfono
-        return data_get($this->credentials, 'whatsapp_phone');
     }
 }

@@ -35,11 +35,12 @@ class InstagramController extends Controller
             }
 
             return Instagram::authRedirect([
-                'ads_management',
-                'business_management',
                 'instagram_basic',
                 'instagram_content_publish',
                 'pages_read_engagement',
+                'pages_show_list',
+                'business_management',
+                'instagram_manage_insights',
             ]);
         }
 
@@ -112,7 +113,8 @@ class InstagramController extends Controller
                         'picture'                 => $igAccount['profile_picture_url'],
                         'access_token'            => $igAccount['access_token'] ?? $token,
                     ],
-                    'expires_at' => now()->addMonths(2),
+                    'connected_at' => now(),
+                    'expires_at'   => now()->addMonths(2),
                 ]);
             }
 
@@ -130,7 +132,8 @@ class InstagramController extends Controller
                     'picture'                 => $igAccount['profile_picture_url'],
                     'access_token'            => $igAccount['access_token'] ?? $token,
                 ],
-                'expires_at' => now()->addMonths(2),
+                'connected_at' => now(),
+                'expires_at'   => now()->addMonths(2),
             ]);
         }
 

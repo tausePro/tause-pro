@@ -18,7 +18,7 @@
 >
     {{-- Imagen --}}
     <img 
-        src="https://via.placeholder.com/200x130?text=Muletas+Aluminio"
+        src="https://via.placeholder.com/200x130/4ecdc4/ffffff?text=Product+Preview"
         alt="Preview"
         style="width: 100%; height: 130px; object-fit: cover;"
     />
@@ -27,7 +27,7 @@
     <div style="padding: 0.75rem;">
         {{-- Nombre --}}
         <div style="font-weight: 600; font-size: 0.85rem; color: #1f2937; margin-bottom: 0.5rem;">
-            {{ __('Aluminum Crutches') }}
+            {{ __('Product Name') }}
         </div>
         
         {{-- Precio --}}
@@ -39,7 +39,7 @@
                 color: {{ $cardConfig['price_color'] ?? '#10b981' }};
             "
         >
-            $89.900 COP
+            $99.900 COP
         </div>
         
         {{-- Badge de Descuento --}}

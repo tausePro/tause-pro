@@ -34,49 +34,47 @@
 
                 {{-- Header Steps --}}
                 <div class="lqd-steps hidden flex-col gap-1 lg:flex">
-                    <div class="lqd-steps-steps overflow-x-auto">
-                        <div class="flex items-center gap-1 min-w-max px-1">
-                            @foreach (\App\Extensions\Chatbot\System\Enums\StepEnum::toArray() as $step)
-                                @continue(!\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() && $step === 'channel')
-                                <button
-                                    class="lqd-step group/step flex gap-1 rounded p-1.5 text-2xs font-semibold capitalize text-heading-foreground transition-colors hover:bg-heading-foreground/5 disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-                                    type="button"
-                                    @click.prevent="setEditingStep({{ $loop->index + 1 }})"
-                                    :disabled="submittingData"
+                    <div class="lqd-steps-steps flex items-center justify-between gap-1 lg:gap-3">
+                        @foreach (\App\Extensions\Chatbot\System\Enums\StepEnum::toArray() as $step)
+                            @continue(!\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() && $step === 'channel')
+                            <button
+                                class="lqd-step group/step flex gap-3 rounded p-2 text-3xs font-semibold capitalize text-heading-foreground transition-colors hover:bg-heading-foreground/5 disabled:pointer-events-none disabled:opacity-50 lg:min-w-32"
+                                type="button"
+                                @click.prevent="setEditingStep({{ $loop->index + 1 }})"
+                                :disabled="submittingData"
+                            >
+                                <span
+                                    class="inline-grid size-[21px] place-items-center rounded-md border border-heading-foreground/10 transition-colors group-hover/step:border-heading-foreground group-hover/step:bg-heading-foreground group-hover/step:text-heading-background"
                                 >
                                     <span
-                                        class="inline-grid size-[16px] place-items-center rounded border border-heading-foreground/10 transition-colors group-hover/step:border-heading-foreground group-hover/step:bg-heading-foreground group-hover/step:text-heading-background"
+                                        class="col-start-1 col-end-1 row-start-1 row-end-1"
+                                        x-show="editingStep <= {{ $loop->index + 1 }}"
+                                        x-transition
                                     >
-                                        <span
-                                            class="col-start-1 col-end-1 row-start-1 row-end-1 text-2xs"
-                                            x-show="editingStep <= {{ $loop->index + 1 }}"
-                                            x-transition
-                                        >
-                                            {{ $loop->index + 1 }}
-                                        </span>
-                                        <svg
-                                            class="col-start-1 col-end-1 row-start-1 row-end-1"
-                                            x-show="editingStep > {{ $loop->index + 1 }}"
-                                            x-transition
-                                            width="6"
-                                            height="5"
-                                            viewBox="0 0 9 7"
-                                            fill="currentColor"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path d="M3.14724 7L0 3.68191L0.78681 2.85239L3.14724 5.34096L8.21319 0L9 0.829522L3.14724 7Z" />
-                                        </svg>
+                                        {{ $loop->index + 1 }}
                                     </span>
-                                    <span class="text-2xs">@lang(ucfirst($step))</span>
-                                </button>
-                            @endforeach
-                        </div>
+                                    <svg
+                                        class="col-start-1 col-end-1 row-start-1 row-end-1"
+                                        x-show="editingStep > {{ $loop->index + 1 }}"
+                                        x-transition
+                                        width="9"
+                                        height="7"
+                                        viewBox="0 0 9 7"
+                                        fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path d="M3.14724 7L0 3.68191L0.78681 2.85239L3.14724 5.34096L8.21319 0L9 0.829522L3.14724 7Z" />
+                                    </svg>
+                                </span>
+                                @lang(ucfirst($step))
+                            </button>
+                        @endforeach
                     </div>
                     <div class="lqd-step-progress relative h-[3px] w-full overflow-hidden rounded-lg bg-heading-foreground/5">
                         <div
                             class="lqd-step-progress-bar absolute start-0 top-0 h-full w-0 rounded-full bg-gradient-to-r from-gradient-from to-gradient-to transition-all"
                             :style="{
-                                width: editingStep * {{ \App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() ? 14.28 : 16.66 }} + '%'
+                                width: editingStep * {{ \App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels() ? 20 : 25 }} + '%'
                             }"
                         ></div>
                     </div>
@@ -96,9 +94,7 @@
                     @include('chatbot::home.edit-window.edit-steps.edit-step-configure')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-customize', ['avatars', $avatars])
                     @include('chatbot::home.edit-window.edit-steps.edit-step-train')
-                    @include('chatbot::home.edit-window.edit-steps.edit-step-triggers')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-embed')
-                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents')
                     @if (\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels())
                         @include('chatbot::home.edit-window.edit-steps.edit-step-channel')
                     @endif

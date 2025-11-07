@@ -6,13 +6,10 @@ namespace App\Extensions\ContentManager\System;
 
 use App\Domains\Marketplace\Contracts\UninstallExtensionServiceProviderInterface;
 use App\Extensions\ContentManager\System\Http\Controllers\ContentManagerSettingsController;
-use App\Extensions\ContentManager\System\Http\Controllers\MediaController;
-use App\Extensions\ContentManager\System\Http\Livewire\MediaManagerModal;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Livewire\Livewire;
 
 /**
  * Author: MagicAI Team <info@liquid-themes.com>
@@ -40,8 +37,7 @@ class ContentManagerServiceProvider extends ServiceProvider implements Uninstall
 
     public function registerComponents(): static
     {
-        // Register Livewire components
-        Livewire::component('media-manager-modal', MediaManagerModal::class);
+        //        $this->loadViewComponentsAs('content-manager', []);
 
         return $this;
     }
@@ -86,7 +82,6 @@ class ContentManagerServiceProvider extends ServiceProvider implements Uninstall
 
     private function registerRoutes(): static
     {
-        // Settings routes
         $this->router()
             ->group([
                 'middleware' => ['web', 'auth'],
@@ -96,21 +91,6 @@ class ContentManagerServiceProvider extends ServiceProvider implements Uninstall
             ], function (Router $router) {
                 $router->get('/', 'index')->name('settings');
                 $router->post('/update', 'update')->name('settings.update');
-            });
-
-        // Media routes
-        $this->router()
-            ->group([
-                'middleware' => ['web', 'auth'],
-                'as'         => 'content-manager::media.',
-                'prefix'     => 'media',
-                'controller' => MediaController::class,
-            ], function (Router $router) {
-                $router->get('/', 'index')->name('index');
-                $router->get('/{file}', 'serve')->name('serve');
-                $router->get('/{file}/info', 'info')->name('info');
-                $router->put('/{file}', 'update')->name('update');
-                $router->delete('/{file}', 'destroy')->name('destroy');
             });
 
         return $this;

@@ -56,22 +56,10 @@
 
     </div>
 
-    @if ($is_editor)
-        <p class="mb-4 text-[27px]/none font-bold -tracking-wide text-white">
-            <span 
-                class="block opacity-70"
-                x-text="activeChatbot.welcome_text || 'Hi there 👋🏼'"
-            ></span>
-            <span x-text="activeChatbot.welcome_text ? '' : 'How can we help you?'"></span>
-        </p>
-    @else
-        <p class="mb-4 text-[27px]/none font-bold -tracking-wide text-white">
-            <span class="block opacity-70">{{ $chatbot['welcome_text'] ?? __('Hi there 👋🏼') }}</span>
-            @if (!isset($chatbot['welcome_text']) || !$chatbot['welcome_text'])
-                {{ __('How can we help you?') }}
-            @endif
-        </p>
-    @endif
+    <p class="mb-4 text-[27px]/none font-bold -tracking-wide text-white">
+        <span class="block opacity-70">{{ __('Hi there 👋🏼') }}</span>
+        {{ __('How can we help you?') }}
+    </p>
 
     <button
         class="lqd-ext-chatbot-window-welcome-button relative flex w-full items-center gap-3.5 rounded-full bg-white/25 p-4 text-start text-white shadow-2xl backdrop-blur-md transition-all before:pointer-events-none before:absolute before:-inset-px before:z-0 before:rounded-full before:border before:border-white before:opacity-35 before:[mask-image:linear-gradient(to_bottom,black,transparent)] hover:-translate-y-1 hover:bg-white hover:text-black hover:shadow-white/20 sm:px-[22px] sm:py-[18px]"
@@ -88,22 +76,12 @@
 			@endif
 			{{-- blade-formatter-enable --}}
         >
-        @if ($is_editor)
-            <span class="text-xs/5 font-medium">
-                <span x-text="activeChatbot.initial_prompt_text || 'Ask me anything.'"></span>
-                <span 
-                    class="block opacity-50"
-                    x-text="activeChatbot.cta_button_text || 'We usually reply in a few hours.'"
-                ></span>
+        <span class="text-xs/5 font-medium">
+            {{ __('Ask me anything.') }}
+            <span class="block opacity-50">
+                {{ __('We usually reply in a few hours.') }}
             </span>
-        @else
-            <span class="text-xs/5 font-medium">
-                {{ $chatbot['initial_prompt_text'] ?? __('Ask me anything.') }}
-                <span class="block opacity-50">
-                    {{ $chatbot['cta_button_text'] ?? __('We usually reply in a few hours.') }}
-                </span>
-            </span>
-        @endif
+        </span>
 
         <svg
             class="ms-auto"

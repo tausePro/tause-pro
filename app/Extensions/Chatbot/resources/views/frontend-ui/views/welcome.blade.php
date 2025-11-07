@@ -4,16 +4,7 @@
 
 <div
     class="lqd-ext-chatbot-window-welcome-screen relative col-start-1 col-end-1 row-start-1 row-end-1 h-full w-full overflow-hidden bg-cover"
-    {{-- blade-formatter-disable --}}
-    @if ($is_editor)
-        :style="{
-            backgroundImage: activeChatbot.custom_bg_image_url ? `url(${activeChatbot.custom_bg_image_url})` : 'url({{ $bg_image }})',
-            backgroundPosition: 'top center'
-        }"
-    @else
-        style="background-image: url({{ $chatbot['custom_bg_image_url'] ?? $bg_image }}); background-position: top center;"
-    @endif
-    {{-- blade-formatter-enable --}}
+    style="background-image: url({{ $bg_image }}); background-position: top center;"
     x-show="currentView === 'welcome'"
     x-transition:enter="transition"
     x-transition:enter-start="opacity-0 translate-x-1"

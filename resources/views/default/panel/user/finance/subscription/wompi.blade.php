@@ -16,7 +16,7 @@
                             
                             <div class="mb-3">
                                 <p class="text-muted">
-                                    {{ __('You will be redirected to Wompi to complete your payment securely.') }}
+                                    {{ __('Complete your payment securely without leaving this page.') }}
                                 </p>
                                 <p class="text-muted">
                                     {{ __('Available payment methods:') }}
@@ -29,16 +29,32 @@
                                 </ul>
                             </div>
 
-                            <form method="POST" action="{{ route('dashboard.user.payment.subscription.wompi.process') }}" id="wompi-form">
-                                @csrf
-                                <input type="hidden" name="plan_id" value="{{ $plan->id }}">
-                                <input type="hidden" name="coupon" value="{{ request()->get('coupon') }}">
-                                
-                                <button type="submit" class="btn btn-primary btn-lg w-100" id="wompi-button">
-                                    <i class="ti ti-credit-card me-2"></i>
-                                    {{ __('Pay with Wompi') }} - ${{ number_format($finalPrice + $taxValue, 0, ',', '.') }} COP
-                                </button>
-                            </form>
+                            <!-- Wompi Widget -->
+                            <div class="text-center">
+                                <form>
+                                    <script 
+                                        src="https://checkout.wompi.co/widget.js"
+                                        data-render="button"
+                                        data-public-key="{{ $widgetData['public_key'] }}"
+                                        data-currency="{{ $widgetData['currency'] }}"
+                                        data-amount-in-cents="{{ $widgetData['amount_in_cents'] }}"
+                                        data-reference="{{ $widgetData['reference'] }}"
+                                        data-signature:integrity="{{ $widgetData['integrity_signature'] }}"
+                                        data-redirect-url="{{ $widgetData['redirect_url'] }}"
+                                        data-customer-data:email="{{ Auth::user()->email }}"
+                                        data-customer-data:full-name="{{ Auth::user()->name }}"
+                                        @if(Auth::user()->phone)
+                                        data-customer-data:phone-number="{{ Auth::user()->phone }}"
+                                        data-customer-data:phone-number-prefix="+57"
+                                        @endif
+                                    >
+                                    </script>
+                                </form>
+                            </div>
+
+                            <p class="mt-3 text-center text-muted small">
+                                {{ __('Amount to pay:') }} <strong>${{ number_format($finalPrice + $taxValue, 0, ',', '.') }} COP</strong>
+                            </p>
 
                             <p class="mt-3 text-center">
                                 {{ __('By purchasing you confirm our') }} 
@@ -58,10 +74,14 @@
 
 @push('script')
 <script>
-    document.getElementById('wompi-form').addEventListener('submit', function(e) {
-        const button = document.getElementById('wompi-button');
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>{{ __("Processing...") }}';
+    // Wompi Widget handles the payment flow automatically
+    // When payment is completed, user will be redirected to the redirect_url
+    console.log('Wompi Widget Configuration:', {
+        publicKey: '{{ $widgetData['public_key'] }}',
+        currency: '{{ $widgetData['currency'] }}',
+        amountInCents: {{ $widgetData['amount_in_cents'] }},
+        reference: '{{ $widgetData['reference'] }}',
+        integritySignature: '{{ $widgetData['integrity_signature'] }}'
     });
 </script>
 @endpush

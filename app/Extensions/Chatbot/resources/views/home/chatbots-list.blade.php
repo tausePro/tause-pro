@@ -74,13 +74,6 @@
                                         ],
                                     ],
                                     [
-                                        'label' => __('E-commerce & Sales'),
-                                        'link' => '',
-                                        'attrs' => [
-                                            ':href' => '`/dashboard/chatbot/${chatbot.id}/ecommerce`',
-                                        ],
-                                    ],
-                                    [
                                         'label' => __('Test & Embed'),
                                         'link' => '#',
                                         'attrs' => [
@@ -98,7 +91,6 @@
                                         ],
                                     ];
                                 }
-
 
                             @endphp
                             <ul class="py-1 text-xs font-medium">

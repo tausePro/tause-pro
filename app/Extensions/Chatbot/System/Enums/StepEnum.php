@@ -11,9 +11,7 @@ enum StepEnum: string
     case configure = 'configure';
     case customize = 'customize';
     case train = 'train';
-    case triggers = 'triggers';
     case embed = 'embed';
-    case agents = 'agents';
     case channel = 'channel';
 
     public static function isInValid(string $step): bool

@@ -1,110 +1,148 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Extensions\Chatbot\System\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ChatbotProduct extends Model
 {
+    use HasFactory;
+    
     protected $table = 'ext_chatbot_products';
 
     protected $fillable = [
-        'chatbot_id',
         'user_id',
-        'woocommerce_id',
-        'sku',
+        'chatbot_id',
         'name',
         'description',
-        'short_description',
         'price',
-        'regular_price',
-        'sale_price',
+        'sku',
+        'category_id',
         'image_url',
-        'gallery_urls',
-        'in_stock',
+        'purchase_url',
+        'availability',
         'stock_quantity',
-        'categories',
-        'tags',
-        'product_url',
         'metadata',
-        'last_synced_at',
-        'is_active',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'regular_price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
-        'gallery_urls' => 'json',
-        'categories' => 'json',
-        'tags' => 'json',
-        'metadata' => 'json',
-        'in_stock' => 'boolean',
-        'is_active' => 'boolean',
-        'last_synced_at' => 'datetime',
+        'stock_quantity' => 'integer',
+        'metadata' => 'array',
     ];
 
     /**
-     * Relación con Chatbot
+     * Get the user that owns the product.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the chatbot that owns the product.
      */
     public function chatbot(): BelongsTo
     {
-        return $this->belongsTo(Chatbot::class);
+        return $this->belongsTo(Chatbot::class, 'chatbot_id');
     }
 
     /**
-     * Scope para productos activos
+     * Get the category that the product belongs to.
      */
-    public function scopeActive($query)
+    public function category(): BelongsTo
     {
-        return $query->where('is_active', true);
+        return $this->belongsTo(ChatbotProductCategory::class, 'category_id');
     }
 
     /**
-     * Scope para productos en stock
+     * Get the knowledge base articles that reference this product.
      */
-    public function scopeInStock($query)
+    public function knowledgeBaseArticles(): BelongsToMany
     {
-        return $query->where('in_stock', true);
+        return $this->belongsToMany(
+            ChatbotKnowledgeBaseArticle::class,
+            'ext_chatbot_knowledge_base_article_products',
+            'product_id',
+            'article_id'
+        );
     }
 
     /**
-     * Obtener precio formateado
+     * Scope to filter products by availability.
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->where('availability', 'in_stock')
+                    ->where('stock_quantity', '>', 0);
+    }
+
+    /**
+     * Scope to filter products by category.
+     */
+    public function scopeByCategory($query, $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    /**
+     * Scope to search products by name or description.
+     */
+    public function scopeSearch($query, $term)
+    {
+        return $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+              ->orWhere('description', 'like', "%{$term}%")
+              ->orWhere('sku', 'like', "%{$term}%");
+        });
+    }
+
+    /**
+     * Get the formatted price with currency.
      */
     public function getFormattedPriceAttribute(): string
     {
-        return '$' . number_format((float) $this->price, 0, ',', '.') . ' COP';
+        return '$' . number_format($this->price, 2);
     }
 
     /**
-     * Verificar si tiene descuento
+     * Check if the product is in stock.
      */
-    public function getHasDiscountAttribute(): bool
+    public function isInStock(): bool
     {
-        return $this->sale_price && $this->sale_price < $this->regular_price;
+        return $this->availability === 'in_stock' && $this->stock_quantity > 0;
     }
 
     /**
-     * Calcular porcentaje de descuento
+     * Check if the product is out of stock.
      */
-    public function getDiscountPercentageAttribute(): ?int
+    public function isOutOfStock(): bool
     {
-        if (!$this->has_discount) {
-            return null;
-        }
-
-        return (int) round((($this->regular_price - $this->sale_price) / $this->regular_price) * 100);
+        return $this->availability === 'out_of_stock' || $this->stock_quantity <= 0;
     }
 
     /**
-     * Obtener imagen principal o placeholder
+     * Get the availability status with human-readable format.
      */
-    public function getImageAttribute(): string
+    public function getAvailabilityStatusAttribute(): string
     {
-        return $this->image_url ?? asset('images/product-placeholder.png');
+        return match($this->availability) {
+            'in_stock' => $this->stock_quantity > 0 ? 'In Stock (' . $this->stock_quantity . ')' : 'Out of Stock',
+            'out_of_stock' => 'Out of Stock',
+            'discontinued' => 'Discontinued',
+            default => 'Unknown'
+        };
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return \Database\Factories\Extensions\Chatbot\ChatbotProductFactory::new();
     }
 }
-

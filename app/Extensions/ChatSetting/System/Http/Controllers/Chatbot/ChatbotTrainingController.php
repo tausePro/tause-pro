@@ -153,12 +153,15 @@ class ChatbotTrainingController extends Controller
             $parser->setPdfPath($storagePath)->parse();
         }
 
+        // Limpiar el texto para evitar errores UTF-8
+        $cleanText = $this->cleanUtf8Text($parser->getText());
+        
         ChatBotData::query()->firstOrCreate([
             'chatbot_id' => $chatbot->getAttribute('id'),
             'type'       => 'pdf',
             'type_value' => $name,
         ], [
-            'content' => $parser->getText(),
+            'content' => $cleanText,
             'status'  => 'waiting',
             'path'    => $path,
         ]);
@@ -303,5 +306,29 @@ class ChatbotTrainingController extends Controller
                 ];
             })
             ->pluck('content', 'id');
+    }
+
+    /**
+     * Limpia el texto para evitar errores UTF-8 en MySQL
+     */
+    private function cleanUtf8Text($text)
+    {
+        if (empty($text)) {
+            return $text;
+        }
+
+        // Remover caracteres de 4 bytes (emojis y caracteres especiales)
+        $text = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $text);
+        
+        // Remover caracteres de control excepto saltos de línea y tabs
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
+        
+        // Normalizar espacios en blanco
+        $text = preg_replace('/\s+/', ' ', $text);
+        
+        // Trim
+        $text = trim($text);
+        
+        return $text;
     }
 }

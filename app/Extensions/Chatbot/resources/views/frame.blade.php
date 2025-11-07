@@ -16,11 +16,7 @@
             'send-email' => route('api.v2.chatbot.send-email.store', [$chatbot->getAttribute('uuid'), $session]),
             'collect-email' => route('api.v2.chatbot.collect.email', [$chatbot->getAttribute('uuid'), $session]),
             'articles' => route('api.v2.chatbot.articles', [$chatbot->getAttribute('uuid')]),
-            'enable-sound' => route('api.v2.chatbot.enable-sound', [$chatbot->getAttribute('uuid'), $session]),
-            'gdpr-consent' => route('api.v2.chatbot.gdpr.consent', [$chatbot->getAttribute('uuid'), $session]),
-            'getProducts' => route('api.v2.chatbot.products', [$chatbot->getAttribute('uuid')]),
-            'generatePaymentLink' => route('api.v2.chatbot.payment-link', [$chatbot->getAttribute('uuid')]),
-            'createOrder' => route('api.v2.chatbot.create-order', [$chatbot->getAttribute('uuid')]),
+            'enable-sound' => route('api.v2.chatbot.enable-sound', [$chatbot->getAttribute('uuid'), $session]), // Enabled and disabled route
         ],
     ])
 @endif

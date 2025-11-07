@@ -1,4 +1,4 @@
-<x-form.group class="flex w-full gap-1">
+<x-form.group class="mb-2 flex w-full gap-1">
 	<x-form.checkbox
 		class="border-input rounded-input border !px-2.5 !py-3"
 		name="chatpro_temp_chat_allowed"

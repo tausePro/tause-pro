@@ -78,7 +78,7 @@ class AIChatProController extends Controller
                 $isPaid = false;
             }
             $category = $this->firstOpenaiGeneratorChatCategory($slug);
-            if (! $isPaid && $category->plan === 'premium' && auth()->user()?->type !== 'admin') {
+            if (! $isPaid && $category->plan === 'premium' && ! auth()->user()?->isAdmin()) {
                 // $aiList = OpenaiGeneratorChatCategory::all();
                 $aiList = OpenaiGeneratorChatCategory::where('slug', '<>', 'ai_vision')->where('slug', '<>', 'ai_pdf')->get();
                 $categoryList = ChatCategory::all();

@@ -39,17 +39,10 @@ class ChatbotResource extends JsonResource
             'is_emoji'                   => $this->is_emoji,
             'is_articles'                => $this->is_articles,
             'is_links'                   => $this->is_links,
-            'gdpr_enabled'               => $this->gdpr_enabled,
-            'gdpr_message'               => $this->gdpr_message,
-            'gdpr_required'              => $this->gdpr_required,
             'header_bg_type'             => $this->header_bg_type,
             'header_bg_color'            => $this->header_bg_color,
             'header_bg_gradient'         => $this->header_bg_gradient,
             'header_bg_image'            => asset($this->header_bg_image),
-            'custom_bg_image_url'        => $this->custom_bg_image_url,
-            'welcome_text'               => $this->welcome_text,
-            'initial_prompt_text'        => $this->initial_prompt_text,
-            'cta_button_text'            => $this->cta_button_text,
         ];
     }
 }
