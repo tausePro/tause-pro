@@ -6,6 +6,7 @@ namespace App\Extensions\ChatbotWhatsapp\System;
 
 use App\Extensions\ChatbotWhatsapp\System\Http\Controllers\ChatbotWhatsappController;
 use App\Extensions\ChatbotWhatsapp\System\Http\Controllers\Webhook\ChatbotTwilioController;
+use App\Extensions\ChatbotWhatsapp\System\Http\Controllers\Webhook\ChatbotEvolutionController;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
@@ -81,6 +82,7 @@ class ChatbotWhatsappServiceProvider extends ServiceProvider
                 'as'             => 'api.v2.chatbot.channel.',
             ], function (Router $router) {
                 $router->any('{chatbotId}/channel/{channelId}/twilio', [ChatbotTwilioController::class, 'handle'])->name('twilio.post.handle');
+                $router->any('{chatbotId}/channel/{channelId}/evolution', [ChatbotEvolutionController::class, 'handle'])->name('evolution.post.handle');
             })->group([
                 'middleware' => ['web', 'auth'],
             ], function (Router $router) {
