@@ -858,6 +858,15 @@
                     messageToReplace.showConnectButtonsWhenTypingDone = data.needs_human;
                     messageToReplace.connectToHumanAgentDirectlyWhenTypingDone = data.needs_human_direct;
 
+                    // Sales Agent: Procesar orquestación de agentes
+                    if (data.orchestration && data.orchestration.agents_activated) {
+                        const salesAgent = data.orchestration.agents_activated.find(agent => agent.agent_type === 'sales');
+                        if (salesAgent && salesAgent.data) {
+                            messageToReplace.products = salesAgent.data.products || [];
+                            messageToReplace.show_product_grid = salesAgent.data.show_product_grid || false;
+                        }
+                    }
+
                     if (data.collect_email) {
                         this.activeChatbot.showCollectEmail = true;
                     }

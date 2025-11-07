@@ -12,6 +12,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
 use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Models\ChatbotKnowledgeBaseArticle;
+use App\Extensions\Chatbot\System\Services\AgentOrchestratorService;
 use App\Extensions\Chatbot\System\Services\GeneratorService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
 use App\Helpers\Classes\Helper;
@@ -397,6 +398,30 @@ class ChatbotApplicationController extends Controller
             }
         }
 
+        // Orquestar agentes si están habilitados
+        $orchestration = null;
+        if ($chatbot->sales_agent_enabled) {
+            try {
+                $orchestrator = app(AgentOrchestratorService::class);
+                $orchestration = $orchestrator->orchestrate(
+                    chatbot: $chatbot,
+                    userQuery: $request->validated('prompt'),
+                    aiResponse: $response
+                );
+                
+                Log::info('Agent Orchestration', [
+                    'chatbot_id' => $chatbot->id,
+                    'agents_activated' => $orchestration['agents_activated'] ?? [],
+                    'user_query' => $request->validated('prompt')
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Agent Orchestration Error', [
+                    'error' => $e->getMessage(),
+                    'chatbot_id' => $chatbot->id
+                ]);
+            }
+        }
+
         $needsHuman = false;
         $needsHumanDirect = false;
 
@@ -450,6 +475,7 @@ class ChatbotApplicationController extends Controller
             'needs_human'                         => $needsHuman,
             'needs_human_direct'                  => $needsHumanDirect,
             'original_response'                   => $originalResponse,
+            'orchestration'                       => $orchestration,
         ]);
     }
 
