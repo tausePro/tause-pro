@@ -276,26 +276,32 @@ class ProductIntegrationService
 
             // Get products that match keywords
             $products = ChatbotProduct::where('user_id', $chatbot->user_id)
-                ->where('availability', 'in_stock')
+                ->active()
+                ->inStock()
                 ->where(function ($query) use ($keywords) {
                     foreach ($keywords as $keyword) {
                         $query->orWhere('name', 'like', "%{$keyword}%")
                               ->orWhere('description', 'like', "%{$keyword}%");
                     }
                 })
-                ->with('category')
                 ->limit($limit)
                 ->get();
 
             return $products->map(function ($product) {
+                // Extraer primera categoría si existe
+                $categories = $product->categories ?? [];
+                $firstCategory = !empty($categories) && isset($categories[0]['name']) 
+                    ? $categories[0]['name'] 
+                    : 'Uncategorized';
+                
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'description' => $product->description,
                     'price' => $product->formatted_price,
-                    'category' => $product->category->name ?? 'Uncategorized',
+                    'category' => $firstCategory,
                     'image_url' => $product->image_url,
-                    'purchase_url' => $product->purchase_url,
+                    'purchase_url' => $product->product_url ?? $product->purchase_url,
                 ];
             })->toArray();
 

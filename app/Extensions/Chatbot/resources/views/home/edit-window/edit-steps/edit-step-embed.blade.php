@@ -1,8 +1,8 @@
-{{-- Editing Step 4 - Embed --}}
+{{-- Editing Step 5 - Embed --}}
 <div
     class="col-start-1 col-end-1 row-start-1 row-end-1 transition-all"
-    data-step="4"
-    x-show="editingStep === 4"
+    data-step="5"
+    x-show="editingStep === 5"
     x-transition:enter-start="opacity-0 -translate-x-3"
     x-transition:enter-end="opacity-100 translate-x-0"
     x-transition:leave-start="opacity-100 translate-x-0"

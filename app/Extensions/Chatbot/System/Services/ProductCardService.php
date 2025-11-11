@@ -14,8 +14,10 @@ class ProductCardService
     public function generateProductCards(Chatbot $chatbot, array $filters = [], int $limit = 3): array
     {
         $products = ChatbotProduct::where('chatbot_id', $chatbot->id)
+            ->active()
+            ->inStock()
             ->when(isset($filters['category']), function($query) use ($filters) {
-                return $query->where('category', $filters['category']);
+                return $query->whereJsonContains('categories', ['name' => $filters['category']]);
             })
             ->when(isset($filters['price_range']), function($query) use ($filters) {
                 [$min, $max] = $filters['price_range'];
@@ -50,10 +52,12 @@ class ProductCardService
     public function searchProducts(Chatbot $chatbot, string $query, int $limit = 5): array
     {
         $products = ChatbotProduct::where('chatbot_id', $chatbot->id)
+            ->active()
+            ->inStock()
             ->where(function($q) use ($query) {
                 $q->where('name', 'like', '%' . $query . '%')
                   ->orWhere('description', 'like', '%' . $query . '%')
-                  ->orWhere('category', 'like', '%' . $query . '%');
+                  ->orWhereJsonContains('categories', ['name' => $query]);
             })
             ->limit($limit)
             ->get();
@@ -69,6 +73,8 @@ class ProductCardService
         // Por ahora, retornamos productos aleatorios
         // TODO: Implementar ML para recomendaciones personalizadas
         $products = ChatbotProduct::where('chatbot_id', $chatbot->id)
+            ->active()
+            ->inStock()
             ->inRandomOrder()
             ->limit($limit)
             ->get();
@@ -82,7 +88,9 @@ class ProductCardService
     public function getProductsByCategory(Chatbot $chatbot, string $category, int $limit = 6): array
     {
         $products = ChatbotProduct::where('chatbot_id', $chatbot->id)
-            ->where('category', $category)
+            ->active()
+            ->inStock()
+            ->whereJsonContains('categories', ['name' => $category])
             ->limit($limit)
             ->get();
         
@@ -107,24 +115,42 @@ class ProductCardService
      */
     protected function formatSingleProduct(ChatbotProduct $product): array
     {
+        // Extraer primera categoría si existe
+        $categories = $product->categories ?? [];
+        $firstCategory = !empty($categories) && isset($categories[0]['name']) 
+            ? $categories[0]['name'] 
+            : null;
+        
+        // Obtener currency de metadata o usar COP por defecto
+        $currency = data_get($product->metadata, 'currency', 'COP');
+        
+        // Obtener rating de metadata si existe
+        $rating = data_get($product->metadata, 'rating');
+        
         return [
             'id' => $product->id,
+            'woocommerce_id' => $product->woocommerce_id,
             'name' => $product->name,
             'description' => $this->truncateDescription($product->description, 100),
-            'price' => $product->price,
-            'currency' => $product->currency ?? 'USD',
-            'formatted_price' => $this->formatPrice($product->price, $product->currency ?? 'USD'),
-            'image' => $product->image ?? $this->getPlaceholderImage(),
-            'url' => $product->url,
-            'category' => $product->category,
-            'in_stock' => $product->stock > 0,
-            'stock' => $product->stock,
-            'rating' => $product->rating ?? null,
+            'short_description' => $product->short_description,
+            'price' => (float) $product->price,
+            'regular_price' => $product->regular_price ? (float) $product->regular_price : null,
+            'sale_price' => $product->sale_price ? (float) $product->sale_price : null,
+            'currency' => $currency,
+            'formatted_price' => $product->formatted_price ?? $this->formatPrice((float) $product->price, $currency),
+            'image_url' => $product->image_url ?? $this->getPlaceholderImage(),
+            'product_url' => $product->product_url,
+            'categories' => $categories,
+            'category' => $firstCategory,
+            'in_stock' => (bool) $product->in_stock,
+            'stock_quantity' => $product->stock_quantity ?? 0,
+            'rating' => $rating,
+            'sku' => $product->sku,
             'buttons' => [
                 [
                     'type' => 'link',
                     'label' => '🛒 Ver producto',
-                    'url' => $product->url,
+                    'url' => $product->product_url ?? '#',
                     'target' => '_blank'
                 ],
                 [
@@ -160,7 +186,7 @@ class ProductCardService
     /**
      * Format price with currency
      */
-    protected function formatPrice(float $price, string $currency = 'USD'): string
+    protected function formatPrice(float $price, string $currency = 'COP'): string
     {
         $symbols = [
             'USD' => '$',
@@ -170,6 +196,11 @@ class ProductCardService
         ];
         
         $symbol = $symbols[$currency] ?? $currency;
+        
+        // Para COP, formatear sin decimales
+        if ($currency === 'COP') {
+            return $symbol . number_format($price, 0, ',', '.') . ' COP';
+        }
         
         return $symbol . number_format($price, 2);
     }

@@ -23,6 +23,9 @@ class Chatbot extends Model
         'bubble_message',
         'welcome_message',
         'connect_message',
+        'human_agent_command',
+        'human_agent_tip_message',
+        'human_agent_tip_sent_at',
         'instructions',
         'do_not_go_beyond_instructions',
         'language',
@@ -55,6 +58,39 @@ class Chatbot extends Model
         'is_emoji',
         'is_articles',
         'is_links',
+        // GDPR
+        'gdpr_enabled',
+        'gdpr_message',
+        'gdpr_required',
+        // WooCommerce
+        'woocommerce_url',
+        'woocommerce_key',
+        'woocommerce_secret',
+        'woocommerce_enabled',
+        'woocommerce_last_sync',
+        // Wompi
+        'wompi_public_key',
+        'wompi_private_key',
+        'wompi_enabled',
+        'wompi_environment',
+        // Sales Agent
+        'sales_agent_enabled',
+        'sales_agent_keywords',
+        'sales_agent_priority',
+        'sales_agent_name',
+        'sales_agent_description',
+        'sales_agent_tone',
+        'sales_agent_strategy',
+        'sales_agent_search_strategy',
+        'sales_agent_display_mode',
+        'sales_agent_custom_prompt',
+        'sales_agent_card_config',
+        // Negotiation
+        'negotiation_enabled',
+        'negotiation_max_discount',
+        'negotiation_min_cart_value',
+        'negotiation_triggers',
+        'negotiation_coupon_duration',
         // links
         'whatsapp_link',
         'telegram_link',
@@ -65,6 +101,11 @@ class Chatbot extends Model
         'header_bg_gradient',
         'header_bg_image',
         'human_agent_conditions',
+        // advanced customization
+        'custom_bg_image_url',
+        'welcome_text',
+        'initial_prompt_text',
+        'cta_button_text',
     ];
 
     protected $casts = [
@@ -78,7 +119,21 @@ class Chatbot extends Model
         'active'                        => 'boolean',
         'user_id'                       => 'integer',
         'is_demo'                       => 'boolean',
+        'gdpr_enabled'                  => 'boolean',
+        'gdpr_required'                 => 'boolean',
+        'woocommerce_enabled'           => 'boolean',
+        'woocommerce_last_sync'         => 'datetime',
+        'wompi_enabled'                 => 'boolean',
+        'sales_agent_enabled'           => 'boolean',
+        'sales_agent_keywords'          => 'json',
+        'sales_agent_priority'          => 'integer',
+        'sales_agent_card_config'       => 'json',
         'human_agent_conditions'        => 'json',
+        'negotiation_enabled'           => 'boolean',
+        'negotiation_max_discount'      => 'integer',
+        'negotiation_min_cart_value'    => 'integer',
+        'negotiation_triggers'          => 'array',
+        'negotiation_coupon_duration'   => 'integer',
     ];
 
     public function conversations(): HasMany
@@ -118,5 +173,20 @@ class Chatbot extends Model
                 DB::raw('"#" as link'),
             ])
             ->get();
+    }
+
+    public function triggers(): HasMany
+    {
+        return $this->hasMany(ChatbotTrigger::class, 'chatbot_id', 'id');
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(ChatbotProduct::class, 'chatbot_id', 'id');
+    }
+
+    public function agents(): HasMany
+    {
+        return $this->hasMany(ChatbotAgent::class, 'chatbot_id', 'id');
     }
 }

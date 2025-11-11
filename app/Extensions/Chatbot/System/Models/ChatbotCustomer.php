@@ -20,9 +20,16 @@ class ChatbotCustomer extends Model
         'ip_address',
         'chatbot_channel',
         'payload',
+        'gdpr_consent',
+        'gdpr_consent_at',
+        'crm_tags',
+        'crm_status',
     ];
 
     protected $casts = [
         'payload' => 'json',
+        'gdpr_consent' => 'boolean',
+        'gdpr_consent_at' => 'datetime',
+        'crm_tags' => 'array',
     ];
 }

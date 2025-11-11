@@ -20,6 +20,9 @@ class ChatbotHistory extends Model
         'model',
         'role',
         'message',
+        'quick_replies',
+        'metadata',
+        'action_type',
         'type',
         'media_url',
         'media_name',
@@ -31,6 +34,8 @@ class ChatbotHistory extends Model
 
     protected $casts = [
         'created_at' => 'datetime',
+        'quick_replies' => 'array',
+        'metadata' => 'array',
     ];
 
     public function conversation(): BelongsTo

@@ -64,7 +64,7 @@ trait EnhancedKnowledgeBaseTrait
         $searchResults = $this->enhancedSearch($query, $chatbotId, [
             'product_limit' => 5,
             'article_limit' => 3,
-            'availability' => 'in_stock'
+            'only_in_stock' => true, // Cambiado de 'availability' => 'in_stock' para mayor claridad
         ]);
 
         // Format results for conversation response

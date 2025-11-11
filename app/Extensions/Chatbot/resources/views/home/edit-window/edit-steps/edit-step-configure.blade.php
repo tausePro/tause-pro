@@ -158,6 +158,63 @@
 
         @includeIf('chatbot-agent::particles.chatbot-config')
 
+        {{-- GDPR Compliance Section --}}
+        <div class="border-t pt-7">
+            <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
+                @lang('GDPR Compliance')
+            </h3>
+            
+            <div class="flex flex-col gap-5">
+                <div>
+                    <x-forms.input
+                        class="h-[18px] w-[34px] [background-size:0.625rem]"
+                        class:label="text-heading-foreground flex-row-reverse justify-between"
+                        label="{{ __('Enable GDPR Consent') }}"
+                        name="gdpr_enabled"
+                        size="lg"
+                        type="checkbox"
+                        switcher
+                        x-model.boolean="activeChatbot.gdpr_enabled"
+                    />
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Require users to accept GDPR terms before chatting')
+                    </p>
+                </div>
+
+                <div x-show="activeChatbot.gdpr_enabled">
+                    <x-forms.input
+                        class:label="text-heading-foreground"
+                        label="{{ __('GDPR Consent Message') }}"
+                        placeholder="{{ __('We collect and process your data according to GDPR regulations...') }}"
+                        name="gdpr_message"
+                        size="lg"
+                        type="textarea"
+                        rows="3"
+                        x-model="activeChatbot.gdpr_message"
+                    />
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Message shown to users requesting consent')
+                    </p>
+                </div>
+
+                <div x-show="activeChatbot.gdpr_enabled">
+                    <x-forms.input
+                        class="h-[18px] w-[34px] [background-size:0.625rem]"
+                        class:label="text-heading-foreground flex-row-reverse justify-between"
+                        label="{{ __('GDPR Consent Required') }}"
+                        name="gdpr_required"
+                        size="lg"
+                        type="checkbox"
+                        switcher
+                        x-model.boolean="activeChatbot.gdpr_required"
+                    />
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('If enabled, users must accept before chatting')
+                    </p>
+                </div>
+            </div>
+        </div>
+
         {{--        <div> --}}
         {{--            <x-forms.input --}}
         {{--                class:label="text-heading-foreground" --}}

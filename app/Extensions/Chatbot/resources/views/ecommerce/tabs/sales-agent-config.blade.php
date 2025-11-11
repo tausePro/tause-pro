@@ -1,5 +1,5 @@
 {{-- Sales Agent Configuration Tab --}}
-<div class="space-y-8" x-data="{ negotiationEnabled: {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'true' : 'false' }} }">
+<div class="space-y-8">
     {{-- Sección 1: Comportamiento del Agente --}}
     <div class="space-y-4">
         <h3 class="font-semibold text-lg">{{ __('Agent Behavior') }}</h3>
@@ -425,6 +425,10 @@
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Negotiation toggle
+    Alpine.data('negotiationToggle', () => ({
+        negotiationEnabled: {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'true' : 'false' }}
+    }));
     // Referencias a elementos del preview
     const previewCard = document.querySelector('.enhanced-product-card');
     const previewButton = previewCard?.querySelector('button');
