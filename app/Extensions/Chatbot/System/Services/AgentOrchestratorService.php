@@ -172,8 +172,7 @@ class AgentOrchestratorService
         
         // Obtener productos activos y en stock
         $allProducts = ChatbotProduct::where('chatbot_id', $chatbot->id)
-            ->active()
-            ->inStock()
+            ->where('availability', 'in_stock')
             ->get();
 
         if ($allProducts->isEmpty()) {

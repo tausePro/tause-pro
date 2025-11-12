@@ -759,9 +759,9 @@ class ChatbotApplicationController extends Controller
 
     protected function injectProductUrlsFromEmbeddings(Chatbot $chatbot, string $response): string
     {
-        // Obtener embeddings de website y product con URLs
+        // Obtener embeddings de website con URLs
         $embeddings = $chatbot->embeddings()
-            ->whereIn('type', ['website', 'product'])
+            ->where('type', 'website')
             ->whereNotNull('url')
             ->whereNotNull('title')
             ->get(['title', 'url']);
@@ -780,8 +780,7 @@ class ChatbotApplicationController extends Controller
 
         $replacements = 0;
 
-        // Crear un mapa de palabras clave a URLs para matching más flexible
-        $urlMap = [];
+        // Buscar links en la respuesta que apunten a URLs incorrectas
         foreach ($embeddings as $embedding) {
             $title = trim($embedding->title);
             $correctUrl = trim($embedding->url);
@@ -790,104 +789,33 @@ class ChatbotApplicationController extends Controller
                 continue;
             }
 
-            // Limpiar el título removiendo prefijos comunes
-            $cleanTitle = preg_replace('/^Producto:\s*/i', '', $title);
-            $cleanTitle = preg_replace('/\s*-\s*Aliviate\s*$/i', '', $cleanTitle);
-            $cleanTitle = preg_replace('/\s*-\s*[^-]+\s*$/i', '', $cleanTitle);
-            $cleanTitle = trim($cleanTitle);
+            // Buscar menciones del título en formato markdown: [Texto que contiene el título](URL cualquiera)
+            $pattern = '/\[([^\]]*' . preg_quote($title, '/') . '[^\]]*)\]\(([^)]+)\)/i';
             
-            // Extraer palabras clave significativas (más de 3 caracteres)
-            $words = preg_split('/\s+/', strtoupper($cleanTitle));
-            $keywords = array_filter($words, function($word) {
-                return strlen($word) > 3 && !in_array($word, ['PARA', 'CON', 'SIN', 'LOS', 'LAS', 'UNA', 'UNO', 'DEL', 'DE']);
-            });
-            
-            if (!empty($keywords)) {
-                // Usar array de keywords en lugar de pattern regex para evitar errores
-                // Reindexar array después del filter
-                $keywords = array_values($keywords);
-                $urlMap[] = [
-                    'keywords' => $keywords,
-                    'url' => $correctUrl,
-                    'title' => $cleanTitle
-                ];
-            }
-        }
-
-        Log::debug('InjectUrls: URL Map created', ['total_mappings' => count($urlMap), 'first_mapping' => $urlMap[0] ?? null]);
-
-        // Función helper para normalizar texto (remover acentos)
-        $normalizeText = function($text) {
-            $text = strtoupper($text);
-            $unwanted_array = [
-                'Á'=>'A', 'É'=>'E', 'Í'=>'I', 'Ó'=>'O', 'Ú'=>'U', 'Ñ'=>'N',
-                'á'=>'A', 'é'=>'E', 'í'=>'I', 'ó'=>'O', 'ú'=>'U', 'ñ'=>'N'
-            ];
-            return strtr($text, $unwanted_array);
-        };
-
-        // Normalizar la respuesta completa para búsqueda de contexto
-        $responseNormalized = $normalizeText($response);
-
-        // Buscar todos los links markdown en la respuesta
-        $response = preg_replace_callback('/\[([^\]]+)\]\(([^)]+)\)/', function ($matches) use ($urlMap, &$replacements, $normalizeText, $responseNormalized) {
-            $linkText = $matches[1];
-            $currentUrl = trim($matches[2]);
-            $linkTextNormalized = $normalizeText($linkText);
-            
-            Log::debug('InjectUrls: Found link', [
-                'link_text' => $linkText,
-                'current_url' => $currentUrl,
-                'link_text_normalized' => $linkTextNormalized
-            ]);
-            
-            // Verificar si la URL es del dominio de aliviate (necesita corrección)
-            $isAliviateUrl = preg_match('/aliviate\.com\.co/i', $currentUrl);
-            
-            if (!$isAliviateUrl) {
-                return $matches[0]; // No es del dominio, mantener original
-            }
-            
-            // Buscar en el contexto completo de la respuesta (no solo en el texto del link)
-            foreach ($urlMap as $mapping) {
-                // Verificar si las keywords del producto están presentes en la RESPUESTA COMPLETA
-                $allKeywordsMatch = true;
-                $matchDetails = [];
+            $response = preg_replace_callback($pattern, function ($matches) use ($correctUrl, &$replacements) {
+                $linkText = $matches[1];
+                $currentUrl = trim($matches[2]);
                 
-                foreach ($mapping['keywords'] as $keyword) {
-                    $keywordNormalized = $normalizeText($keyword);
-                    $found = strpos($responseNormalized, $keywordNormalized) !== false;
-                    $matchDetails[$keyword] = $found;
-                    if (!$found) {
-                        $allKeywordsMatch = false;
-                        break;
-                    }
-                }
-                
-                if ($allKeywordsMatch) {
-                    // Las keywords del producto están en la respuesta
-                    // Verificar si la URL actual es la correcta
-                    $isCorrectUrl = ($currentUrl === $mapping['url'] || 'https://' . parse_url($currentUrl, PHP_URL_HOST) . parse_url($currentUrl, PHP_URL_PATH) === $mapping['url']);
+                // Si la URL actual NO es la correcta, reemplazarla
+                if ($currentUrl !== $correctUrl) {
+                    // Verificar si es una URL genérica (solo dominio, sin ruta específica)
+                    $isGenericUrl = preg_match('/^https?:\/\/[^\/]+\/?$/', $currentUrl);
                     
-                    if (!$isCorrectUrl) {
-                        Log::debug('InjectUrls: Replacing URL (context-based match)', [
+                    // Si es genérica o diferente, usar la URL correcta del embedding
+                    if ($isGenericUrl || $currentUrl !== $correctUrl) {
+                        Log::debug('InjectUrls: Replacing URL', [
                             'from' => $currentUrl,
-                            'to' => $mapping['url'],
-                            'link_text' => $linkText,
-                            'matched_title' => $mapping['title'],
-                            'keywords' => implode(', ', $mapping['keywords']),
-                            'method' => 'context_match'
+                            'to' => $correctUrl,
+                            'link_text' => $linkText
                         ]);
                         $replacements++;
-                        return "[{$linkText}]({$mapping['url']})";
+                        return "[{$linkText}]({$correctUrl})";
                     }
-                    
-                    break; // Ya encontramos un match, no seguir buscando
                 }
-            }
-            
-            return $matches[0]; // Mantener original si no hay coincidencia
-        }, $response);
+                
+                return $matches[0]; // Mantener original si la URL ya es correcta
+            }, $response);
+        }
 
         Log::debug('InjectUrls: Completed', ['replacements' => $replacements]);
 
