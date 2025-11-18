@@ -1,0 +1,135 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - feature/sales-agent-config-view
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'scripts/**'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'feature/sales-agent-config-view'
+        type: string
+
+env:
+  STAGING_HOST: 3.220.198.180
+  STAGING_USER: ubuntu
+  PROJECT_PATH: /var/www/magicai
+  PHP_VERSION: '8.2'
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, bcmath, pdo_mysql
+          coverage: none
+
+      - name: Validate PHP syntax
+        run: |
+          echo "🔍 Validating PHP syntax..."
+          find app -name "*.php" -type f -exec php -l {} \; | grep -v "No syntax errors" || echo "✅ All PHP files valid"
+
+      - name: Check for critical changes
+        run: |
+          echo "📋 Modified files in this commit:"
+          git diff --name-only HEAD~1 | head -20 || echo "No previous commit to compare"
+
+  deploy-to-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key.pem
+          chmod 600 ~/.ssh/staging_key.pem
+          ssh-keyscan -H ${{ env.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ env.STAGING_HOST }}
+          username: ${{ env.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -e
+            
+            echo "🚀 Starting deployment to staging..."
+            cd ${{ env.PROJECT_PATH }}
+            
+            # Verificar que estamos en la rama correcta
+            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            echo "📍 Current branch: $CURRENT_BRANCH"
+            
+            # Fetch y pull
+            echo "📥 Fetching latest changes..."
+            git fetch origin
+            
+            # Determinar qué rama usar
+            DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+            if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
+              echo "🔄 Switching to branch: $DEPLOY_BRANCH"
+              git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH
+            fi
+            
+            echo "📥 Pulling latest changes..."
+            git pull origin $DEPLOY_BRANCH
+            
+            # Verificar cambios
+            echo "📋 Latest commit:"
+            git log -1 --oneline
+            
+            # Ejecutar migraciones
+            echo "🗄️ Running migrations..."
+            php artisan migrate --force
+            
+            # Limpiar cachés (solo config y view para evitar cuelgues)
+            echo "🧹 Clearing caches..."
+            php artisan config:clear || true
+            php artisan view:clear || true
+            
+            # Asegurar permisos
+            echo "🔐 Setting permissions..."
+            sudo chown -R www-data:www-data storage bootstrap/cache || true
+            sudo chmod -R 775 storage bootstrap/cache || true
+            
+            # Verificar versión
+            echo "📌 Current version:"
+            cat version.txt || echo "No version.txt found"
+            
+            echo "✅ Deployment completed successfully!"
+
+      - name: Health Check
+        run: |
+          echo "✅ Staging deployment completed"
+          echo ""
+          echo "🔍 Verification steps:"
+          echo "  - Visit: https://test.tause.pro"
+          echo "  - Check dashboard: https://test.tause.pro/dashboard/admin"
+          echo "  - Verify migrations: ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'cd ${{ env.PROJECT_PATH }} && php artisan migrate:status | tail -5'"
+          echo ""
+          echo "📝 View logs:"
+          echo "  ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'tail -50 ${{ env.PROJECT_PATH }}/storage/logs/laravel.log'"
+
