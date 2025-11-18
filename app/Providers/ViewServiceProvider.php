@@ -59,9 +59,23 @@ class ViewServiceProvider extends ServiceProvider
 
     protected function shareGoodForNow(): void
     {
-        $goodForNow = TableSchema::hasTable('settings_two', $this->tables)
-            && $this->settings
-            && Helper::settingTwo('liquid_license_type');
+        /**
+         * En producción, MagicAI comprueba si el script está correctamente
+         * activado mediante la tabla `settings_two` y el campo
+         * `liquid_license_type`. En staging esto nos bloquea el acceso al
+         * panel y muestra siempre la vista de activación.
+         *
+         * Para el entorno de staging forzamos que la aplicación se considere
+         * "lista" (`good_for_now = true`) y así podemos trabajar con el
+         * dashboard sin depender del estado de la licencia.
+         */
+        if (app()->environment('staging')) {
+            $goodForNow = true;
+        } else {
+            $goodForNow = TableSchema::hasTable('settings_two', $this->tables)
+                && $this->settings
+                && Helper::settingTwo('liquid_license_type');
+        }
 
         View::share('good_for_now', $goodForNow);
     }

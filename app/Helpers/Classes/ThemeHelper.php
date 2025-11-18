@@ -10,15 +10,18 @@ class ThemeHelper
     public static function googleFontsString(string $landingOrDash = 'landingPage'): string
     {
         $google_fonts_string = '';
-        $theme_google_fonts = Theme::getSetting($landingOrDash . '.googleFonts');
+
+        // Siempre trabajar con arrays para evitar TypeError
+        $theme_google_fonts = Theme::getSetting($landingOrDash . '.googleFonts') ?? [];
 
         if (MarketplaceHelper::isRegistered('live-customizer')) {
-            $theme_google_fonts = array_merge(LiveCustomizer::getFontSetting(), $theme_google_fonts);
+            $liveFonts = LiveCustomizer::getFontSetting() ?? [];
+            $theme_google_fonts = array_merge($liveFonts, $theme_google_fonts);
         }
 
         $i = 0;
 
-        foreach ($theme_google_fonts ?? [] as $font_name => $weights) {
+        foreach ($theme_google_fonts as $font_name => $weights) {
             $font_string = 'family=' . str_replace(' ', '+', $font_name);
             if (! empty($weights)) {
                 $font_string .= ':wght@' . implode(';', $weights);
