@@ -161,6 +161,10 @@ jobs:
             echo "📋 Latest commit:"
             git log -1 --oneline
             
+            # Instalar/actualizar dependencias (sin dev)
+            echo "📦 Installing dependencies (production only)..."
+            composer install --no-dev --optimize-autoloader --no-interaction || { echo "⚠️ Warning: composer install failed, but continuing..."; }
+            
             # Ejecutar migraciones
             echo "🗄️ Running migrations..."
             php artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
