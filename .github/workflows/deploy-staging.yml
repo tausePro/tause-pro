@@ -173,6 +173,8 @@ jobs:
             php artisan cache:clear 2>/dev/null || echo "⚠️ cache:clear failed"
             php artisan route:clear 2>/dev/null || echo "⚠️ route:clear failed"
             php artisan view:clear 2>/dev/null || echo "⚠️ view:clear failed"
+            # Eliminar archivos de caché de bootstrap que pueden tener referencias a boost
+            sudo rm -f bootstrap/cache/services.php bootstrap/cache/packages.php 2>/dev/null || echo "⚠️ bootstrap cache files not found"
             
             # Regenerar autoloader para eliminar referencias a boost
             echo "🔄 Regenerating autoloader..."
