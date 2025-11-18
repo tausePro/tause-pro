@@ -76,7 +76,6 @@
 		"irazasyed/telegram-bot-sdk": "^3.15",
 		"iyzico/iyzipay-php": "^2.0",
 		"james-heinrich/getid3": "^1.9",
-		"laravel/boost": "^1.8",
 		"laravel/cashier": "14.14.0",
 		"laravel/framework": "^10.0",
 		"laravel/octane": "^2.8",
@@ -127,6 +126,7 @@
 	"require-dev": {
 		"barryvdh/laravel-debugbar": "^3.9",
 		"fakerphp/faker": "^1.9.1",
+		"laravel/boost": "^1.8",
 		"laravel/breeze": "^1.19",
 		"laravel/pint": "^1.17",
 		"laravel/sail": "^1.18",
