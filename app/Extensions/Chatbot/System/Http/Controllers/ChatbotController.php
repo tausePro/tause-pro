@@ -7,6 +7,7 @@ use App\Extensions\Chatbot\System\Http\Requests\ChatbotStoreRequest;
 use App\Extensions\Chatbot\System\Http\Resources\Admin\ChatbotConversationResource;
 use App\Extensions\Chatbot\System\Http\Resources\Admin\ChatbotResource;
 use App\Extensions\Chatbot\System\Models\Chatbot;
+use App\Extensions\Chatbot\System\Models\ChatbotAgent;
 use App\Extensions\Chatbot\System\Models\ChatbotTrigger;
 use App\Extensions\Chatbot\System\Services\ChatbotService;
 use App\Helpers\Classes\Helper;
@@ -257,5 +258,35 @@ class ChatbotController extends Controller
         ];
 
         return $descriptions[$type] ?? 'Proactive trigger';
+    }
+
+    /**
+     * Get agents for a chatbot
+     */
+    public function getAgents(string $chatbotId): JsonResponse
+    {
+        $chatbot = Chatbot::where('id', $chatbotId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $agents = ChatbotAgent::where('chatbot_id', $chatbot->id)
+            ->orderBy('priority', 'desc')
+            ->get()
+            ->map(function ($agent) {
+                return [
+                    'id' => $agent->id,
+                    'agent_type' => $agent->agent_type,
+                    'name' => $agent->name,
+                    'description' => $agent->description,
+                    'is_enabled' => $agent->is_enabled,
+                    'priority' => $agent->priority,
+                    'triggers' => $agent->triggers ?? [],
+                    'configuration' => $agent->configuration ?? [],
+                ];
+            });
+
+        return response()->json([
+            'agents' => $agents
+        ]);
     }
 }

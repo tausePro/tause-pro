@@ -177,6 +177,9 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                         $route->get('{chatbot}/triggers', 'getTriggers')->name('triggers.get');
                         $route->post('{chatbot}/triggers', 'saveTriggers')->name('triggers.save');
 
+                        // agents
+                        $route->get('{chatbot}/agents', 'getAgents')->name('agents.get');
+
                         // ended routes
                         $route->get('{chatbot}/enbed', 'enbed')->name('enbed');
                     });

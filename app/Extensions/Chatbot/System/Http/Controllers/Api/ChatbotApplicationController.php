@@ -499,20 +499,33 @@ class ChatbotApplicationController extends Controller
         if ($chatbot->sales_agent_enabled) {
             try {
                 $orchestrator = app(AgentOrchestratorService::class);
+                
+                // Preparar contexto de conversación
+                $context = [
+                    'conversation_id' => $chatbotConversation->id ?? null,
+                    'customer_id' => $chatbotConversation?->getAttribute('customer')?->id ?? null,
+                    'is_first_message' => $chatbotConversation->messages()->count() === 1,
+                ];
+                
                 $orchestration = $orchestrator->orchestrate(
                     chatbot: $chatbot,
+                    userQuery: $request->validated('prompt'),
                     aiResponse: $messageToUser,
-                    userQuery: $request->validated('prompt')
+                    context: $context
                 );
                 
                 Log::info('Agent Orchestration', [
                     'chatbot_id' => $chatbot->id,
                     'agents_activated' => $orchestration['agents_activated'] ?? [],
-                    'user_query' => $request->validated('prompt')
+                    'agents_activated_count' => count($orchestration['agents_activated'] ?? []),
+                    'intent_type' => $orchestration['orchestration_metadata']['intent']['type'] ?? 'unknown',
+                    'intent_confidence' => $orchestration['orchestration_metadata']['intent']['confidence'] ?? 0,
+                    'user_query' => substr($request->validated('prompt'), 0, 100)
                 ]);
             } catch (\Exception $e) {
                 Log::error('Agent Orchestration Error', [
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                     'chatbot_id' => $chatbot->id
                 ]);
             }

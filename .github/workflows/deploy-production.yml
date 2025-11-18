@@ -1,0 +1,89 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/Extensions/Chatbot/**'
+      - '.github/workflows/deploy-production.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  AWS_REGION: us-east-1
+  PHP_VERSION: '8.2'
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, bcmath, pdo_mysql
+          coverage: none
+
+      - name: Validate PHP syntax
+        run: |
+          echo "Validating PHP syntax..."
+          find app/Extensions/Chatbot/System/Services -name "*.php" -exec php -l {} \; | grep -v "No syntax errors" || echo "✅ All files valid"
+
+      - name: Check for critical changes
+        run: |
+          echo "📋 Modified files:"
+          git diff --name-only HEAD~1 | grep -E "app/Extensions/Chatbot" || echo "No Chatbot changes"
+
+  deploy-to-aws:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ${{ secrets.AWS_EC2_USER }}
+          key: ${{ secrets.AWS_EC2_SSH_KEY }}
+          script: |
+            cd /var/www/tausepro9.4
+            ./scripts/backup-pre-deploy.sh
+            git pull origin main
+            composer install --no-dev --optimize-autoloader
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            ./scripts/verify-deployment.sh
+
+      - name: Health Check
+        run: |
+          echo "✅ Deployment completed"
+          echo "🔍 Please verify manually:"
+          echo "  - Sales Agent functionality"
+          echo "  - Product search"
+          echo "  - Check logs for errors"

@@ -15,6 +15,72 @@
         @lang('Configure AI agents to handle specific tasks and improve customer interactions.')
     </p>
 
+    {{-- Agentes Configurados (Nueva Arquitectura) --}}
+    <div class="mt-6 mb-4 rounded-lg border border-blue-200 bg-blue-50/50 p-4" x-data="agentsManager()" x-init="loadAgents()">
+        <div class="mb-3 flex items-center justify-between">
+            <div>
+                <h3 class="text-sm font-semibold text-heading-foreground flex items-center gap-2">
+                    <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    @lang('Agentes Activos')
+                </h3>
+                <p class="mt-1 text-2xs text-heading-foreground/60">
+                    @lang('Agentes configurados con el nuevo sistema de orquestación')
+                </p>
+            </div>
+            <button 
+                @click="loadAgents()" 
+                class="rounded-lg border border-border bg-background px-3 py-1.5 text-xs hover:bg-primary/5"
+                :disabled="loading"
+            >
+                <span x-show="!loading">@lang('Actualizar')</span>
+                <span x-show="loading">@lang('Cargando...')</span>
+            </button>
+        </div>
+
+        <div x-show="agents.length === 0 && !loading" class="rounded-lg border border-dashed border-border p-4 text-center">
+            <p class="text-xs text-heading-foreground/60">
+                @lang('No hay agentes configurados aún. Los agentes se crearán automáticamente cuando se active el Sales Agent.')
+            </p>
+        </div>
+
+        <div x-show="loading" class="rounded-lg border border-border p-4 text-center">
+            <p class="text-xs text-heading-foreground/60">@lang('Cargando agentes...')</p>
+        </div>
+
+        <div class="space-y-2" x-show="agents.length > 0 && !loading">
+            <template x-for="agent in agents" :key="agent.id">
+                <div class="flex items-center justify-between rounded-lg border border-border bg-background p-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-heading-foreground" x-text="agent.name"></span>
+                            <span 
+                                class="rounded-full px-2 py-0.5 text-2xs font-medium"
+                                :class="{
+                                    'bg-green-100 text-green-700': agent.is_enabled,
+                                    'bg-gray-100 text-gray-700': !agent.is_enabled
+                                }"
+                                x-text="agent.is_enabled ? '@lang('Activo')' : '@lang('Inactivo')'"
+                            ></span>
+                            <span 
+                                class="rounded-full px-2 py-0.5 text-2xs font-medium bg-blue-100 text-blue-700"
+                                x-text="agent.agent_type"
+                            ></span>
+                        </div>
+                        <p class="mt-1 text-2xs text-heading-foreground/60" x-text="agent.description || ''"></p>
+                        <div class="mt-1 flex items-center gap-3 text-2xs text-heading-foreground/50">
+                            <span>@lang('Prioridad'): <span class="font-medium" x-text="agent.priority"></span></span>
+                            <span x-show="agent.triggers && agent.triggers.keywords">
+                                @lang('Keywords'): <span class="font-medium" x-text="(agent.triggers.keywords || []).join(', ')"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
     <div class="flex flex-col gap-5 pt-9">
         {{-- Sales Agent --}}
         <div class="rounded-xl border border-border p-4 transition-all hover:border-primary/30">
@@ -328,4 +394,52 @@
             </div>
         </button>
     </div>
+
+    {{-- JavaScript para gestionar agentes --}}
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('agentsManager', () => ({
+                agents: [],
+                loading: false,
+
+                async loadAgents() {
+                    this.loading = true;
+                    
+                    // Obtener ID del chatbot desde el store o input hidden
+                    let chatbotId = null;
+                    try {
+                        const store = Alpine.store('externalChatbotEditor');
+                        chatbotId = store?.activeChatbot?.id;
+                    } catch (_) {}
+
+                    if (!chatbotId || chatbotId === 'new_chatbot') {
+                        this.agents = [];
+                        this.loading = false;
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dashboard/chatbot/${chatbotId}/agents`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.agents = data.agents || [];
+                        } else {
+                            this.agents = [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load agents:', error);
+                        this.agents = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }));
+        });
+    </script>
 </div>

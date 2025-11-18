@@ -12,6 +12,7 @@ enum EmbeddingTypeEnum: string
     case file = 'file';
     case text = 'text';
     case qa = 'qa';
+    case product = 'product';
 
     public static function isInValid(string $step): bool
     {

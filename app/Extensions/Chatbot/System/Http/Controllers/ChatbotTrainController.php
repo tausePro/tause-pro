@@ -43,6 +43,7 @@ class ChatbotTrainController extends Controller
             $this->service->query()
                 ->findOrFail($request->validated('id'))
                 ->embeddings()
+                ->whereIn('type', EmbeddingTypeEnum::toArray())
                 ->when($request->validated('type'), fn ($query) => $query->where('type', $request->validated('type')))
                 ->get()
         );
