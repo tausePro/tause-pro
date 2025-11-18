@@ -32,6 +32,17 @@ class ViewServiceProvider extends ServiceProvider
         $this->sharedAppStatus();
         Paginator::useBootstrap();
 
+        // Durante la instalación, solo compartir objetos vacíos sin intentar consultar BD
+        $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+        
+        if ($isInstallationRoute) {
+            // Modo instalación: solo compartir objetos vacíos
+            $this->settings = new Setting();
+            View::share('setting', $this->settings);
+            View::share('settings_two', new SettingTwo());
+            return;
+        }
+
         // Intentar compartir $setting siempre, incluso si la BD no está disponible
         // Esto evita errores en vistas durante la instalación o errores de conexión
         try {
