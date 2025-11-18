@@ -104,6 +104,10 @@ jobs:
                 sudo cp -r . $BACKUP_DIR/ || echo "⚠️ Backup failed, continuing..."
               fi
               
+              # Cambiar permisos temporalmente para permitir checkout
+              echo "🔐 Adjusting permissions for git checkout..."
+              sudo chown -R ubuntu:ubuntu . 2>/dev/null || echo "⚠️ Warning: chown failed, continuing..."
+              
               # Inicializar git y configurar remote
               if [ "$IS_GIT_REPO" = false ]; then
                 echo "🔧 Initializing git repository..."
@@ -118,6 +122,11 @@ jobs:
               echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
               git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
               git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+              
+              # Restaurar permisos correctos después del checkout
+              echo "🔐 Restoring correct permissions..."
+              sudo chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || echo "⚠️ Warning: chown storage/cache failed"
+              sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "⚠️ Warning: chmod storage/cache failed"
             else
               # Es un repo git válido, hacer pull normal
               echo "✅ Git repository found with commits"
@@ -142,6 +151,11 @@ jobs:
               echo "📥 Pulling latest changes..."
               git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             fi
+            
+            # Asegurar permisos antes de continuar
+            echo "🔐 Ensuring correct permissions..."
+            sudo chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || echo "⚠️ Warning: chown storage/cache failed"
+            sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "⚠️ Warning: chmod storage/cache failed"
             
             # Verificar cambios
             echo "📋 Latest commit:"
