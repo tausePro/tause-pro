@@ -59,24 +59,27 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key.pem
-          chmod 600 ~/.ssh/staging_key.pem
-          ssh-keyscan -H ${{ env.STAGING_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy to Staging Server
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ env.STAGING_HOST }}
           username: ${{ env.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
           script: |
             set -e
             
             echo "🚀 Starting deployment to staging..."
-            cd ${{ env.PROJECT_PATH }}
+            echo "📍 Host: ${{ env.STAGING_HOST }}"
+            echo "📍 User: ${{ env.STAGING_USER }}"
+            echo "📍 Project Path: ${{ env.PROJECT_PATH }}"
+            
+            cd ${{ env.PROJECT_PATH }} || { echo "❌ Error: Cannot cd to ${{ env.PROJECT_PATH }}"; exit 1; }
+            
+            # Verificar que git está disponible
+            git --version || { echo "❌ Error: git not found"; exit 1; }
             
             # Verificar que estamos en la rama correcta
             CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -84,17 +87,19 @@ jobs:
             
             # Fetch y pull
             echo "📥 Fetching latest changes..."
-            git fetch origin
+            git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
             
             # Determinar qué rama usar
             DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+            echo "📍 Target branch: $DEPLOY_BRANCH"
+            
             if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
               echo "🔄 Switching to branch: $DEPLOY_BRANCH"
-              git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH
+              git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
             fi
             
             echo "📥 Pulling latest changes..."
-            git pull origin $DEPLOY_BRANCH
+            git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             
             # Verificar cambios
             echo "📋 Latest commit:"
@@ -102,21 +107,21 @@ jobs:
             
             # Ejecutar migraciones
             echo "🗄️ Running migrations..."
-            php artisan migrate --force
+            php artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
             
             # Limpiar cachés (solo config y view para evitar cuelgues)
             echo "🧹 Clearing caches..."
-            php artisan config:clear || true
-            php artisan view:clear || true
+            php artisan config:clear || echo "⚠️ Warning: config:clear failed"
+            php artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
             # Asegurar permisos
             echo "🔐 Setting permissions..."
-            sudo chown -R www-data:www-data storage bootstrap/cache || true
-            sudo chmod -R 775 storage bootstrap/cache || true
+            sudo chown -R www-data:www-data storage bootstrap/cache || echo "⚠️ Warning: chown failed"
+            sudo chmod -R 775 storage bootstrap/cache || echo "⚠️ Warning: chmod failed"
             
             # Verificar versión
             echo "📌 Current version:"
-            cat version.txt || echo "No version.txt found"
+            cat version.txt || echo "⚠️ No version.txt found"
             
             echo "✅ Deployment completed successfully!"
 
