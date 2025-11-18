@@ -1081,7 +1081,7 @@ function getMetaTitle($setting, $settingTwo, $ext_title = null)
     $ext_title = $ext_title == null ? ' | ' . __('Home') : $ext_title;
     $lang = app()->getLocale();
 
-    if ($lang == $settingTwo->languages_default) {
+    if ($settingTwo && isset($settingTwo->languages_default) && $lang == $settingTwo->languages_default) {
         if (isset($setting->meta_title)) {
             $title = $setting->meta_title;
         } else {
@@ -1115,11 +1115,20 @@ function getMetaDesc($setting, $settingTwo)
             $desc = '';
         }
     } else {
-        $meta_description = PrivacyTerms::where('type', 'meta_desc')->where('lang', $lang)->first();
-        if ($meta_description) {
-            $desc = $meta_description->content;
-        } else {
-
+        // Intentar obtener desde BD, pero si falla usar el setting por defecto
+        try {
+            $meta_description = PrivacyTerms::where('type', 'meta_desc')->where('lang', $lang)->first();
+            if ($meta_description) {
+                $desc = $meta_description->content;
+            } else {
+                if (isset($setting->meta_description)) {
+                    $desc = $setting->meta_description;
+                } else {
+                    $desc = '';
+                }
+            }
+        } catch (\Exception $e) {
+            // Si la BD no está disponible, usar el setting por defecto
             if (isset($setting->meta_description)) {
                 $desc = $setting->meta_description;
             } else {
