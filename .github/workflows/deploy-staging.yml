@@ -161,9 +161,22 @@ jobs:
             echo "📋 Latest commit:"
             git log -1 --oneline
             
-            # Eliminar laravel/boost si está instalado (es solo para desarrollo)
-            echo "🧹 Removing laravel/boost if installed (dev-only package)..."
-            composer remove laravel/boost --no-interaction 2>/dev/null || echo "⚠️ laravel/boost not installed or already removed"
+            # Eliminar laravel/boost completamente (es solo para desarrollo)
+            echo "🧹 Removing laravel/boost completely (dev-only package)..."
+            composer remove laravel/boost --no-interaction 2>/dev/null || echo "⚠️ laravel/boost not in composer.json"
+            # Eliminar físicamente el directorio si existe
+            sudo rm -rf vendor/laravel/boost 2>/dev/null || echo "⚠️ vendor/laravel/boost directory not found"
+            
+            # Limpiar TODOS los cachés ANTES de composer install
+            echo "🧹 Clearing all caches before composer install..."
+            php artisan config:clear 2>/dev/null || echo "⚠️ config:clear failed"
+            php artisan cache:clear 2>/dev/null || echo "⚠️ cache:clear failed"
+            php artisan route:clear 2>/dev/null || echo "⚠️ route:clear failed"
+            php artisan view:clear 2>/dev/null || echo "⚠️ view:clear failed"
+            
+            # Regenerar autoloader para eliminar referencias a boost
+            echo "🔄 Regenerating autoloader..."
+            composer dump-autoload --no-dev --optimize 2>/dev/null || echo "⚠️ dump-autoload failed"
             
             # Instalar/actualizar dependencias (sin dev)
             echo "📦 Installing dependencies (production only)..."
@@ -173,9 +186,10 @@ jobs:
             echo "🗄️ Running migrations..."
             php artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
             
-            # Limpiar cachés (solo config y view para evitar cuelgues)
-            echo "🧹 Clearing caches..."
+            # Limpiar cachés nuevamente después de composer install
+            echo "🧹 Clearing caches after composer install..."
             php artisan config:clear || echo "⚠️ Warning: config:clear failed"
+            php artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
             php artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
             # Asegurar permisos
