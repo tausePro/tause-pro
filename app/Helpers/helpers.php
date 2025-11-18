@@ -1088,15 +1088,24 @@ function getMetaTitle($setting, $settingTwo, $ext_title = null)
             $title = $setting->site_name . $ext_title;
         }
     } else {
-        $meta_title = PrivacyTerms::where('type', 'meta_title')->where('lang', $lang)->first();
-        if ($meta_title) {
-            $title = $meta_title->content;
-        } else {
-
+        // Intentar obtener desde BD, pero si falla usar el setting por defecto
+        try {
+            $meta_title = PrivacyTerms::where('type', 'meta_title')->where('lang', $lang)->first();
+            if ($meta_title) {
+                $title = $meta_title->content;
+            } else {
+                if (isset($setting->meta_title)) {
+                    $title = $setting->meta_title;
+                } else {
+                    $title = ($setting->site_name ?? config('app.name')) . $ext_title;
+                }
+            }
+        } catch (\Exception $e) {
+            // Si la BD no está disponible, usar el setting por defecto
             if (isset($setting->meta_title)) {
                 $title = $setting->meta_title;
             } else {
-                $title = $setting->site_name . $ext_title;
+                $title = ($setting->site_name ?? config('app.name')) . $ext_title;
             }
         }
     }
