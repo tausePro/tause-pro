@@ -81,25 +81,52 @@ jobs:
             # Verificar que git está disponible
             git --version || { echo "❌ Error: git not found"; exit 1; }
             
-            # Verificar que estamos en la rama correcta
-            CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            echo "📍 Current branch: $CURRENT_BRANCH"
-            
-            # Fetch y pull
-            echo "📥 Fetching latest changes..."
-            git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
-            
-            # Determinar qué rama usar
-            DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
-            echo "📍 Target branch: $DEPLOY_BRANCH"
-            
-            if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
-              echo "🔄 Switching to branch: $DEPLOY_BRANCH"
-              git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+            # Verificar si es un repositorio git, si no, inicializarlo
+            if [ ! -d .git ]; then
+              echo "⚠️ Directory is not a git repository. Initializing..."
+              
+              # Backup del código actual si existe
+              if [ -f composer.json ]; then
+                echo "📦 Backing up existing code..."
+                BACKUP_DIR="/tmp/magicai-backup-$(date +%Y%m%d_%H%M%S)"
+                sudo mkdir -p $BACKUP_DIR
+                sudo cp -r . $BACKUP_DIR/ || echo "⚠️ Backup failed, continuing..."
+              fi
+              
+              # Inicializar git y configurar remote
+              echo "🔧 Initializing git repository..."
+              git init
+              git remote add origin https://github.com/tausePro/tause-pro.git || git remote set-url origin https://github.com/tausePro/tause-pro.git
+              
+              # Determinar qué rama usar
+              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+              echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
+              git fetch origin
+              git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || git checkout $DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+            else
+              # Es un repo git, hacer pull normal
+              echo "✅ Git repository found"
+              
+              # Verificar que estamos en la rama correcta
+              CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+              echo "📍 Current branch: $CURRENT_BRANCH"
+              
+              # Fetch y pull
+              echo "📥 Fetching latest changes..."
+              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
+              
+              # Determinar qué rama usar
+              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+              echo "📍 Target branch: $DEPLOY_BRANCH"
+              
+              if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
+                echo "🔄 Switching to branch: $DEPLOY_BRANCH"
+                git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+              fi
+              
+              echo "📥 Pulling latest changes..."
+              git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             fi
-            
-            echo "📥 Pulling latest changes..."
-            git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             
             # Verificar cambios
             echo "📋 Latest commit:"
