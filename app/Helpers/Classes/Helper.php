@@ -253,9 +253,13 @@ class Helper
 
     public static function setting(string $key, $default = null, $setting = null)
     {
-        $setting = $setting ?: Setting::getCache();
-
-        return $setting?->getAttribute($key) ?? $default;
+        try {
+            $setting = $setting ?: Setting::getCache();
+            return $setting?->getAttribute($key) ?? $default;
+        } catch (\Exception $e) {
+            // Si la BD no está disponible, retornar el valor por defecto
+            return $default;
+        }
     }
 
     public static function appIsDemoForChatbot(): bool

@@ -104,7 +104,16 @@
         {!! $metaSetting->dashboard_code_before_head !!}
     @endif
 
-    {!! setting('google_tag_manager', '') !!}
+    @php
+        try {
+            $googleTagManager = setting('google_tag_manager', '');
+            $additionalCustomCss = setting('additional_custom_css');
+        } catch (\Exception $e) {
+            $googleTagManager = '';
+            $additionalCustomCss = null;
+        }
+    @endphp
+    {!! $googleTagManager !!}
 
     <script>
         window.pusherConfig = @json(\Illuminate\Support\Arr::except(config('broadcasting.connections.pusher'), ['secret', 'app_id']));
@@ -112,8 +121,8 @@
 
     @vite(\App\Helpers\Classes\ThemeHelper::appJsPath())
 
-    @if (setting('additional_custom_css') != null)
-        {!! setting('additional_custom_css') !!}
+    @if ($additionalCustomCss != null)
+        {!! $additionalCustomCss !!}
     @endif
 
     @livewireStyles
