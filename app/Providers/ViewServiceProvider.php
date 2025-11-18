@@ -32,19 +32,31 @@ class ViewServiceProvider extends ServiceProvider
         $this->sharedAppStatus();
         Paginator::useBootstrap();
 
-        if (! Helper::dbConnectionStatus()) {
-            return;
+        // Intentar compartir $setting siempre, incluso si la BD no está disponible
+        // Esto evita errores en vistas durante la instalación o errores de conexión
+        try {
+            if (Helper::dbConnectionStatus()) {
+                $this->tables = app('magicai_tables');
+
+                if ($this->hasTables(['migrations', 'settings'])) {
+                    $this->shareSetting();
+                    $this->shareAiGenerator();
+                    $this->shareGoodForNow();
+                } else {
+                    // Tablas no existen aún, compartir objeto vacío para evitar errores
+                    $this->settings = new Setting();
+                    View::share('setting', $this->settings);
+                }
+            } else {
+                // BD no disponible, compartir objeto vacío para evitar errores
+                $this->settings = new Setting();
+                View::share('setting', $this->settings);
+            }
+        } catch (\Exception $e) {
+            // Cualquier error, compartir objeto vacío para evitar errores
+            $this->settings = new Setting();
+            View::share('setting', $this->settings);
         }
-
-        $this->tables = app('magicai_tables');
-
-        if (! $this->hasTables(['migrations', 'settings'])) {
-            return;
-        }
-
-        $this->shareSetting();
-        $this->shareAiGenerator();
-        $this->shareGoodForNow();
 
         View::composer(
             ['components.navbar.navbar', 'panel.layout.partials.menu'],
@@ -95,6 +107,16 @@ class ViewServiceProvider extends ServiceProvider
         if ($settings = Setting::getCache()) {
             $this->settings = $settings;
             View::share('setting', $settings);
+        } else {
+            // Si no hay cache, intentar obtener desde BD directamente
+            try {
+                $this->settings = Setting::first() ?? new Setting();
+                View::share('setting', $this->settings);
+            } catch (\Exception $e) {
+                // Si falla, usar objeto vacío
+                $this->settings = new Setting();
+                View::share('setting', $this->settings);
+            }
         }
 
         $this->shareFrontendSettings();
