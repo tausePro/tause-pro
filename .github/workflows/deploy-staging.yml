@@ -81,9 +81,20 @@ jobs:
             # Verificar que git está disponible
             git --version || { echo "❌ Error: git not found"; exit 1; }
             
-            # Verificar si es un repositorio git, si no, inicializarlo
-            if [ ! -d .git ]; then
-              echo "⚠️ Directory is not a git repository. Initializing..."
+            # Verificar si es un repositorio git válido (con commits)
+            IS_GIT_REPO=false
+            HAS_COMMITS=false
+            
+            if [ -d .git ]; then
+              IS_GIT_REPO=true
+              # Verificar si tiene commits
+              if git rev-parse --verify HEAD >/dev/null 2>&1; then
+                HAS_COMMITS=true
+              fi
+            fi
+            
+            if [ "$IS_GIT_REPO" = false ] || [ "$HAS_COMMITS" = false ]; then
+              echo "⚠️ Directory is not a valid git repository (or is empty). Initializing..."
               
               # Backup del código actual si existe
               if [ -f composer.json ]; then
@@ -94,18 +105,22 @@ jobs:
               fi
               
               # Inicializar git y configurar remote
-              echo "🔧 Initializing git repository..."
-              git init
+              if [ "$IS_GIT_REPO" = false ]; then
+                echo "🔧 Initializing git repository..."
+                git init
+              fi
+              
+              git remote remove origin 2>/dev/null || true
               git remote add origin https://github.com/tausePro/tause-pro.git || git remote set-url origin https://github.com/tausePro/tause-pro.git
               
               # Determinar qué rama usar
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
               echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
-              git fetch origin
-              git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || git checkout $DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
+              git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
             else
-              # Es un repo git, hacer pull normal
-              echo "✅ Git repository found"
+              # Es un repo git válido, hacer pull normal
+              echo "✅ Git repository found with commits"
               
               # Verificar que estamos en la rama correcta
               CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -121,7 +136,7 @@ jobs:
               
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
                 echo "🔄 Switching to branch: $DEPLOY_BRANCH"
-                git checkout $DEPLOY_BRANCH || git checkout -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
+                git checkout -f $DEPLOY_BRANCH || git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
               fi
               
               echo "📥 Pulling latest changes..."
