@@ -43,19 +43,22 @@ class ViewServiceProvider extends ServiceProvider
                     $this->shareAiGenerator();
                     $this->shareGoodForNow();
                 } else {
-                    // Tablas no existen aún, compartir objeto vacío para evitar errores
+                    // Tablas no existen aún, compartir objetos vacíos para evitar errores
                     $this->settings = new Setting();
                     View::share('setting', $this->settings);
+                    View::share('settings_two', new SettingTwo());
                 }
             } else {
-                // BD no disponible, compartir objeto vacío para evitar errores
+                // BD no disponible, compartir objetos vacíos para evitar errores
                 $this->settings = new Setting();
                 View::share('setting', $this->settings);
+                View::share('settings_two', new SettingTwo());
             }
         } catch (\Exception $e) {
-            // Cualquier error, compartir objeto vacío para evitar errores
+            // Cualquier error, compartir objetos vacíos para evitar errores
             $this->settings = new Setting();
             View::share('setting', $this->settings);
+            View::share('settings_two', new SettingTwo());
         }
 
         View::composer(
@@ -187,6 +190,11 @@ class ViewServiceProvider extends ServiceProvider
             $settingsTwo = SettingTwo::getCache() ?? tap(new SettingTwo)->save();
             View::share('settings_two', $settingsTwo);
         });
+        
+        // Asegurar que siempre existe, incluso si la tabla no está disponible
+        if (! View::shared('settings_two')) {
+            View::share('settings_two', new SettingTwo());
+        }
     }
 
     protected function sharedAppStatus(): void

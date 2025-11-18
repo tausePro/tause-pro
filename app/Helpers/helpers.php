@@ -1108,7 +1108,7 @@ function getMetaDesc($setting, $settingTwo)
 {
     $lang = app()->getLocale();
 
-    if ($lang == $settingTwo->languages_default) {
+    if ($settingTwo && isset($settingTwo->languages_default) && $lang == $settingTwo->languages_default) {
         if (isset($setting->meta_description)) {
             $desc = $setting->meta_description;
         } else {
