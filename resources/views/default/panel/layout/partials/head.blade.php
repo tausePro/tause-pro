@@ -1,8 +1,12 @@
 <head>
-    @if (!empty($setting->google_analytics_code))
+    @php
+        $metaSetting = $setting ?? null;
+        $metaSettingsTwo = $settings_two ?? null;
+    @endphp
+    @if (! empty($metaSetting->google_analytics_code ?? null))
         <script
             async
-            src="https://www.googletagmanager.com/gtag/js?id={{ $setting->google_analytics_code }}"
+            src="https://www.googletagmanager.com/gtag/js?id={{ $metaSetting->google_analytics_code }}"
         ></script>
         <script>
             window.dataLayer = window.dataLayer || [];
@@ -11,7 +15,7 @@
                 dataLayer.push(arguments);
             }
             gtag("js", new Date());
-            gtag("config", '{{ $setting->google_analytics_code }}');
+            gtag("config", '{{ $metaSetting->google_analytics_code }}');
         </script>
     @endif
     <meta
@@ -33,19 +37,19 @@
     >
     <meta
         name="description"
-        content="{{ getMetaDesc($setting, $settings_two) }}"
+        content="{{ getMetaDesc($metaSetting, $metaSettingsTwo) }}"
     >
-    @if (isset($setting->meta_keywords))
+    @if (! empty($metaSetting->meta_keywords ?? null))
         <meta
             name="keywords"
-            content="{{ $setting->meta_keywords }}"
+            content="{{ $metaSetting->meta_keywords }}"
         >
     @endif
     <link
         rel="icon"
-        href="{{ custom_theme_url($setting->favicon_path ?? 'assets/favicon.ico', true) }}"
+        href="{{ custom_theme_url($metaSetting->favicon_path ?? 'assets/favicon.ico', true) }}"
     >
-    <title>{{ getMetaTitle($setting, $settings_two, ' ') ?? $setting->site_name }} | @yield('title')</title>
+    <title>{{ getMetaTitle($metaSetting, $metaSettingsTwo, ' ') ?? $metaSetting->site_name ?? config('app.name') }} | @yield('title')</title>
 
     @if (filled($google_fonts_string = \App\Helpers\Classes\ThemeHelper::googleFontsString('dashboard')))
         <link
@@ -96,8 +100,8 @@
 
     @vite(\App\Helpers\Classes\ThemeHelper::dashboardScssPath())
 
-    @if ($setting->dashboard_code_before_head != null)
-        {!! $setting->dashboard_code_before_head !!}
+    @if (! empty($metaSetting->dashboard_code_before_head ?? null))
+        {!! $metaSetting->dashboard_code_before_head !!}
     @endif
 
     {!! setting('google_tag_manager', '') !!}
