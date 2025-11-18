@@ -1085,7 +1085,7 @@ function getMetaTitle($setting, $settingTwo, $ext_title = null)
         if (isset($setting->meta_title)) {
             $title = $setting->meta_title;
         } else {
-            $title = $setting->site_name . $ext_title;
+            $title = ($setting->site_name ?? config('app.name')) . $ext_title;
         }
     } else {
         // Intentar obtener desde BD, pero si falla usar el setting por defecto
