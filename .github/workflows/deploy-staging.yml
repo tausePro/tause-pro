@@ -161,6 +161,10 @@ jobs:
             echo "📋 Latest commit:"
             git log -1 --oneline
             
+            # Eliminar laravel/boost si está instalado (es solo para desarrollo)
+            echo "🧹 Removing laravel/boost if installed (dev-only package)..."
+            composer remove laravel/boost --no-interaction 2>/dev/null || echo "⚠️ laravel/boost not installed or already removed"
+            
             # Instalar/actualizar dependencias (sin dev)
             echo "📦 Installing dependencies (production only)..."
             composer install --no-dev --optimize-autoloader --no-interaction || { echo "⚠️ Warning: composer install failed, but continuing..."; }
