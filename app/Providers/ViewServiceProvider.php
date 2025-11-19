@@ -61,7 +61,25 @@ class ViewServiceProvider extends ServiceProvider
 
         // Intentar compartir $setting siempre, incluso si la BD no está disponible
         // Esto evita errores en vistas durante la instalación o errores de conexión
+        // PERO: Verificar nuevamente si estamos en instalación antes de cualquier consulta
         try {
+            // Verificar nuevamente si estamos en instalación (por si acaso)
+            $isInstallationRouteCheck = false;
+            try {
+                $isInstallationRouteCheck = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            } catch (\Exception $e) {
+                $isInstallationRouteCheck = true;
+            }
+            
+            if ($isInstallationRouteCheck) {
+                // Estamos en instalación, NO intentar consultar BD
+                $this->settings = new Setting();
+                View::share('setting', $this->settings);
+                View::share('settings_two', new SettingTwo());
+                View::share('is_onetime_commission', 0);
+                return;
+            }
+
             if (Helper::dbConnectionStatus()) {
                 try {
                     $this->tables = app('magicai_tables');
