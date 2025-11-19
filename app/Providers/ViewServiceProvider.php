@@ -139,26 +139,55 @@ class ViewServiceProvider extends ServiceProvider
 
     protected function shareSetting(): void
     {
-        if ($settings = Setting::getCache()) {
-            $this->settings = $settings;
-            View::share('setting', $settings);
-        } else {
-            // Si no hay cache, intentar obtener desde BD directamente
-            try {
-                $this->settings = Setting::first() ?? new Setting();
-                View::share('setting', $this->settings);
-            } catch (\Exception $e) {
-                // Si falla, usar objeto vacío
+        // Verificar si estamos en modo instalación ANTES de cualquier consulta
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            if ($isInstallationRoute) {
+                // Modo instalación: usar objeto vacío sin consultar BD
                 $this->settings = new Setting();
                 View::share('setting', $this->settings);
+                View::share('settings_two', new SettingTwo());
+                View::share('is_onetime_commission', 0);
+                return;
             }
+        } catch (\Exception $e) {
+            // Si no podemos verificar, usar objeto vacío
+            $this->settings = new Setting();
+            View::share('setting', $this->settings);
+            View::share('settings_two', new SettingTwo());
+            View::share('is_onetime_commission', 0);
+            return;
         }
 
-        $this->shareFrontendSettings();
-        $this->shareOpenAiList();
-        $this->shareSections();
-        $this->shareCommissionSetting();
-        $this->shareSettingsTwo();
+        // Solo intentar consultar BD si NO estamos en instalación
+        try {
+            if ($settings = Setting::getCache()) {
+                $this->settings = $settings;
+                View::share('setting', $settings);
+            } else {
+                // Si no hay cache, intentar obtener desde BD directamente
+                try {
+                    $this->settings = Setting::first() ?? new Setting();
+                    View::share('setting', $this->settings);
+                } catch (\Exception $e) {
+                    // Si falla, usar objeto vacío
+                    $this->settings = new Setting();
+                    View::share('setting', $this->settings);
+                }
+            }
+
+            $this->shareFrontendSettings();
+            $this->shareOpenAiList();
+            $this->shareSections();
+            $this->shareCommissionSetting();
+            $this->shareSettingsTwo();
+        } catch (\Exception $e) {
+            // Si falla cualquier consulta, usar objetos vacíos
+            $this->settings = new Setting();
+            View::share('setting', $this->settings);
+            View::share('settings_two', new SettingTwo());
+            View::share('is_onetime_commission', 0);
+        }
     }
 
     protected function shareFrontendSettings(): void
