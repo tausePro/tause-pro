@@ -32,30 +32,26 @@ class ViewServiceProvider extends ServiceProvider
         $this->sharedAppStatus();
         Paginator::useBootstrap();
 
-        // Durante la instalación, solo compartir objetos vacíos sin intentar consultar BD
-        // Verificar tanto la ruta como si la BD está disponible
-        $isInstallationRoute = false;
+        // SOLUCIÓN SIMPLE: Si estamos en instalación, NO hacer NADA
+        // Solo compartir objetos vacíos y retornar inmediatamente
         try {
-            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            $path = request()->path();
+            if (str_starts_with($path, 'install') || 
+                str_starts_with($path, 'upgrade') || 
+                str_starts_with($path, 'update')) {
+                // Modo instalación: solo compartir objetos vacíos y retornar
+                $this->settings = new Setting();
+                View::share('setting', $this->settings);
+                View::share('settings_two', new SettingTwo());
+                View::share('is_onetime_commission', 0);
+                return;
+            }
         } catch (\Exception $e) {
-            // Si request() no está disponible aún, asumir que estamos en instalación
-            $isInstallationRoute = true;
-        }
-        
-        // También verificar si la BD no está disponible como indicador de instalación
-        $dbNotAvailable = false;
-        try {
-            $dbNotAvailable = !Helper::dbConnectionStatus();
-        } catch (\Exception $e) {
-            $dbNotAvailable = true;
-        }
-        
-        if ($isInstallationRoute || $dbNotAvailable) {
-            // Modo instalación: solo compartir objetos vacíos
+            // Si no podemos verificar la ruta, asumir instalación y retornar
             $this->settings = new Setting();
             View::share('setting', $this->settings);
             View::share('settings_two', new SettingTwo());
-            View::share('is_onetime_commission', 0); // Valor por defecto
+            View::share('is_onetime_commission', 0);
             return;
         }
 
