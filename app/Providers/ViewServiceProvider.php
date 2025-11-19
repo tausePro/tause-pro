@@ -242,8 +242,24 @@ class ViewServiceProvider extends ServiceProvider
 
     protected function conditionallyShare(string $table, callable $callback): void
     {
-        if (TableSchema::hasTable($table, $this->tables)) {
-            $callback();
+        // Durante instalación o si BD no está disponible, no intentar verificar tablas
+        try {
+            $dbNotAvailable = !Helper::dbConnectionStatus();
+        } catch (\Exception $e) {
+            $dbNotAvailable = true;
+        }
+        
+        if ($dbNotAvailable) {
+            return; // No ejecutar callback si BD no está disponible
+        }
+        
+        try {
+            if (TableSchema::hasTable($table, $this->tables)) {
+                $callback();
+            }
+        } catch (\Exception $e) {
+            // Si falla la verificación de tabla, no ejecutar callback
+            return;
         }
     }
 }
