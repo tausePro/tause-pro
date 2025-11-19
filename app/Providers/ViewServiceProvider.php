@@ -33,13 +33,29 @@ class ViewServiceProvider extends ServiceProvider
         Paginator::useBootstrap();
 
         // Durante la instalación, solo compartir objetos vacíos sin intentar consultar BD
-        $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+        // Verificar tanto la ruta como si la BD está disponible
+        $isInstallationRoute = false;
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+        } catch (\Exception $e) {
+            // Si request() no está disponible aún, asumir que estamos en instalación
+            $isInstallationRoute = true;
+        }
         
-        if ($isInstallationRoute) {
+        // También verificar si la BD no está disponible como indicador de instalación
+        $dbNotAvailable = false;
+        try {
+            $dbNotAvailable = !Helper::dbConnectionStatus();
+        } catch (\Exception $e) {
+            $dbNotAvailable = true;
+        }
+        
+        if ($isInstallationRoute || $dbNotAvailable) {
             // Modo instalación: solo compartir objetos vacíos
             $this->settings = new Setting();
             View::share('setting', $this->settings);
             View::share('settings_two', new SettingTwo());
+            View::share('is_onetime_commission', 0); // Valor por defecto
             return;
         }
 
@@ -191,8 +207,18 @@ class ViewServiceProvider extends ServiceProvider
     protected function shareCommissionSetting(): void
     {
         $this->conditionallyShare('app_settings', function () {
-            View::share('is_onetime_commission', setting('onetime_commission', 0));
+            try {
+                View::share('is_onetime_commission', setting('onetime_commission', 0));
+            } catch (\Exception $e) {
+                // Si falla, usar valor por defecto
+                View::share('is_onetime_commission', 0);
+            }
         });
+        
+        // Asegurar que siempre existe, incluso si la tabla no está disponible
+        if (! View::shared('is_onetime_commission')) {
+            View::share('is_onetime_commission', 0);
+        }
     }
 
     protected function shareSettingsTwo(): void
