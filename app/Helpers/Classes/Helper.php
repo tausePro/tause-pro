@@ -171,9 +171,19 @@ class Helper
 
     public static function dbConnectionStatus(): bool
     {
+        // Verificar si estamos en modo instalación ANTES de intentar conectar
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            if ($isInstallationRoute) {
+                return false; // Durante instalación, siempre retornar false
+            }
+        } catch (\Exception $e) {
+            // Si request() no está disponible, asumir instalación
+            return false;
+        }
+
         try {
             DB::connection()->getPdo();
-
             return true;
         } catch (Exception $e) {
             return false;

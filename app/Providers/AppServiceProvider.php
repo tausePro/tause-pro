@@ -48,13 +48,37 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->useLangPath(base_path('lang'));
 
-        if (Helper::dbConnectionStatus()) {
-            Schema::defaultStringLength(191);
-            $this->initializeTables();
-            $this->configSet();
-            $this->jobRuns();
-            $this->app->setLocale($this->getLocale('en'));
-        } else {
+        // Verificar si estamos en modo instalación ANTES de intentar cualquier consulta a BD
+        $isInstallationRoute = false;
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+        } catch (\Exception $e) {
+            // Si request() no está disponible aún, asumir que estamos en instalación
+            $isInstallationRoute = true;
+        }
+
+        // Si estamos en instalación, NO intentar conectarse a BD
+        if ($isInstallationRoute) {
+            Theme::set('default');
+            $this->registerHealthChecks();
+            $this->bootBladeDirectives();
+            $this->bootObservers();
+            return;
+        }
+
+        // Solo intentar conectarse a BD si NO estamos en instalación
+        try {
+            if (Helper::dbConnectionStatus()) {
+                Schema::defaultStringLength(191);
+                $this->initializeTables();
+                $this->configSet();
+                $this->jobRuns();
+                $this->app->setLocale($this->getLocale('en'));
+            } else {
+                Theme::set('default');
+            }
+        } catch (\Exception $e) {
+            // Si hay cualquier error de BD, usar configuración por defecto
             Theme::set('default');
         }
 
@@ -65,11 +89,34 @@ class AppServiceProvider extends ServiceProvider
 
     protected function configSet(): void
     {
-        if (TableSchema::hasTable('settings', $this->tables) && DB::table('settings')->exists()) {
-            $setting = Setting::getCache();
-            $this->setPusherConfig();
-            $this->setRecaptchaConfig($setting);
-            $this->setMailConfig($setting);
+        // Verificar si estamos en modo instalación
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            if ($isInstallationRoute) {
+                return; // No configurar nada durante instalación
+            }
+        } catch (\Exception $e) {
+            // Si no podemos verificar la ruta, no configurar
+            return;
+        }
+
+        // Verificar que tenemos tablas disponibles
+        if (empty($this->tables)) {
+            return;
+        }
+
+        try {
+            if (TableSchema::hasTable('settings', $this->tables) && DB::table('settings')->exists()) {
+                $setting = Setting::getCache();
+                if ($setting) {
+                    $this->setPusherConfig();
+                    $this->setRecaptchaConfig($setting);
+                    $this->setMailConfig($setting);
+                }
+            }
+        } catch (\Exception $e) {
+            // Si falla cualquier consulta, simplemente no configurar
+            return;
         }
     }
 
