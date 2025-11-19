@@ -256,13 +256,56 @@ class Helper
 
     public static function settingTwo(string $key, $default = null)
     {
-        $setting = SettingTwo::getCache();
+        // Verificar si estamos en modo instalación ANTES de cualquier consulta
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            if ($isInstallationRoute) {
+                return $default; // Durante instalación, siempre retornar default
+            }
+        } catch (\Exception $e) {
+            // Si request() no está disponible, asumir instalación
+            return $default;
+        }
 
-        return $setting?->getAttribute($key) ?? $default;
+        // Verificar si BD está disponible ANTES de intentar consultar
+        try {
+            if (!self::dbConnectionStatus()) {
+                return $default; // BD no disponible, retornar default
+            }
+        } catch (\Exception $e) {
+            return $default; // Si falla la verificación, retornar default
+        }
+
+        try {
+            $setting = SettingTwo::getCache();
+            return $setting?->getAttribute($key) ?? $default;
+        } catch (\Exception $e) {
+            return $default;
+        }
     }
 
     public static function setting(string $key, $default = null, $setting = null)
     {
+        // Verificar si estamos en modo instalación ANTES de cualquier consulta
+        try {
+            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            if ($isInstallationRoute) {
+                return $default; // Durante instalación, siempre retornar default
+            }
+        } catch (\Exception $e) {
+            // Si request() no está disponible, asumir instalación
+            return $default;
+        }
+
+        // Verificar si BD está disponible ANTES de intentar consultar
+        try {
+            if (!self::dbConnectionStatus()) {
+                return $default; // BD no disponible, retornar default
+            }
+        } catch (\Exception $e) {
+            return $default; // Si falla la verificación, retornar default
+        }
+
         try {
             $setting = $setting ?: Setting::getCache();
             return $setting?->getAttribute($key) ?? $default;
