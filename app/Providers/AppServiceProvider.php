@@ -103,7 +103,18 @@ class AppServiceProvider extends ServiceProvider
 
     protected function initializeTables(): void
     {
-        $this->app->singleton('magicai_tables', fn () => (new TableSchema)->allTables());
+        $this->app->singleton('magicai_tables', function () {
+            try {
+                // Verificar si BD está disponible antes de consultar tablas
+                if (!\App\Helpers\Classes\Helper::dbConnectionStatus()) {
+                    return [];
+                }
+                return (new TableSchema)->allTables();
+            } catch (\Exception $e) {
+                // Si falla, retornar array vacío para evitar errores durante instalación
+                return [];
+            }
+        });
 
         $this->tables = app('magicai_tables');
 
