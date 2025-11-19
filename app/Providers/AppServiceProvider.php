@@ -48,22 +48,50 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->useLangPath(base_path('lang'));
 
-        // Verificar si estamos en modo instalación ANTES de intentar cualquier consulta a BD
-        $isInstallationRoute = false;
+        // SOLUCIÓN RADICAL: Verificar SIEMPRE si estamos en instalación ANTES de CUALQUIER cosa
+        $isInstallation = false;
+        
         try {
-            $isInstallationRoute = request()->is('install*') || request()->is('upgrade*') || request()->is('update*');
+            // Método 1: Verificar path
+            $path = request()->path();
+            if (str_starts_with($path, 'install') || 
+                str_starts_with($path, 'upgrade') || 
+                str_starts_with($path, 'update')) {
+                $isInstallation = true;
+            }
+            
+            // Método 2: Verificar URL completa
+            if (!$isInstallation) {
+                $url = request()->url();
+                if (str_contains($url, '/install') || 
+                    str_contains($url, '/upgrade') || 
+                    str_contains($url, '/update')) {
+                    $isInstallation = true;
+                }
+            }
+            
+            // Método 3: Verificar si BD no está disponible
+            if (!$isInstallation) {
+                try {
+                    if (!Helper::dbConnectionStatus()) {
+                        $isInstallation = true;
+                    }
+                } catch (\Exception $e) {
+                    $isInstallation = true;
+                }
+            }
         } catch (\Exception $e) {
-            // Si request() no está disponible aún, asumir que estamos en instalación
-            $isInstallationRoute = true;
+            // Si CUALQUIER cosa falla, asumir instalación
+            $isInstallation = true;
         }
 
-        // Si estamos en instalación, NO intentar conectarse a BD
-        if ($isInstallationRoute) {
+        // Si estamos en instalación, NO hacer NADA relacionado con BD
+        if ($isInstallation) {
             Theme::set('default');
             $this->registerHealthChecks();
             $this->bootBladeDirectives();
             $this->bootObservers();
-            return;
+            return; // RETORNAR INMEDIATAMENTE
         }
 
         // Solo intentar conectarse a BD si NO estamos en instalación
