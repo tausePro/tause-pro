@@ -63,9 +63,14 @@ class ViewServiceProvider extends ServiceProvider
         // Esto evita errores en vistas durante la instalación o errores de conexión
         try {
             if (Helper::dbConnectionStatus()) {
-                $this->tables = app('magicai_tables');
+                try {
+                    $this->tables = app('magicai_tables');
+                } catch (\Exception $e) {
+                    // Si no se puede obtener magicai_tables, usar array vacío
+                    $this->tables = [];
+                }
 
-                if ($this->hasTables(['migrations', 'settings'])) {
+                if ($this->tables && $this->hasTables(['migrations', 'settings'])) {
                     $this->shareSetting();
                     $this->shareAiGenerator();
                     $this->shareGoodForNow();
@@ -249,8 +254,8 @@ class ViewServiceProvider extends ServiceProvider
             $dbNotAvailable = true;
         }
         
-        if ($dbNotAvailable) {
-            return; // No ejecutar callback si BD no está disponible
+        if ($dbNotAvailable || empty($this->tables)) {
+            return; // No ejecutar callback si BD no está disponible o no hay tablas
         }
         
         try {
