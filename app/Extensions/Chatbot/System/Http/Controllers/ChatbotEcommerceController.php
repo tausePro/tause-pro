@@ -110,6 +110,15 @@ class ChatbotEcommerceController extends Controller
 
         $result = $this->wooCommerceService->syncProducts($chatbot);
 
+        Log::info('🔵 SYNC PRODUCTS RESULT', [
+            'chatbot_id' => $chatbot->id,
+            'success'    => $result['success'],
+            'message'    => $result['message'],
+            'synced'     => $result['synced'] ?? 0,
+            'errors'     => $result['errors'] ?? 0,
+            'total'      => $result['total'] ?? 0,
+        ]);
+
         if ($result['success']) {
             $chatbot->update(['woocommerce_last_sync' => now()]);
 

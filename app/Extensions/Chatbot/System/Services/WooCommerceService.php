@@ -101,7 +101,11 @@ class WooCommerceService
             ];
 
         } catch (Exception $e) {
-            Log::error('WooCommerce sync error: ' . $e->getMessage());
+            Log::error('🔴 WooCommerce sync error', [
+                'chatbot_id' => $chatbot->id,
+                'error'      => $e->getMessage(),
+                'trace'      => $e->getTraceAsString(),
+            ]);
 
             return [
                 'success' => false,
@@ -250,44 +254,59 @@ class WooCommerceService
             'url'      => $url,
             'per_page' => 100,
             'status'   => 'publish',
+            'key'      => substr($config['key'], 0, 10) . '...', // Solo primeros caracteres para log
         ]);
 
-        $response = Http::withBasicAuth($config['key'], $config['secret'])
-            ->timeout(30)
-            ->get($url, [
-                'per_page' => 100, // Máximo por página
-                'status'   => 'publish',
+        try {
+            $response = Http::withBasicAuth($config['key'], $config['secret'])
+                ->timeout(30)
+                ->get($url, [
+                    'per_page' => 100, // Máximo por página
+                    'status'   => 'publish',
+                ]);
+
+            Log::info('🟡 WooCommerce API response received', [
+                'status_code' => $response->status(),
+                'headers'     => $response->headers(),
             ]);
 
-        if (! $response->successful()) {
-            $errorMessage = 'Error al conectar con WooCommerce';
-            $statusCode = $response->status();
-            $body = $response->body();
+            if (! $response->successful()) {
+                $statusCode = $response->status();
+                $body = $response->body();
 
-            Log::error('🔴 WooCommerce API error', [
-                'status' => $statusCode,
-                'body'   => substr($body, 0, 500), // Primeros 500 caracteres
-            ]);
+                Log::error('🔴 WooCommerce API error', [
+                    'status'     => $statusCode,
+                    'body'       => substr($body, 0, 500), // Primeros 500 caracteres
+                    'full_body'  => $body, // Cuerpo completo para debugging
+                ]);
 
-            if ($statusCode === 401) {
-                throw new Exception('Error de autenticación (401). Verifica que Consumer Key y Consumer Secret sean correctos.');
-            } elseif ($statusCode === 404) {
-                throw new Exception('URL de WooCommerce no encontrada (404). Verifica que la URL sea correcta y que WooCommerce REST API esté habilitada.');
-            } else {
-                throw new Exception("Error al conectar con WooCommerce: HTTP {$statusCode}. " . (strlen($body) > 0 ? substr($body, 0, 200) : 'Sin detalles'));
+                if ($statusCode === 401) {
+                    throw new Exception('Error de autenticación (401). Verifica que Consumer Key y Consumer Secret sean correctos y tengan permisos de lectura.');
+                } elseif ($statusCode === 404) {
+                    throw new Exception('URL de WooCommerce no encontrada (404). Verifica que la URL sea correcta y que WooCommerce REST API esté habilitada en tu tienda.');
+                } elseif ($statusCode === 403) {
+                    throw new Exception('Acceso denegado (403). Verifica que las credenciales API tengan permisos de lectura y que WooCommerce REST API esté habilitada.');
+                } else {
+                    $errorDetails = strlen($body) > 0 ? substr($body, 0, 500) : 'Sin detalles del servidor';
+                    throw new Exception("Error al conectar con WooCommerce: HTTP {$statusCode}. {$errorDetails}");
+                }
             }
-        }
 
-        $products = $response->json();
+            $products = $response->json();
 
-        if (! is_array($products)) {
-            Log::warning('🟡 Invalid response from WooCommerce', [
-                'response_type'    => gettype($products),
-                'response_preview' => substr(json_encode($products), 0, 200),
+            if (! is_array($products)) {
+                Log::warning('🟡 Invalid response from WooCommerce', [
+                    'response_type'    => gettype($products),
+                    'response_preview' => substr(json_encode($products), 0, 500),
+                    'full_response'    => json_encode($products),
+                ]);
+
+                return [];
+            }
+
+            Log::info('🟢 Products parsed successfully', [
+                'count' => count($products),
             ]);
-
-            return [];
-        }
 
         // Si hay más páginas, obtenerlas también
         $totalPages = (int) $response->header('X-WP-TotalPages');
