@@ -121,10 +121,6 @@ jobs:
               git remote remove origin 2>/dev/null || true
               git remote add origin https://github.com/tausePro/tause-pro.git || git remote set-url origin https://github.com/tausePro/tause-pro.git
               
-              # Limpiar cualquier archivo existente antes de checkout
-              echo "🧹 Cleaning any existing files before checkout..."
-              rm -rf * .[^.]* 2>/dev/null || echo "⚠️ Warning: clean failed, continuing..."
-              
               # Determinar qué rama usar
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
@@ -143,40 +139,21 @@ jobs:
               CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
               echo "📍 Current branch: $CURRENT_BRANCH"
               
+              # Fetch y pull
+              echo "📥 Fetching latest changes..."
+              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
+              
               # Determinar qué rama usar
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📍 Target branch: $DEPLOY_BRANCH"
               
-              # Fetch primero
-              echo "📥 Fetching latest changes..."
-              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
-              
-              # Cambiar a la rama correcta si es necesario
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
                 echo "🔄 Switching to branch: $DEPLOY_BRANCH"
                 git checkout -f $DEPLOY_BRANCH || git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
               fi
               
-              # Intentar pull primero
               echo "📥 Pulling latest changes..."
-              if git pull origin $DEPLOY_BRANCH 2>&1 | grep -q "untracked working tree files"; then
-                echo "⚠️ Detected untracked files conflict, cleaning..."
-                # Listar archivos que causan conflicto
-                git status --porcelain | grep '^??' | awk '{print $2}' | xargs rm -f 2>/dev/null || true
-                # Limpiar todos los archivos no trackeados
-                git clean -fd || true
-                # Intentar pull de nuevo
-                git pull origin $DEPLOY_BRANCH || { 
-                  echo "⚠️ Pull still failed, trying reset --hard as fallback..."
-                  git reset --hard origin/$DEPLOY_BRANCH || { echo "❌ Error: All git update methods failed"; exit 1; }
-                }
-              else
-                # Si pull falla por otra razón, usar reset --hard como fallback
-                if ! git pull origin $DEPLOY_BRANCH; then
-                  echo "⚠️ Pull failed, using reset --hard as fallback..."
-                  git reset --hard origin/$DEPLOY_BRANCH || { echo "❌ Error: git reset --hard failed"; exit 1; }
-                fi
-              fi
+              git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             fi
             
             # Asegurar permisos antes de continuar
@@ -273,8 +250,6 @@ jobs:
             php8.3 artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
             php8.3 artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
-            # Nginx fix deshabilitado - se aplicará manualmente si es necesario
-            
             # Asegurar permisos
             echo "🔐 Setting permissions..."
             sudo chown -R www-data:www-data storage bootstrap/cache || echo "⚠️ Warning: chown failed"
@@ -298,4 +273,3 @@ jobs:
           echo "📝 View logs:"
           echo "  ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'tail -50 ${{ env.PROJECT_PATH }}/storage/logs/laravel.log'"
 
-# Deploy trigger
