@@ -143,7 +143,7 @@ jobs:
               CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
               echo "📍 Current branch: $CURRENT_BRANCH"
               
-              # Fetch y pull
+              # Fetch y reset hard (más seguro que pull cuando hay archivos no trackeados)
               echo "📥 Fetching latest changes..."
               git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
               
@@ -151,13 +151,18 @@ jobs:
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📍 Target branch: $DEPLOY_BRANCH"
               
+              # Cambiar a la rama correcta
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
                 echo "🔄 Switching to branch: $DEPLOY_BRANCH"
                 git checkout -f $DEPLOY_BRANCH || git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
               fi
               
-              echo "📥 Pulling latest changes..."
-              git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
+              # Reset hard al estado del repositorio remoto (elimina archivos no trackeados que causan conflicto)
+              echo "🔄 Resetting to match remote repository..."
+              git reset --hard origin/$DEPLOY_BRANCH || { echo "❌ Error: git reset --hard failed"; exit 1; }
+              
+              # Limpiar archivos no trackeados que puedan quedar
+              git clean -fd || echo "⚠️ Warning: git clean failed, continuing..."
             fi
             
             # Asegurar permisos antes de continuar
