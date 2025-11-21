@@ -80,8 +80,8 @@ if (file_exists(base_path('routes/custom_routes_web.php'))) {
     include base_path('routes/custom_routes_web.php');
 }
 
-// External Chatbot Frame Route
-Route::get('/chatbot/{uuid}/frame', 'App\Http\Controllers\ExternalChatbotController@frame')->name('chatbot.frame');
+// External Chatbot Frame Route - Moved to ChatbotServiceProvider
+// Route::get('/chatbot/{uuid}/frame', 'App\Http\Controllers\ExternalChatbotController@frame')->name('chatbot.frame');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/panel.php';
