@@ -143,7 +143,11 @@ jobs:
               CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
               echo "📍 Current branch: $CURRENT_BRANCH"
               
-              # Fetch y reset hard (más seguro que pull cuando hay archivos no trackeados)
+              # Limpiar archivos no trackeados que puedan causar conflictos ANTES del pull
+              echo "🧹 Cleaning untracked files that might conflict..."
+              git clean -fd || echo "⚠️ Warning: git clean failed, continuing..."
+              
+              # Fetch y pull (configuración que funcionaba en deploy #41)
               echo "📥 Fetching latest changes..."
               git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
               
@@ -151,18 +155,13 @@ jobs:
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📍 Target branch: $DEPLOY_BRANCH"
               
-              # Cambiar a la rama correcta
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
                 echo "🔄 Switching to branch: $DEPLOY_BRANCH"
                 git checkout -f $DEPLOY_BRANCH || git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
               fi
               
-              # Reset hard al estado del repositorio remoto (elimina archivos no trackeados que causan conflicto)
-              echo "🔄 Resetting to match remote repository..."
-              git reset --hard origin/$DEPLOY_BRANCH || { echo "❌ Error: git reset --hard failed"; exit 1; }
-              
-              # Limpiar archivos no trackeados que puedan quedar
-              git clean -fd || echo "⚠️ Warning: git clean failed, continuing..."
+              echo "📥 Pulling latest changes..."
+              git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             fi
             
             # Asegurar permisos antes de continuar
@@ -259,16 +258,7 @@ jobs:
             php8.3 artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
             php8.3 artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
-            # Aplicar fix de Nginx para chatbot frame (permitir embedding cross-origin)
-            # TEMPORALMENTE DESHABILITADO - Se aplicará manualmente después
-            # echo "🔧 Applying Nginx fix for chatbot frame..."
-            # if [ -f scripts/fix-nginx-chatbot-frame.sh ]; then
-            #   chmod +x scripts/fix-nginx-chatbot-frame.sh
-            #   bash scripts/fix-nginx-chatbot-frame.sh || echo "⚠️ Warning: Nginx fix encountered issues, but continuing deployment..."
-            # else
-            #   echo "⚠️ Script fix-nginx-chatbot-frame.sh not found, skipping Nginx fix"
-            # fi
-            echo "⏭️  Skipping Nginx fix (temporarily disabled)"
+            # Nginx fix deshabilitado - se aplicará manualmente si es necesario
             
             # Asegurar permisos
             echo "🔐 Setting permissions..."
