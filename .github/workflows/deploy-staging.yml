@@ -139,19 +139,26 @@ jobs:
               CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
               echo "📍 Current branch: $CURRENT_BRANCH"
               
-              # Fetch y pull
-              echo "📥 Fetching latest changes..."
-              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
-              
               # Determinar qué rama usar
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📍 Target branch: $DEPLOY_BRANCH"
               
+              # Fetch primero
+              echo "📥 Fetching latest changes..."
+              git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
+              
+              # Cambiar a la rama correcta si es necesario
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
                 echo "🔄 Switching to branch: $DEPLOY_BRANCH"
                 git checkout -f $DEPLOY_BRANCH || git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
               fi
               
+              # Descartar TODOS los cambios locales (modificados y no trackeados) antes del pull
+              echo "🧹 Discarding local changes to match remote..."
+              git reset --hard HEAD || echo "⚠️ Warning: git reset failed, continuing..."
+              git clean -fd || echo "⚠️ Warning: git clean failed, continuing..."
+              
+              # Ahora hacer pull sin conflictos
               echo "📥 Pulling latest changes..."
               git pull origin $DEPLOY_BRANCH || { echo "❌ Error: git pull failed"; exit 1; }
             fi
