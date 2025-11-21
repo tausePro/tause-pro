@@ -251,9 +251,11 @@ jobs:
             php8.3 artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
             # Aplicar fix de Nginx para chatbot frame (permitir embedding cross-origin)
+            # Nota: Este script está diseñado para no fallar el deploy si hay problemas
             echo "🔧 Applying Nginx fix for chatbot frame..."
             if [ -f scripts/fix-nginx-chatbot-frame.sh ]; then
-              bash scripts/fix-nginx-chatbot-frame.sh || echo "⚠️ Warning: Nginx fix failed, but continuing..."
+              chmod +x scripts/fix-nginx-chatbot-frame.sh
+              bash scripts/fix-nginx-chatbot-frame.sh || echo "⚠️ Warning: Nginx fix encountered issues, but continuing deployment..."
             else
               echo "⚠️ Script fix-nginx-chatbot-frame.sh not found, skipping Nginx fix"
             fi
