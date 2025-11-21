@@ -20,76 +20,36 @@ class WooCommerceService
     public function syncProducts(Chatbot $chatbot): array
     {
         try {
-            Log::info('🟢 Starting WooCommerce sync', [
+            Log::info('Starting WooCommerce sync', [
                 'chatbot_id'   => $chatbot->id,
                 'chatbot_name' => $chatbot->name,
                 'woo_url'      => $chatbot->woocommerce_url,
-                'woo_enabled'  => $chatbot->woocommerce_enabled,
-                'has_key'      => ! empty($chatbot->woocommerce_key),
-                'has_secret'   => ! empty($chatbot->woocommerce_secret),
             ]);
 
             // Validar configuración
             if (! $this->hasValidConfiguration($chatbot)) {
-                Log::warning('🔴 Invalid WooCommerce configuration', [
-                    'chatbot_id' => $chatbot->id,
-                    'url'        => $chatbot->woocommerce_url ?? 'missing',
-                    'key'        => ! empty($chatbot->woocommerce_key) ? 'present' : 'missing',
-                    'secret'     => ! empty($chatbot->woocommerce_secret) ? 'present' : 'missing',
-                ]);
+                Log::warning('Invalid WooCommerce configuration', ['chatbot_id' => $chatbot->id]);
 
                 return [
                     'success' => false,
-                    'message' => '❌ Configuración de WooCommerce incompleta. Verifica que URL, Consumer Key y Consumer Secret estén configurados.',
+                    'message' => 'Configuración de WooCommerce incompleta',
                 ];
             }
 
             $config = $this->getConfiguration($chatbot);
-
-            Log::info('🟡 Fetching products from WooCommerce', [
-                'chatbot_id' => $chatbot->id,
-                'api_url'    => rtrim($config['url'], '/') . '/wp-json/wc/v3/products',
-            ]);
 
             // Obtener productos de WooCommerce
             $products = $this->fetchProductsFromWooCommerce($config);
 
             Log::info('🟢 Products fetched from WooCommerce', [
                 'chatbot_id' => $chatbot->id,
-                'count'      => is_array($products) ? count($products) : 0,
-                'is_array'   => is_array($products),
+                'count'      => count($products),
             ]);
 
-            // Si no hay productos pero la respuesta fue exitosa, simplemente continuar
-            // (puede ser que la tienda no tenga productos aún)
-            if (! is_array($products)) {
-                Log::error('🔴 Invalid products response from WooCommerce', [
-                    'chatbot_id'    => $chatbot->id,
-                    'woo_url'       => $config['url'],
-                    'products_type' => gettype($products),
-                ]);
-
+            if (empty($products)) {
                 return [
                     'success' => false,
-                    'message' => 'Error: La respuesta de WooCommerce no es válida. Verifica que la URL sea correcta y que WooCommerce REST API esté habilitada.',
-                ];
-            }
-
-            // Si el array está vacío, puede ser que no haya productos o que haya un problema
-            if (empty($products)) {
-                Log::warning('🟡 No products found in WooCommerce', [
-                    'chatbot_id' => $chatbot->id,
-                    'woo_url'    => $config['url'],
-                ]);
-
-                // Continuar con el proceso pero retornar un mensaje informativo
-                // No es un error fatal, simplemente no hay productos para sincronizar
-                return [
-                    'success' => true,
-                    'message' => '✅ Sincronización completada. No se encontraron productos publicados en WooCommerce. Asegúrate de que tu tienda tenga productos con estado "publicado".',
-                    'synced'  => 0,
-                    'errors'  => 0,
-                    'total'   => 0,
+                    'message' => 'No se encontraron productos en WooCommerce',
                 ];
             }
 
@@ -123,11 +83,7 @@ class WooCommerceService
             ];
 
         } catch (Exception $e) {
-            Log::error('🔴 WooCommerce sync error', [
-                'chatbot_id' => $chatbot->id,
-                'error'      => $e->getMessage(),
-                'trace'      => $e->getTraceAsString(),
-            ]);
+            Log::error('WooCommerce sync error: ' . $e->getMessage());
 
             return [
                 'success' => false,
