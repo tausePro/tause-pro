@@ -3,8 +3,7 @@ name: Deploy to Staging
 on:
   push:
     branches:
-      - feature/sales-agent-config-view
-      - main
+      - staging
     paths-ignore:
       - '**.md'
       - 'scripts/**'
@@ -13,14 +12,14 @@ on:
       branch:
         description: 'Branch to deploy'
         required: true
-        default: 'feature/sales-agent-config-view'
+        default: 'staging'
         type: string
 
 env:
   STAGING_HOST: 3.220.198.180
   STAGING_USER: ubuntu
   PROJECT_PATH: /var/www/magicai
-  PHP_VERSION: '8.2'
+  PHP_VERSION: '8.3'
 
 jobs:
   pre-deployment-checks:
@@ -78,6 +77,11 @@ jobs:
             
             cd ${{ env.PROJECT_PATH }} || { echo "❌ Error: Cannot cd to ${{ env.PROJECT_PATH }}"; exit 1; }
             
+            # Verificar versión de PHP en servidor
+            echo "🔍 Verifying PHP version on server..."
+            php8.3 -v || { echo "❌ Error: PHP 8.3 not found on server"; exit 1; }
+            echo "✅ PHP 8.3 found"
+            
             # Verificar que git está disponible
             git --version || { echo "❌ Error: git not found"; exit 1; }
             
@@ -118,7 +122,7 @@ jobs:
               git remote add origin https://github.com/tausePro/tause-pro.git || git remote set-url origin https://github.com/tausePro/tause-pro.git
               
               # Determinar qué rama usar
-              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
               git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
               git checkout -f -b $DEPLOY_BRANCH origin/$DEPLOY_BRANCH || { echo "❌ Error: Cannot checkout branch $DEPLOY_BRANCH"; exit 1; }
@@ -140,7 +144,7 @@ jobs:
               git fetch origin || { echo "❌ Error: git fetch failed"; exit 1; }
               
               # Determinar qué rama usar
-              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'feature/sales-agent-config-view' }}"
+              DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📍 Target branch: $DEPLOY_BRANCH"
               
               if [ "$DEPLOY_BRANCH" != "$CURRENT_BRANCH" ]; then
@@ -169,30 +173,39 @@ jobs:
             
             # Limpiar TODOS los cachés ANTES de composer install
             echo "🧹 Clearing all caches before composer install..."
-            php artisan config:clear 2>/dev/null || echo "⚠️ config:clear failed"
-            php artisan cache:clear 2>/dev/null || echo "⚠️ cache:clear failed"
-            php artisan route:clear 2>/dev/null || echo "⚠️ route:clear failed"
-            php artisan view:clear 2>/dev/null || echo "⚠️ view:clear failed"
+            php8.3 artisan config:clear 2>/dev/null || echo "⚠️ config:clear failed"
+            php8.3 artisan cache:clear 2>/dev/null || echo "⚠️ cache:clear failed"
+            php8.3 artisan route:clear 2>/dev/null || echo "⚠️ route:clear failed"
+            php8.3 artisan view:clear 2>/dev/null || echo "⚠️ view:clear failed"
             # Eliminar archivos de caché de bootstrap que pueden tener referencias a boost
             sudo rm -f bootstrap/cache/services.php bootstrap/cache/packages.php 2>/dev/null || echo "⚠️ bootstrap cache files not found"
             
             # Regenerar autoloader para eliminar referencias a boost
             echo "🔄 Regenerating autoloader..."
-            composer dump-autoload --no-dev --optimize 2>/dev/null || echo "⚠️ dump-autoload failed"
+            composer dump-autoload --optimize 2>/dev/null || echo "⚠️ dump-autoload failed"
             
-            # Instalar/actualizar dependencias (sin dev)
-            echo "📦 Installing dependencies (production only)..."
-            composer install --no-dev --optimize-autoloader --no-interaction || { echo "⚠️ Warning: composer install failed, but continuing..."; }
+            # Instalar/actualizar dependencias (con dev para Debugbar y otras herramientas)
+            echo "📦 Installing dependencies..."
+            composer install --optimize-autoloader --no-interaction || { echo "⚠️ Warning: composer install failed, but continuing..."; }
+            
+            # Compilar assets frontend
+            echo "🎨 Building frontend assets..."
+            if [ -f package.json ]; then
+              npm install --production=false || echo "⚠️ Warning: npm install failed, but continuing..."
+              npm run build || echo "⚠️ Warning: npm build failed, but continuing..."
+            else
+              echo "⚠️ No package.json found, skipping npm build"
+            fi
             
             # Ejecutar migraciones
             echo "🗄️ Running migrations..."
-            php artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
+            php8.3 artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
             
             # Limpiar cachés nuevamente después de composer install
             echo "🧹 Clearing caches after composer install..."
-            php artisan config:clear || echo "⚠️ Warning: config:clear failed"
-            php artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
-            php artisan view:clear || echo "⚠️ Warning: view:clear failed"
+            php8.3 artisan config:clear || echo "⚠️ Warning: config:clear failed"
+            php8.3 artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
+            php8.3 artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
             # Asegurar permisos
             echo "🔐 Setting permissions..."
@@ -212,7 +225,7 @@ jobs:
           echo "🔍 Verification steps:"
           echo "  - Visit: https://test.tause.pro"
           echo "  - Check dashboard: https://test.tause.pro/dashboard/admin"
-          echo "  - Verify migrations: ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'cd ${{ env.PROJECT_PATH }} && php artisan migrate:status | tail -5'"
+          echo "  - Verify migrations: ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'cd ${{ env.PROJECT_PATH }} && php8.3 artisan migrate:status | tail -5'"
           echo ""
           echo "📝 View logs:"
           echo "  ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'tail -50 ${{ env.PROJECT_PATH }}/storage/logs/laravel.log'"
