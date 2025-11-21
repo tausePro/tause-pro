@@ -170,9 +170,15 @@ jobs:
             
             # Crear base de datos y usuario si no existen
             sudo mysql -e "CREATE DATABASE IF NOT EXISTS magicai_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || echo "⚠️ Database creation skipped"
+            
+            # Crear o actualizar usuario (ALTER USER actualiza la contraseña si existe)
             sudo mysql -e "CREATE USER IF NOT EXISTS 'magicai_staging'@'localhost' IDENTIFIED BY 'staging_password_2024';" 2>/dev/null || echo "⚠️ User creation skipped"
+            sudo mysql -e "ALTER USER 'magicai_staging'@'localhost' IDENTIFIED BY 'staging_password_2024';" 2>/dev/null || echo "⚠️ User password update skipped"
             sudo mysql -e "GRANT ALL PRIVILEGES ON magicai_staging.* TO 'magicai_staging'@'localhost';" 2>/dev/null || echo "⚠️ Grant privileges skipped"
             sudo mysql -e "FLUSH PRIVILEGES;" 2>/dev/null || echo "⚠️ Flush privileges skipped"
+            
+            # Verificar que el usuario puede conectarse
+            mysql -u magicai_staging -pstaging_password_2024 -e "SELECT 1;" 2>/dev/null && echo "✅ Database user verified" || echo "⚠️ Database user verification failed"
             
             # Asegurar que .env existe
             if [ ! -f .env ]; then
