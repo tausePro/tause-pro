@@ -250,6 +250,14 @@ jobs:
             php8.3 artisan cache:clear || echo "⚠️ Warning: cache:clear failed"
             php8.3 artisan view:clear || echo "⚠️ Warning: view:clear failed"
             
+            # Aplicar fix de Nginx para chatbot frame (permitir embedding cross-origin)
+            echo "🔧 Applying Nginx fix for chatbot frame..."
+            if [ -f scripts/fix-nginx-chatbot-frame.sh ]; then
+              bash scripts/fix-nginx-chatbot-frame.sh || echo "⚠️ Warning: Nginx fix failed, but continuing..."
+            else
+              echo "⚠️ Script fix-nginx-chatbot-frame.sh not found, skipping Nginx fix"
+            fi
+            
             # Asegurar permisos
             echo "🔐 Setting permissions..."
             sudo chown -R www-data:www-data storage bootstrap/cache || echo "⚠️ Warning: chown failed"
