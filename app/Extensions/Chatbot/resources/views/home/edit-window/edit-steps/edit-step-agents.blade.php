@@ -149,8 +149,8 @@
                         </select>
                     </div>
 
-                    {{-- WooCommerce & Wompi Config --}}
-                    <div x-show="activeChatbot.woocommerce_enabled || activeChatbot.wompi_enabled">
+                    {{-- WooCommerce, Wompi & ePayco Config --}}
+                    <div x-show="activeChatbot.woocommerce_enabled || activeChatbot.wompi_enabled || activeChatbot.epayco_enabled">
                         <div class="rounded-lg bg-green-50 p-3">
                             <div class="flex items-start gap-2">
                                 <svg class="mt-0.5 h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,12 +163,13 @@
                                     <p class="mt-1 text-2xs text-green-700">
                                         <span x-show="activeChatbot.woocommerce_enabled">@lang('WooCommerce connected')</span>
                                         <span x-show="activeChatbot.wompi_enabled">@lang('Wompi payments enabled')</span>
+                                        <span x-show="activeChatbot.epayco_enabled">@lang('ePayco payments enabled')</span>
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div x-show="!activeChatbot.woocommerce_enabled && !activeChatbot.wompi_enabled">
+                    <div x-show="!activeChatbot.woocommerce_enabled && !activeChatbot.wompi_enabled && !activeChatbot.epayco_enabled">
                         <div class="rounded-lg bg-yellow-50 p-3">
                             <div class="flex items-start gap-2">
                                 <svg class="mt-0.5 h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

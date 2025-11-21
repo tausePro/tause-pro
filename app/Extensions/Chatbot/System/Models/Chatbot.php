@@ -73,6 +73,11 @@ class Chatbot extends Model
         'wompi_private_key',
         'wompi_enabled',
         'wompi_environment',
+        // ePayco
+        'epayco_public_key',
+        'epayco_private_key',
+        'epayco_enabled',
+        'epayco_environment',
         // Sales Agent
         'sales_agent_enabled',
         'sales_agent_keywords',
@@ -124,6 +129,7 @@ class Chatbot extends Model
         'woocommerce_enabled'           => 'boolean',
         'woocommerce_last_sync'         => 'datetime',
         'wompi_enabled'                 => 'boolean',
+        'epayco_enabled'                => 'boolean',
         'sales_agent_enabled'           => 'boolean',
         'sales_agent_keywords'          => 'json',
         'sales_agent_priority'          => 'integer',

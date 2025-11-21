@@ -39,11 +39,24 @@ class AgentOrchestratorService
         // Analizar intención del usuario con servicio de inteligencia
         $intent = $this->intelligence->analyzeIntent($userQuery, $aiResponse, $context);
 
+        // Asegurar que el Sales Agent existe si sales_agent_enabled está activo
+        if ($chatbot->sales_agent_enabled) {
+            $salesAgentExists = ChatbotAgent::where('chatbot_id', $chatbot->id)
+                ->where('agent_type', 'sales')
+                ->exists();
+
+            if (! $salesAgentExists) {
+                // Usar el servicio para crear el Sales Agent automáticamente
+                $chatbotService = app(\App\Extensions\Chatbot\System\Services\ChatbotService::class);
+                $chatbotService->ensureSalesAgent($chatbot);
+            }
+        }
+
         // Obtener agentes activos del chatbot ordenados por prioridad
         $agents = ChatbotAgent::getActiveAgents($chatbot->id);
 
         // Si no hay agentes configurados, crear External Agent por defecto si es necesario
-        if ($agents->isEmpty() && $chatbot->sales_agent_enabled) {
+        if ($agents->isEmpty()) {
             // Intentar crear agente external por defecto si no existe
             $this->ensureDefaultExternalAgent($chatbot);
             $agents = ChatbotAgent::getActiveAgents($chatbot->id);
@@ -223,6 +236,7 @@ class AgentOrchestratorService
                 'show_product_grid'   => $agent->getConfig('show_product_grid', true) && $products->isNotEmpty(),
                 'woocommerce_enabled' => $agent->getConfig('woocommerce_enabled', false) || $chatbot->woocommerce_enabled,
                 'wompi_enabled'       => $agent->getConfig('wompi_enabled', false) || $chatbot->wompi_enabled,
+                'epayco_enabled'      => $agent->getConfig('epayco_enabled', false) || $chatbot->epayco_enabled,
                 'total_products'      => $products->count(),
             ],
         ];

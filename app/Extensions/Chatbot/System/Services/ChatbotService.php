@@ -3,6 +3,7 @@
 namespace App\Extensions\Chatbot\System\Services;
 
 use App\Extensions\Chatbot\System\Models\Chatbot;
+use App\Extensions\Chatbot\System\Models\ChatbotAgent;
 use App\Extensions\Chatbot\System\Models\ChatbotAvatar;
 use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -228,9 +229,109 @@ class ChatbotService
             $model = $this->query()->findOrFail($model);
         }
 
+        // Verificar si sales_agent_enabled está siendo activado o actualizado
+        $salesAgentEnabled = $data['sales_agent_enabled'] ?? $model->sales_agent_enabled ?? false;
+
         $model->update($data);
 
+        // Asegurar que el Sales Agent existe cuando sales_agent_enabled está activo
+        if ($salesAgentEnabled) {
+            $this->ensureSalesAgent($model);
+        } else {
+            // Si se desactiva, desactivar el agente pero no eliminarlo
+            ChatbotAgent::where('chatbot_id', $model->id)
+                ->where('agent_type', 'sales')
+                ->update(['is_enabled' => false]);
+        }
+
         return $model;
+    }
+
+    /**
+     * Asegurar que existe un Sales Agent configurado para el chatbot
+     */
+    public function ensureSalesAgent(Chatbot $chatbot): void
+    {
+        $existingSalesAgent = ChatbotAgent::where('chatbot_id', $chatbot->id)
+            ->where('agent_type', 'sales')
+            ->first();
+
+        // Preparar keywords desde sales_agent_keywords
+        $keywords = [];
+        if (! empty($chatbot->sales_agent_keywords)) {
+            if (is_string($chatbot->sales_agent_keywords)) {
+                // Si es string, convertir a array separado por comas
+                $keywords = array_map('trim', explode(',', $chatbot->sales_agent_keywords));
+            } elseif (is_array($chatbot->sales_agent_keywords)) {
+                $keywords = $chatbot->sales_agent_keywords;
+            }
+        }
+
+        // Configuración del agente
+        $configuration = [
+            'woocommerce_enabled' => (bool) ($chatbot->woocommerce_enabled ?? false),
+            'wompi_enabled'       => (bool) ($chatbot->wompi_enabled ?? false),
+            'epayco_enabled'      => (bool) ($chatbot->epayco_enabled ?? false),
+            'show_product_grid'   => true,
+        ];
+
+        // Agregar configuración avanzada si existe
+        if (! empty($chatbot->sales_agent_name)) {
+            $configuration['name'] = $chatbot->sales_agent_name;
+        }
+        if (! empty($chatbot->sales_agent_description)) {
+            $configuration['description'] = $chatbot->sales_agent_description;
+        }
+        if (! empty($chatbot->sales_agent_tone)) {
+            $configuration['tone'] = $chatbot->sales_agent_tone;
+        }
+        if (! empty($chatbot->sales_agent_strategy)) {
+            $configuration['strategy'] = $chatbot->sales_agent_strategy;
+        }
+        if (! empty($chatbot->sales_agent_search_strategy)) {
+            $configuration['search_strategy'] = $chatbot->sales_agent_search_strategy;
+        }
+        if (! empty($chatbot->sales_agent_display_mode)) {
+            $configuration['display_mode'] = $chatbot->sales_agent_display_mode;
+        }
+        if (! empty($chatbot->sales_agent_custom_prompt)) {
+            $configuration['custom_prompt'] = $chatbot->sales_agent_custom_prompt;
+        }
+        if (! empty($chatbot->sales_agent_card_config)) {
+            $configuration['card_config'] = is_array($chatbot->sales_agent_card_config)
+                ? $chatbot->sales_agent_card_config
+                : json_decode($chatbot->sales_agent_card_config, true);
+        }
+
+        // Triggers del agente
+        $triggers = [
+            'keywords'                 => $keywords,
+            'detect_commercial_intent' => true,
+        ];
+
+        if ($existingSalesAgent) {
+            // Actualizar agente existente
+            $existingSalesAgent->update([
+                'name'          => $chatbot->sales_agent_name ?? 'Sales Agent',
+                'description'   => $chatbot->sales_agent_description ?? 'Helps customers find and buy products',
+                'is_enabled'    => true,
+                'priority'      => $chatbot->sales_agent_priority ?? 10,
+                'triggers'      => $triggers,
+                'configuration' => $configuration,
+            ]);
+        } else {
+            // Crear nuevo agente
+            ChatbotAgent::create([
+                'chatbot_id'    => $chatbot->id,
+                'agent_type'    => 'sales',
+                'name'          => $chatbot->sales_agent_name ?? 'Sales Agent',
+                'description'   => $chatbot->sales_agent_description ?? 'Helps customers find and buy products',
+                'is_enabled'    => true,
+                'priority'      => $chatbot->sales_agent_priority ?? 10,
+                'triggers'      => $triggers,
+                'configuration' => $configuration,
+            ]);
+        }
     }
 
     public function avatars(): Collection|array

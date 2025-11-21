@@ -49,6 +49,7 @@ class ChatbotResource extends JsonResource
             'sales_agent_enabled'        => (bool) $this->sales_agent_enabled,
             'woocommerce_enabled'        => (bool) $this->woocommerce_enabled,
             'wompi_enabled'              => (bool) $this->wompi_enabled,
+            'epayco_enabled'             => (bool) $this->epayco_enabled,
             'custom_bg_image_url'        => $this->custom_bg_image_url,
             'welcome_text'               => $this->welcome_text,
             'initial_prompt_text'        => $this->initial_prompt_text,

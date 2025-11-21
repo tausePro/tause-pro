@@ -111,31 +111,25 @@
                             <button type="submit" class="btn btn-primary">
                                 💾 Guardar Configuración
                             </button>
-                        </div>
-
-                    </form>
-                    
-                    @if($chatbot->woocommerce_url && $chatbot->woocommerce_key)
-                        <div class="mt-4 flex gap-3">
-                            <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline" id="sync-form-{{ $chatbot->id }}">
-                                @csrf
-                                <button type="submit" class="btn btn-success" {{ !$chatbot->woocommerce_enabled ? 'disabled' : '' }} onclick="this.disabled=true; this.textContent='⏳ Sincronizando...'; this.form.submit();">
-                                    🔄 Sincronizar Productos
-                                </button>
-                            </form>
-                        </div>
-                        
-                        <div class="mt-3 rounded-lg bg-blue-50 p-3">
-                            <p class="text-2xs text-blue-800">
-                                <strong>Última sincronización:</strong> {{ $chatbot->woocommerce_last_sync ? $chatbot->woocommerce_last_sync->diffForHumans() : 'Nunca' }}
-                            </p>
-                            @if(!$chatbot->woocommerce_enabled)
-                                <p class="mt-1 text-2xs text-amber-600">
-                                    ⚠️ WooCommerce está deshabilitado. Activa el toggle y guarda para poder sincronizar.
-                                </p>
+                            
+                            @if($chatbot->woocommerce_enabled)
+                                <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        🔄 Sincronizar Productos
+                                    </button>
+                                </form>
                             @endif
                         </div>
-                    @endif
+
+                        @if($chatbot->woocommerce_enabled)
+                            <div class="mt-3 rounded-lg bg-gray-50 p-3">
+                                <p class="text-2xs opacity-60">
+                                    Última sincronización: <strong>{{ $chatbot->woocommerce_last_sync ? $chatbot->woocommerce_last_sync->diffForHumans() : 'Nunca' }}</strong>
+                                </p>
+                            </div>
+                        @endif
+                    </form>
                 </div>
 
                 {{-- Wompi Configuration --}}
@@ -228,6 +222,99 @@
                     </form>
                 </div>
 
+                {{-- ePayco Configuration --}}
+                <div class="border-t pt-7">
+                    <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
+                        💳 Configuración ePayco
+                    </h3>
+                    <p class="mb-4 text-xs text-heading-foreground/60">
+                        Configura ePayco como gateway de pagos para procesar transacciones directamente desde el chat
+                    </p>
+                    
+                    <form action="{{ route('dashboard.chatbot.ecommerce.epayco.save', $chatbot) }}" method="POST" class="flex flex-col gap-5">                 
+                        @csrf
+                        
+                        <div>
+                            <x-forms.input
+                                class:label="text-heading-foreground"
+                                label="{{ __('Public Key') }}"
+                                name="epayco_public_key"
+                                size="lg"
+                                placeholder="pub_test_xxxxxxxxxxxxx"
+                                value="{{ old('epayco_public_key', $chatbot->epayco_public_key) }}"
+                            />
+                            @error('epayco_public_key')
+                                <div class="mt-2 text-2xs/5 font-medium text-red-500">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <x-forms.input
+                                class:label="text-heading-foreground"
+                                label="{{ __('Private Key') }}"
+                                name="epayco_private_key"
+                                type="password"
+                                size="lg"
+                                placeholder="prv_test_xxxxxxxxxxxxx"
+                                value="{{ old('epayco_private_key', $chatbot->epayco_private_key) }}"
+                            />
+                            <p class="mt-1 text-2xs opacity-60">
+                                <a href="https://docs.epayco.com/" target="_blank" class="underline">
+                                    ¿Cómo obtener las llaves de ePayco?
+                                </a>
+                            </p>
+                            @error('epayco_private_key')
+                                <div class="mt-2 text-2xs/5 font-medium text-red-500">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <x-forms.input
+                                class:label="text-heading-foreground"
+                                label="{{ __('Entorno') }}"
+                                name="epayco_environment"
+                                size="lg"
+                                type="select"
+                                value="{{ old('epayco_environment', $chatbot->epayco_environment ?? 'test') }}"
+                            >
+                                <option value="test" {{ old('epayco_environment', $chatbot->epayco_environment ?? 'test') === 'test' ? 'selected' : '' }}>
+                                    🧪 Pruebas (Sandbox)
+                                </option>
+                                <option value="production" {{ old('epayco_environment', $chatbot->epayco_environment ?? 'test') === 'production' ? 'selected' : '' }}>
+                                    🚀 Producción
+                                </option>
+                            </x-forms.input>
+                            @error('epayco_environment')
+                                <div class="mt-2 text-2xs/5 font-medium text-red-500">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <x-forms.input
+                                class="h-[18px] w-[34px] [background-size:0.625rem]"
+                                class:label="text-heading-foreground flex-row-reverse justify-between"
+                                label="{{ __('Habilitar ePayco') }}"
+                                name="epayco_enabled"
+                                size="lg"
+                                type="checkbox"
+                                switcher
+                                value="1"
+                                :checked="old('epayco_enabled', $chatbot->epayco_enabled)"
+                            />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            💾 Guardar Configuración
+                        </button>
+                    </form>
+                </div>
+
                 {{-- Sales Agent Configuration --}}
                 <div class="border-t pt-7" x-data="{ showAdvanced: false }">
                     <div class="flex justify-between items-center mb-4">
@@ -244,20 +331,7 @@
                         </button>
                     </div>
                     
-                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="{
-                        keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
-                        newKeyword: '',
-                        addKeyword() {
-                            const keyword = this.newKeyword.trim().toLowerCase();
-                            if (keyword && !this.keywords.includes(keyword)) {
-                                this.keywords.push(keyword);
-                                this.newKeyword = '';
-                            }
-                        },
-                        removeKeyword(index) {
-                            this.keywords.splice(index, 1);
-                        }
-                    }" class="flex flex-col gap-5">                               
+                    <form action="{{ route('dashboard.chatbot.ecommerce.sales-agent.save', $chatbot) }}" method="POST" x-data="salesAgentConfig" class="flex flex-col gap-5">                               
                         @csrf
                         
                         {{-- Configuración Básica --}}
@@ -382,25 +456,9 @@
             {{-- Products List --}}
             @if($chatbot->woocommerce_enabled && $products->count() > 0)
                 <div class="border-t pt-7">
-                    <div class="mb-4 flex items-center justify-between">
-                        <h3 class="text-sm font-semibold text-heading-foreground">
-                            📦 Productos Sincronizados ({{ $products->total() }})
-                        </h3>
-                        <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline" id="sync-form-products-{{ $chatbot->id }}">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-primary" onclick="this.disabled=true; this.innerHTML='<svg class=\'mr-1 inline-block h-4 w-4 animate-spin\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> Sincronizando...'; this.form.submit();">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="mr-1 inline-block h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Sincronizar Ahora
-                            </button>
-                        </form>
-                    </div>
-                    <div class="mb-3 rounded-lg bg-blue-50 p-3">
-                        <p class="text-2xs text-blue-800">
-                            <strong>Última sincronización:</strong> {{ $chatbot->woocommerce_last_sync ? $chatbot->woocommerce_last_sync->diffForHumans() : 'Nunca' }}
-                        </p>
-                    </div>
+                    <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
+                        📦 Productos Sincronizados ({{ $products->total() }})
+                    </h3>
                     
                     <div class="overflow-hidden rounded-lg border">
                         <div class="overflow-x-auto">
@@ -506,4 +564,27 @@
         </div>
     </div>
 @endsection
+
+@push('script')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('salesAgentConfig', () => ({
+            keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
+            newKeyword: '',
+            
+            addKeyword() {
+                const keyword = this.newKeyword.trim().toLowerCase();
+                if (keyword && !this.keywords.includes(keyword)) {
+                    this.keywords.push(keyword);
+                    this.newKeyword = '';
+                }
+            },
+            
+            removeKeyword(index) {
+                this.keywords.splice(index, 1);
+            }
+        }));
+    });
+</script>
+@endpush
 

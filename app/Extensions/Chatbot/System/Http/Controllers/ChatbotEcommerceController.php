@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Extensions\Chatbot\System\Http\Controllers;
 
 use App\Extensions\Chatbot\System\Models\Chatbot;
-use App\Extensions\Chatbot\System\Services\WooCommerceService;
 use App\Extensions\Chatbot\System\Services\WompiService;
+use App\Extensions\Chatbot\System\Services\WooCommerceService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -46,9 +46,9 @@ class ChatbotEcommerceController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'woocommerce_url' => 'required|url',
-            'woocommerce_key' => 'required|string',
-            'woocommerce_secret' => 'required|string',
+            'woocommerce_url'     => 'required|url',
+            'woocommerce_key'     => 'required|string',
+            'woocommerce_secret'  => 'required|string',
             'woocommerce_enabled' => 'boolean',
         ]);
 
@@ -63,15 +63,15 @@ class ChatbotEcommerceController extends Controller
             $request->woocommerce_secret
         );
 
-        if (!$testResult['success']) {
+        if (! $testResult['success']) {
             return back()->with('error', $testResult['message'])->withInput();
         }
 
         // Guardar configuración
         $chatbot->update([
-            'woocommerce_url' => $request->woocommerce_url,
-            'woocommerce_key' => $request->woocommerce_key,
-            'woocommerce_secret' => $request->woocommerce_secret,
+            'woocommerce_url'     => $request->woocommerce_url,
+            'woocommerce_key'     => $request->woocommerce_key,
+            'woocommerce_secret'  => $request->woocommerce_secret,
             'woocommerce_enabled' => $request->boolean('woocommerce_enabled'),
         ]);
 
@@ -84,15 +84,15 @@ class ChatbotEcommerceController extends Controller
     public function syncProducts(Chatbot $chatbot)
     {
         Log::info('🔵 SYNC PRODUCTS CONTROLLER CALLED', [
-            'chatbot_id' => $chatbot->id,
-            'user_id' => auth()->id(),
+            'chatbot_id'      => $chatbot->id,
+            'user_id'         => auth()->id(),
             'chatbot_user_id' => $chatbot->user_id,
         ]);
-        
+
         if ($chatbot->user_id !== auth()->id()) {
             Log::warning('🔴 UNAUTHORIZED SYNC ATTEMPT', [
-                'chatbot_id' => $chatbot->id,
-                'auth_user' => auth()->id(),
+                'chatbot_id'    => $chatbot->id,
+                'auth_user'     => auth()->id(),
                 'chatbot_owner' => $chatbot->user_id,
             ]);
             abort(403, 'This action is unauthorized.');
@@ -102,6 +102,7 @@ class ChatbotEcommerceController extends Controller
 
         if ($result['success']) {
             $chatbot->update(['woocommerce_last_sync' => now()]);
+
             return back()->with('success', $result['message']);
         }
 
@@ -118,10 +119,10 @@ class ChatbotEcommerceController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'wompi_public_key' => 'required|string',
+            'wompi_public_key'  => 'required|string',
             'wompi_private_key' => 'required|string',
             'wompi_environment' => 'required|in:test,production',
-            'wompi_enabled' => 'boolean',
+            'wompi_enabled'     => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -135,19 +136,56 @@ class ChatbotEcommerceController extends Controller
             $request->wompi_environment
         );
 
-        if (!$testResult['success']) {
+        if (! $testResult['success']) {
             return back()->with('error', $testResult['message'])->withInput();
         }
 
         // Guardar configuración
         $chatbot->update([
-            'wompi_public_key' => $request->wompi_public_key,
+            'wompi_public_key'  => $request->wompi_public_key,
             'wompi_private_key' => $request->wompi_private_key,
             'wompi_environment' => $request->wompi_environment,
-            'wompi_enabled' => $request->boolean('wompi_enabled'),
+            'wompi_enabled'     => $request->boolean('wompi_enabled'),
         ]);
 
         return back()->with('success', '✅ Configuración de Wompi guardada exitosamente');
+    }
+
+    /**
+     * Guardar configuración de ePayco
+     */
+    public function saveEpaycoConfig(Request $request, Chatbot $chatbot)
+    {
+        if ($chatbot->user_id !== auth()->id()) {
+            abort(403, 'This action is unauthorized.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'epayco_public_key'  => 'required|string',
+            'epayco_private_key' => 'required|string',
+            'epayco_environment' => 'required|in:test,production',
+            'epayco_enabled'     => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // Guardar configuración (ePayco no requiere test de conexión por ahora)
+        $chatbot->update([
+            'epayco_public_key'  => $request->epayco_public_key,
+            'epayco_private_key' => $request->epayco_private_key,
+            'epayco_environment' => $request->epayco_environment,
+            'epayco_enabled'     => $request->boolean('epayco_enabled'),
+        ]);
+
+        // Asegurar que el Sales Agent tenga la configuración actualizada
+        $chatbotService = app(\App\Extensions\Chatbot\System\Services\ChatbotService::class);
+        if ($chatbot->sales_agent_enabled) {
+            $chatbotService->ensureSalesAgent($chatbot);
+        }
+
+        return back()->with('success', '✅ Configuración de ePayco guardada exitosamente');
     }
 
     /**
@@ -160,17 +198,17 @@ class ChatbotEcommerceController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'sales_agent_enabled' => 'boolean',
-            'sales_agent_keywords' => 'nullable|array',
+            'sales_agent_enabled'    => 'boolean',
+            'sales_agent_keywords'   => 'nullable|array',
             'sales_agent_keywords.*' => 'string',
-            'agent_name' => 'nullable|string|max:255',
-            'agent_description' => 'nullable|string',
-            'tone' => 'nullable|in:formal,casual,friendly',
-            'sales_strategy' => 'nullable|in:consultative,aggressive,helpful',
-            'search_strategy' => 'nullable|in:keyword,semantic,hybrid',
-            'product_display_mode' => 'nullable|in:conversational,cards,both',
-            'custom_prompt' => 'nullable|string',
-            'product_card_config' => 'nullable|array',
+            'agent_name'             => 'nullable|string|max:255',
+            'agent_description'      => 'nullable|string',
+            'tone'                   => 'nullable|in:formal,casual,friendly',
+            'sales_strategy'         => 'nullable|in:consultative,aggressive,helpful',
+            'search_strategy'        => 'nullable|in:keyword,semantic,hybrid',
+            'product_display_mode'   => 'nullable|in:conversational,cards,both',
+            'custom_prompt'          => 'nullable|string',
+            'product_card_config'    => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -179,7 +217,7 @@ class ChatbotEcommerceController extends Controller
 
         // Preparar datos para actualizar
         $updateData = [
-            'sales_agent_enabled' => $request->boolean('sales_agent_enabled'),
+            'sales_agent_enabled'  => $request->boolean('sales_agent_enabled'),
             'sales_agent_keywords' => $request->sales_agent_keywords ?? [],
         ];
 
@@ -242,9 +280,10 @@ class ChatbotEcommerceController extends Controller
         }
 
         $product = $chatbot->products()->findOrFail($productId);
-        $product->update(['is_active' => !$product->is_active]);
+        $product->update(['is_active' => ! $product->is_active]);
 
         $status = $product->is_active ? 'activado' : 'desactivado';
+
         return back()->with('success', "✅ Producto {$status}");
     }
 
@@ -254,58 +293,57 @@ class ChatbotEcommerceController extends Controller
     public function generateCoupon(Request $request, Chatbot $chatbot)
     {
         // Validar que negotiation esté habilitado
-        if (!$chatbot->negotiation_enabled) {
+        if (! $chatbot->negotiation_enabled) {
             return response()->json([
                 'success' => false,
                 'message' => 'Negociación no habilitada para este chatbot',
             ], 403);
         }
-        
+
         // Validar datos
         $validator = Validator::make($request->all(), [
             'cart_value' => 'required|numeric|min:0',
-            'reason' => 'nullable|string',
+            'reason'     => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
-        
+
         $cartValue = $request->get('cart_value');
-        
+
         // Verificar valor mínimo del carrito
         if ($cartValue < $chatbot->negotiation_min_cart_value) {
             return response()->json([
-                'success' => false,
-                'message' => 'El valor del carrito no alcanza el mínimo para negociar',
+                'success'      => false,
+                'message'      => 'El valor del carrito no alcanza el mínimo para negociar',
                 'min_required' => $chatbot->negotiation_min_cart_value,
             ], 400);
         }
-        
+
         // Generar cupón
         $result = $this->wooCommerceService->createDynamicCoupon($chatbot, [
-            'discount' => $chatbot->negotiation_max_discount,
-            'duration' => $chatbot->negotiation_coupon_duration,
+            'discount'       => $chatbot->negotiation_max_discount,
+            'duration'       => $chatbot->negotiation_coupon_duration,
             'min_cart_value' => $chatbot->negotiation_min_cart_value,
         ]);
-        
+
         if ($result['success']) {
             return response()->json([
                 'success' => true,
-                'coupon' => $result['coupon'],
+                'coupon'  => $result['coupon'],
                 'message' => "¡Tengo algo especial para ti! 🎁\n\n" .
                             "Cupón: **{$result['coupon']['code']}**\n" .
                             "Descuento: **{$result['coupon']['discount']}%**\n" .
                             "Válido por: **{$result['coupon']['expires_in_minutes']} minutos**\n\n" .
-                            "¡Aprovecha esta oferta exclusiva! ⏰"
+                            '¡Aprovecha esta oferta exclusiva! ⏰',
             ]);
         }
-        
+
         return response()->json($result, 500);
     }
 }
-
