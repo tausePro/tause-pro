@@ -121,6 +121,10 @@ jobs:
               git remote remove origin 2>/dev/null || true
               git remote add origin https://github.com/tausePro/tause-pro.git || git remote set-url origin https://github.com/tausePro/tause-pro.git
               
+              # Limpiar cualquier archivo existente antes de checkout
+              echo "🧹 Cleaning any existing files before checkout..."
+              rm -rf * .[^.]* 2>/dev/null || echo "⚠️ Warning: clean failed, continuing..."
+              
               # Determinar qué rama usar
               DEPLOY_BRANCH="${{ github.event.inputs.branch || 'staging' }}"
               echo "📥 Fetching and checking out branch: $DEPLOY_BRANCH"
