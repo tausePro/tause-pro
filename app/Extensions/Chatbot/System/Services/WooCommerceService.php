@@ -288,6 +288,7 @@ class WooCommerceService
                     throw new Exception('Acceso denegado (403). Verifica que las credenciales API tengan permisos de lectura y que WooCommerce REST API esté habilitada.');
                 } else {
                     $errorDetails = strlen($body) > 0 ? substr($body, 0, 500) : 'Sin detalles del servidor';
+
                     throw new Exception("Error al conectar con WooCommerce: HTTP {$statusCode}. {$errorDetails}");
                 }
             }
@@ -308,26 +309,52 @@ class WooCommerceService
                 'count' => count($products),
             ]);
 
-        // Si hay más páginas, obtenerlas también
-        $totalPages = (int) $response->header('X-WP-TotalPages');
+            // Si hay más páginas, obtenerlas también
+            $totalPages = (int) $response->header('X-WP-TotalPages');
+            Log::info('🟡 Pagination info', [
+                'total_pages'   => $totalPages,
+                'current_count' => count($products),
+            ]);
 
-        if ($totalPages > 1) {
-            for ($page = 2; $page <= $totalPages; $page++) {
-                $pageResponse = Http::withBasicAuth($config['key'], $config['secret'])
-                    ->timeout(30)
-                    ->get($url, [
-                        'per_page' => 100,
-                        'status'   => 'publish',
-                        'page'     => $page,
-                    ]);
+            if ($totalPages > 1) {
+                for ($page = 2; $page <= $totalPages; $page++) {
+                    Log::info('🟡 Fetching page', ['page' => $page]);
+                    $pageResponse = Http::withBasicAuth($config['key'], $config['secret'])
+                        ->timeout(30)
+                        ->get($url, [
+                            'per_page' => 100,
+                            'status'   => 'publish',
+                            'page'     => $page,
+                        ]);
 
-                if ($pageResponse->successful()) {
-                    $products = array_merge($products, $pageResponse->json());
+                    if ($pageResponse->successful()) {
+                        $pageProducts = $pageResponse->json();
+                        if (is_array($pageProducts)) {
+                            $products = array_merge($products, $pageProducts);
+                            Log::info('🟢 Page fetched', [
+                                'page'             => $page,
+                                'products_in_page' => count($pageProducts),
+                                'total_products'   => count($products),
+                            ]);
+                        }
+                    } else {
+                        Log::warning('🟡 Failed to fetch page', [
+                            'page'   => $page,
+                            'status' => $pageResponse->status(),
+                        ]);
+                    }
                 }
             }
-        }
 
-        return $products;
+            return $products;
+        } catch (Exception $e) {
+            Log::error('🔴 Exception in fetchProductsFromWooCommerce', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
