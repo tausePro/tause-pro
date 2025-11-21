@@ -454,11 +454,26 @@
             </div>
 
             {{-- Products List --}}
-            @if($chatbot->woocommerce_enabled && $products->count() > 0)
+            @if($chatbot->woocommerce_enabled)
                 <div class="border-t pt-7">
-                    <h3 class="mb-4 text-sm font-semibold text-heading-foreground">
-                        📦 Productos Sincronizados ({{ $products->total() }})
-                    </h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-semibold text-heading-foreground">
+                            📦 Productos Sincronizados
+                            @if($products->count() > 0)
+                                <span class="text-xs font-normal opacity-60">({{ $products->total() }})</span>
+                            @endif
+                        </h3>
+                        @if($products->count() > 0)
+                            <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    🔄 Re-sincronizar
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                    
+                    @if($products->count() > 0)
                     
                     <div class="overflow-hidden rounded-lg border">
                         <div class="overflow-x-auto">
@@ -556,9 +571,38 @@
                         </div>
                     </div>
 
-                    <div class="mt-4">
-                        {{ $products->links() }}
-                    </div>
+                        <div class="mt-4">
+                            {{ $products->links() }}
+                        </div>
+                    @else
+                        {{-- Mensaje cuando no hay productos --}}
+                        <div class="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                            <div class="mb-4">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <h4 class="mb-2 text-sm font-semibold text-heading-foreground">
+                                No hay productos sincronizados
+                            </h4>
+                            <p class="mb-4 text-2xs text-heading-foreground/60">
+                                @if($chatbot->woocommerce_last_sync)
+                                    Última sincronización: {{ $chatbot->woocommerce_last_sync->diffForHumans() }}
+                                @else
+                                    Aún no se han sincronizado productos desde WooCommerce
+                                @endif
+                            </p>
+                            <form action="{{ route('dashboard.chatbot.ecommerce.sync', $chatbot) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="btn btn-primary">
+                                    🔄 Sincronizar Productos Ahora
+                                </button>
+                            </form>
+                            <p class="mt-3 text-2xs text-heading-foreground/60">
+                                Asegúrate de que tu tienda WooCommerce tenga productos publicados y que las credenciales API sean correctas
+                            </p>
+                        </div>
+                    @endif
                 </div>
             @endif
         </div>

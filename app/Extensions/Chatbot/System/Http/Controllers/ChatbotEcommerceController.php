@@ -29,9 +29,19 @@ class ChatbotEcommerceController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
+        // Cargar productos con paginación, incluso si no hay productos
         $products = $chatbot->products()
             ->latest('last_synced_at')
             ->paginate(20);
+
+        // Log para debugging
+        Log::info('Ecommerce index loaded', [
+            'chatbot_id'             => $chatbot->id,
+            'woocommerce_enabled'    => $chatbot->woocommerce_enabled,
+            'products_count'         => $products->count(),
+            'total_products'         => $products->total(),
+            'has_woocommerce_config' => ! empty($chatbot->woocommerce_url) && ! empty($chatbot->woocommerce_key),
+        ]);
 
         return view('chatbot::ecommerce.index', compact('chatbot', 'products'));
     }
