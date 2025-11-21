@@ -8,6 +8,7 @@ use App\Extensions\Chatbot\System\Models\Chatbot;
 use App\Extensions\Chatbot\System\Services\WompiService;
 use App\Extensions\Chatbot\System\Services\WooCommerceService;
 use App\Http\Controllers\Controller;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -108,24 +109,34 @@ class ChatbotEcommerceController extends Controller
             abort(403, 'This action is unauthorized.');
         }
 
-        $result = $this->wooCommerceService->syncProducts($chatbot);
+        try {
+            $result = $this->wooCommerceService->syncProducts($chatbot);
 
-        Log::info('🔵 SYNC PRODUCTS RESULT', [
-            'chatbot_id' => $chatbot->id,
-            'success'    => $result['success'],
-            'message'    => $result['message'],
-            'synced'     => $result['synced'] ?? 0,
-            'errors'     => $result['errors'] ?? 0,
-            'total'      => $result['total'] ?? 0,
-        ]);
+            Log::info('🔵 SYNC PRODUCTS RESULT', [
+                'chatbot_id' => $chatbot->id,
+                'success'    => $result['success'],
+                'message'    => $result['message'],
+                'synced'     => $result['synced'] ?? 0,
+                'errors'     => $result['errors'] ?? 0,
+                'total'      => $result['total'] ?? 0,
+            ]);
 
-        if ($result['success']) {
-            $chatbot->update(['woocommerce_last_sync' => now()]);
+            if ($result['success']) {
+                $chatbot->update(['woocommerce_last_sync' => now()]);
 
-            return back()->with('success', $result['message']);
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->with('error', $result['message']);
+        } catch (Exception $e) {
+            Log::error('🔴 EXCEPTION in syncProducts controller', [
+                'chatbot_id' => $chatbot->id,
+                'error'      => $e->getMessage(),
+                'trace'      => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Error al sincronizar productos: ' . $e->getMessage());
         }
-
-        return back()->with('error', $result['message']);
     }
 
     /**

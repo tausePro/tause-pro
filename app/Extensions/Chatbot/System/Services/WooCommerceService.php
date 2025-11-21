@@ -56,18 +56,31 @@ class WooCommerceService
 
             Log::info('🟢 Products fetched from WooCommerce', [
                 'chatbot_id' => $chatbot->id,
-                'count'      => count($products),
+                'count'      => is_array($products) ? count($products) : 0,
+                'is_array'   => is_array($products),
             ]);
 
-            if (empty($products)) {
+            if (empty($products) || ! is_array($products)) {
                 Log::warning('🟡 No products found in WooCommerce', [
-                    'chatbot_id' => $chatbot->id,
-                    'woo_url'    => $config['url'],
+                    'chatbot_id'    => $chatbot->id,
+                    'woo_url'       => $config['url'],
+                    'products_type' => gettype($products),
+                    'products'      => $products,
                 ]);
+
+                // Intentar testear la conexión para dar un mensaje más específico
+                $testResult = $this->testConnection($config['url'], $config['key'], $config['secret']);
+
+                if (! $testResult['success']) {
+                    return [
+                        'success' => false,
+                        'message' => $testResult['message'] . ' Verifica tus credenciales y que WooCommerce REST API esté habilitada.',
+                    ];
+                }
 
                 return [
                     'success' => false,
-                    'message' => '⚠️ No se encontraron productos publicados en WooCommerce. Asegúrate de que tu tienda tenga productos con estado "publicado".',
+                    'message' => '⚠️ No se encontraron productos publicados en WooCommerce. Asegúrate de que tu tienda tenga productos con estado "publicado" y que la API REST esté habilitada.',
                 ];
             }
 
@@ -295,12 +308,21 @@ class WooCommerceService
 
             $products = $response->json();
 
+            // Si la respuesta no es un array, puede ser null, false, o un objeto
             if (! is_array($products)) {
+                $responseBody = $response->body();
                 Log::warning('🟡 Invalid response from WooCommerce', [
                     'response_type'    => gettype($products),
                     'response_preview' => substr(json_encode($products), 0, 500),
                     'full_response'    => json_encode($products),
+                    'raw_body'         => substr($responseBody, 0, 1000),
+                    'status_code'      => $response->status(),
                 ]);
+
+                // Si la respuesta es null o false, puede ser un error de parsing JSON
+                if ($products === null || $products === false) {
+                    throw new Exception('La respuesta de WooCommerce no es válida. Verifica que la URL sea correcta y que WooCommerce REST API esté habilitada. Respuesta: ' . substr($responseBody, 0, 200));
+                }
 
                 return [];
             }
