@@ -293,3 +293,4 @@ jobs:
           echo "📝 View logs:"
           echo "  ssh -i ~/.ssh/staging_key.pem ubuntu@${{ env.STAGING_HOST }} 'tail -50 ${{ env.PROJECT_PATH }}/storage/logs/laravel.log'"
 
+# Deploy trigger
