@@ -236,6 +236,10 @@ jobs:
               echo "⚠️ No package.json found, skipping npm build"
             fi
             
+            # Publicar assets de extensiones (chatbot, etc.)
+            echo "📦 Publishing extension assets..."
+            php8.3 artisan vendor:publish --tag=extension --force || echo "⚠️ Warning: vendor:publish failed, but continuing..."
+            
             # Ejecutar migraciones
             echo "🗄️ Running migrations..."
             php8.3 artisan migrate --force || { echo "⚠️ Warning: Migrations failed, but continuing..."; }
