@@ -139,7 +139,6 @@ class WooCommerceService
                 'woocommerce_id' => (string) $wooProduct['id'],
             ],
             [
-                'user_id'           => $chatbot->user_id,
                 'sku'               => $wooProduct['sku'] ?? null,
                 'name'              => $wooProduct['name'],
                 'description'       => $wooProduct['description'] ?? null,
