@@ -8,6 +8,103 @@
     x-transition:leave-start="opacity-100 translate-x-0"
     x-transition:leave-end="opacity-0 translate-x-3"
 >
+    {{-- Registrar componente Alpine ANTES de usarlo --}}
+    @push('script')
+    <script>
+        // Registrar el componente antes de que Alpine lo necesite
+        if (typeof Alpine !== 'undefined' && Alpine.data) {
+            Alpine.data('agentsManager', () => ({
+                agents: [],
+                loading: false,
+
+                async loadAgents() {
+                    this.loading = true;
+                    
+                    // Obtener ID del chatbot desde el store o input hidden
+                    let chatbotId = null;
+                    try {
+                        const store = Alpine.store('externalChatbotEditor');
+                        chatbotId = store?.activeChatbot?.id;
+                    } catch (_) {}
+
+                    if (!chatbotId || chatbotId === 'new_chatbot') {
+                        this.agents = [];
+                        this.loading = false;
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/dashboard/chatbot/${chatbotId}/agents`, {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.agents = data.agents || [];
+                        } else {
+                            this.agents = [];
+                        }
+                    } catch (error) {
+                        console.error('Failed to load agents:', error);
+                        this.agents = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }));
+        } else {
+            // Si Alpine aún no está disponible, usar el listener
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('agentsManager', () => ({
+                    agents: [],
+                    loading: false,
+
+                    async loadAgents() {
+                        this.loading = true;
+                        
+                        // Obtener ID del chatbot desde el store o input hidden
+                        let chatbotId = null;
+                        try {
+                            const store = Alpine.store('externalChatbotEditor');
+                            chatbotId = store?.activeChatbot?.id;
+                        } catch (_) {}
+
+                        if (!chatbotId || chatbotId === 'new_chatbot') {
+                            this.agents = [];
+                            this.loading = false;
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(`/dashboard/chatbot/${chatbotId}/agents`, {
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Accept': 'application/json',
+                                }
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                this.agents = data.agents || [];
+                            } else {
+                                this.agents = [];
+                            }
+                        } catch (error) {
+                            console.error('Failed to load agents:', error);
+                            this.agents = [];
+                        } finally {
+                            this.loading = false;
+                        }
+                    }
+                }));
+            });
+        }
+    </script>
+    @endpush
+
     <h2 class="mb-3.5">
         @lang('Agents Hub')
     </h2>
@@ -396,51 +493,4 @@
         </button>
     </div>
 
-    {{-- JavaScript para gestionar agentes --}}
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('agentsManager', () => ({
-                agents: [],
-                loading: false,
-
-                async loadAgents() {
-                    this.loading = true;
-                    
-                    // Obtener ID del chatbot desde el store o input hidden
-                    let chatbotId = null;
-                    try {
-                        const store = Alpine.store('externalChatbotEditor');
-                        chatbotId = store?.activeChatbot?.id;
-                    } catch (_) {}
-
-                    if (!chatbotId || chatbotId === 'new_chatbot') {
-                        this.agents = [];
-                        this.loading = false;
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch(`/dashboard/chatbot/${chatbotId}/agents`, {
-                            credentials: 'same-origin',
-                            headers: {
-                                'Accept': 'application/json',
-                            }
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.agents = data.agents || [];
-                        } else {
-                            this.agents = [];
-                        }
-                    } catch (error) {
-                        console.error('Failed to load agents:', error);
-                        this.agents = [];
-                    } finally {
-                        this.loading = false;
-                    }
-                }
-            }));
-        });
-    </script>
 </div>
