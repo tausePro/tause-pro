@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Extensions\Chatbot\System\Models;
 
-use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class ChatbotProduct extends Model
 {
@@ -63,21 +63,35 @@ class ChatbotProduct extends Model
     }
 
     /**
-     * Verificar si una columna existe (con cache)
+     * Verificar si una columna existe (con cache y manejo seguro de errores)
      */
     protected static function hasColumnCached(string $column): bool
     {
-        if (static::$columnCache === null) {
-            try {
-                $columns = Schema::getColumnListing((new static)->getTable());
-                static::$columnCache = array_flip($columns);
-            } catch (Exception $e) {
-                // Si falla, asumir que las columnas existen (comportamiento por defecto)
-                static::$columnCache = ['is_active' => true, 'in_stock' => true];
-            }
+        // Si el cache ya está inicializado, usarlo
+        if (static::$columnCache !== null) {
+            return isset(static::$columnCache[$column]);
         }
 
-        return isset(static::$columnCache[$column]);
+        // Intentar inicializar el cache de forma segura
+        try {
+            // Verificar que la conexión a BD esté disponible
+            if (! app()->bound('db')) {
+                // Si no hay conexión DB, asumir que las columnas existen (comportamiento seguro)
+                return true;
+            }
+
+            $columns = Schema::getColumnListing((new static)->getTable());
+            static::$columnCache = array_flip($columns);
+
+            return isset(static::$columnCache[$column]);
+        } catch (Throwable $e) {
+            // Si falla por cualquier razón, asumir que las columnas existen
+            // Esto es seguro porque si la columna no existe, la query simplemente fallará
+            // pero no romperá el external chatbot
+            static::$columnCache = ['is_active' => true, 'in_stock' => true];
+
+            return true;
+        }
     }
 
     /**
@@ -85,8 +99,13 @@ class ChatbotProduct extends Model
      */
     public function scopeActive($query)
     {
-        if (static::hasColumnCached('is_active')) {
-            return $query->where('is_active', true);
+        try {
+            if (static::hasColumnCached('is_active')) {
+                return $query->where('is_active', true);
+            }
+        } catch (Throwable $e) {
+            // Si falla, simplemente retornar el query sin filtrar
+            // Esto evita romper el external chatbot
         }
 
         return $query;
@@ -97,8 +116,13 @@ class ChatbotProduct extends Model
      */
     public function scopeInStock($query)
     {
-        if (static::hasColumnCached('in_stock')) {
-            return $query->where('in_stock', true);
+        try {
+            if (static::hasColumnCached('in_stock')) {
+                return $query->where('in_stock', true);
+            }
+        } catch (Throwable $e) {
+            // Si falla, simplemente retornar el query sin filtrar
+            // Esto evita romper el external chatbot
         }
 
         return $query;
