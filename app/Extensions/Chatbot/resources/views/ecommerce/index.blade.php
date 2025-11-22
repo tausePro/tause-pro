@@ -615,6 +615,7 @@
         Alpine.data('salesAgentConfig', () => ({
             keywords: {{ json_encode(old('sales_agent_keywords', $chatbot->sales_agent_keywords ?? ['comprar', 'precio', 'producto', 'catálogo', 'ver productos', 'busco'])) }},
             newKeyword: '',
+            negotiationEnabled: {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'true' : 'false' }},
             
             addKeyword() {
                 const keyword = this.newKeyword.trim().toLowerCase();

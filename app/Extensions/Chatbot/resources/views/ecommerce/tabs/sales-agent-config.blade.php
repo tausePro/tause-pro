@@ -425,10 +425,6 @@
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Negotiation toggle
-    Alpine.data('negotiationToggle', () => ({
-        negotiationEnabled: {{ old('negotiation_enabled', $chatbot->negotiation_enabled ?? false) ? 'true' : 'false' }}
-    }));
     // Referencias a elementos del preview
     const previewCard = document.querySelector('.enhanced-product-card');
     const previewButton = previewCard?.querySelector('button');
