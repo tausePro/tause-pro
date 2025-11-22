@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace App\Extensions\Chatbot\System\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class ChatbotProduct extends Model
 {
     protected $table = 'ext_chatbot_products';
+
+    /**
+     * Cache para verificación de columnas
+     */
+    protected static ?array $columnCache = null;
 
     protected $fillable = [
         'chatbot_id',
@@ -35,15 +42,15 @@ class ChatbotProduct extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'regular_price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
-        'gallery_urls' => 'json',
-        'categories' => 'json',
-        'tags' => 'json',
-        'metadata' => 'json',
-        'in_stock' => 'boolean',
-        'is_active' => 'boolean',
+        'price'          => 'decimal:2',
+        'regular_price'  => 'decimal:2',
+        'sale_price'     => 'decimal:2',
+        'gallery_urls'   => 'json',
+        'categories'     => 'json',
+        'tags'           => 'json',
+        'metadata'       => 'json',
+        'in_stock'       => 'boolean',
+        'is_active'      => 'boolean',
         'last_synced_at' => 'datetime',
     ];
 
@@ -56,11 +63,33 @@ class ChatbotProduct extends Model
     }
 
     /**
+     * Verificar si una columna existe (con cache)
+     */
+    protected static function hasColumnCached(string $column): bool
+    {
+        if (static::$columnCache === null) {
+            try {
+                $columns = Schema::getColumnListing((new static)->getTable());
+                static::$columnCache = array_flip($columns);
+            } catch (Exception $e) {
+                // Si falla, asumir que las columnas existen (comportamiento por defecto)
+                static::$columnCache = ['is_active' => true, 'in_stock' => true];
+            }
+        }
+
+        return isset(static::$columnCache[$column]);
+    }
+
+    /**
      * Scope para productos activos
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        if (static::hasColumnCached('is_active')) {
+            return $query->where('is_active', true);
+        }
+
+        return $query;
     }
 
     /**
@@ -68,7 +97,11 @@ class ChatbotProduct extends Model
      */
     public function scopeInStock($query)
     {
-        return $query->where('in_stock', true);
+        if (static::hasColumnCached('in_stock')) {
+            return $query->where('in_stock', true);
+        }
+
+        return $query;
     }
 
     /**
@@ -92,7 +125,7 @@ class ChatbotProduct extends Model
      */
     public function getDiscountPercentageAttribute(): ?int
     {
-        if (!$this->has_discount) {
+        if (! $this->has_discount) {
             return null;
         }
 
@@ -107,4 +140,3 @@ class ChatbotProduct extends Model
         return $this->image_url ?? asset('images/product-placeholder.png');
     }
 }
-

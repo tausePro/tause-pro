@@ -271,8 +271,10 @@ class AgentOrchestratorService
         $searchText = $userQuery . ' ' . $aiResponse;
 
         // Obtener productos activos y en stock
+        // Los scopes ya manejan la verificación de columnas internamente
         $allProducts = ChatbotProduct::where('chatbot_id', $chatbot->id)
-            ->active()->inStock()
+            ->active()
+            ->inStock()
             ->get();
 
         if ($allProducts->isEmpty()) {
