@@ -170,15 +170,18 @@
             const lowerMessage = message.toLowerCase().trim();
             console.log('🔍 Sales Agent: Detectando producto específico en:', lowerMessage);
             
-            // Purchase intent keywords
-            const purchaseKeywords = [
-                'quiero comprar', 'comprar', 'necesito', 'quiero', 'me interesa', 
-                'dame', 'traeme', 'quiero adquirir', 'adquirir', 'llevar', 'llevarme',
-                'tomar', 'tomarme', 'pedir', 'solicitar'
-            ];
+            // Use configured keywords from chatbot settings (sales_agent_keywords)
+            // These are the keywords the user configured in the dashboard
+            const configuredKeywords = this.keywords || [];
+            console.log('   - Keywords configuradas:', configuredKeywords);
             
-            const hasPurchaseIntent = purchaseKeywords.some(keyword => lowerMessage.includes(keyword));
-            console.log('   - Tiene intención de compra:', hasPurchaseIntent);
+            // Check if message contains any configured keyword
+            const hasPurchaseIntent = configuredKeywords.length > 0 && 
+                configuredKeywords.some(keyword => {
+                    const keywordLower = keyword.toLowerCase().trim();
+                    return lowerMessage.includes(keywordLower);
+                });
+            console.log('   - Tiene intención de compra (usando keywords configuradas):', hasPurchaseIntent);
             
             // Patterns to detect product references by number: "item 3", "producto 3", "el 3", "número 3", etc.
             const numberPatterns = [
