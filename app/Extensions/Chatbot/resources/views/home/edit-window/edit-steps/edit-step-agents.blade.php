@@ -420,7 +420,7 @@
 
                 <div
                     class="rounded-lg border border-border/60 p-3"
-                    x-data="humanAgentScheduleCard(@js($human_agent_schedule_day_labels), @js($default_human_agent_schedule))"
+                    x-data='humanAgentScheduleCard(@json($human_agent_schedule_day_labels), @json($default_human_agent_schedule))'
                 >
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
