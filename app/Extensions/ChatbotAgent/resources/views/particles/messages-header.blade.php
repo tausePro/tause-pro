@@ -27,6 +27,26 @@
 
         <div class="ms-auto hidden grow items-center justify-end gap-2 lg:flex">
             <x-button
+                class="size-7 shrink-0"
+                size="none"
+                variant="none"
+                :class="activeChat?.chatbot?.ai_handling_enabled ? 'bg-foreground/5 text-foreground' : 'bg-red-50 text-red-600'"
+                title="{{ __('Toggle AI handling') }}"
+                @click.prevent="toggleAiHandling()"
+                x-bind:disabled="!activeChat?.chatbot"
+            >
+                <x-tabler-robot
+                    class="size-4"
+                    x-show="activeChat?.chatbot?.ai_handling_enabled"
+                />
+                <x-tabler-user-cancel
+                    class="size-4"
+                    x-cloak
+                    x-show="activeChat?.chatbot && !activeChat.chatbot.ai_handling_enabled"
+                />
+            </x-button>
+
+            <x-button
                 class="size-7 shrink-0 bg-foreground/5 shadow-[inset_1px_1px_1px_-0.5px_hsl(0_0%_100%/60%),inset_-1px_-1px_1px_-0.5px_hsl(0_0%_100%/40%),0_1px_2px_-1px_hsl(0_0%_0%/30%)] backdrop-blur backdrop-contrast-125"
                 size="none"
                 variant="none"

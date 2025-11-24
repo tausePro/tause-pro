@@ -246,6 +246,7 @@
                         contactInfoVisible: false,
                     },
                     userConversationHistory: [],
+                    toggleAiHandlingUrl: '{{ route('dashboard.chatbot-agent.chatbot.toggle-ai') }}',
 
                     async init() {
                         this.onSendMessage = this.onSendMessage.bind(this);
@@ -580,6 +581,63 @@
                         this.fetching = false;
 
                         this.scrollMessagesToBottom();
+                    },
+                    syncChatbotData(chatbot) {
+                        if (!chatbot?.id) {
+                            return;
+                        }
+
+                        this.chatsList = this.chatsList.map(chat => {
+                            if (chat.chatbot?.id === chatbot.id) {
+                                return {
+                                    ...chat,
+                                    chatbot: {
+                                        ...chat.chatbot,
+                                        ...chatbot
+                                    }
+                                };
+                            }
+
+                            return chat;
+                        });
+
+                        if (this.activeChat?.chatbot?.id === chatbot.id) {
+                            this.activeChat.chatbot = {
+                                ...this.activeChat.chatbot,
+                                ...chatbot
+                            };
+                        }
+                    },
+                    async toggleAiHandling() {
+                        if (!this.activeChat?.chatbot?.id || !this.toggleAiHandlingUrl) {
+                            return;
+                        }
+
+                        const newStatus = !this.activeChat.chatbot.ai_handling_enabled;
+
+                        const res = await fetch(this.toggleAiHandlingUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            },
+                            body: JSON.stringify({
+                                chatbot_id: this.activeChat.chatbot.id,
+                                ai_handling_enabled: newStatus,
+                            }),
+                        });
+
+                        const data = await res.json();
+
+                        if (!res.ok || data.status !== 'success') {
+                            toastr.error(data.message || '{{ __('Unable to update AI handling right now.') }}');
+                            return;
+                        }
+
+                        this.syncChatbotData(data.chatbot);
+
+                        toastr.success(newStatus ? '{{ __('AI handling enabled') }}' : '{{ __('AI handling paused') }}');
                     },
                     async handleConversationsSearch() {
                         const query = this.$refs.historySearchInput?.value?.trim();

@@ -129,4 +129,61 @@
             ></span>
         </p>
     </div>
+
+    <div
+        class="mt-4 space-y-3 rounded-lg border px-4 py-4 text-left xl:mx-4"
+        x-show="activeChat?.chatbot"
+        x-data="{
+            dayLabels: {
+                monday: '{{ __('Monday') }}',
+                tuesday: '{{ __('Tuesday') }}',
+                wednesday: '{{ __('Wednesday') }}',
+                thursday: '{{ __('Thursday') }}',
+                friday: '{{ __('Friday') }}',
+                saturday: '{{ __('Saturday') }}',
+                sunday: '{{ __('Sunday') }}'
+            }
+        }"
+    >
+        <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold uppercase tracking-wide text-heading-foreground/60">
+                {{ __('AI Handling') }}
+            </p>
+            <span
+                class="rounded-full px-2 py-0.5 text-2xs font-semibold"
+                :class="activeChat?.chatbot?.ai_handling_enabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                x-text="activeChat?.chatbot?.ai_handling_enabled ? '{{ __('Enabled') }}' : '{{ __('Paused') }}'"
+            ></span>
+        </div>
+
+        <div class="rounded-lg border border-border/40 bg-background/60 px-3 py-3">
+            <p class="text-2xs font-semibold uppercase tracking-wide text-heading-foreground/60">
+                {{ __('Human Agent Schedule') }}
+            </p>
+            <p class="text-xs text-heading-foreground/60">
+                <span class="font-semibold">{{ __('Timezone:') }}</span>
+                <span x-text="activeChat?.chatbot?.human_agent_timezone ?? 'UTC'"></span>
+            </p>
+
+            <ul class="mt-2 space-y-1 text-xs">
+                <template
+                    x-if="Array.isArray(activeChat?.chatbot?.human_agent_schedule) && activeChat.chatbot.human_agent_schedule.length"
+                >
+                    <template x-for="slot in activeChat.chatbot.human_agent_schedule" :key="slot.day">
+                        <li class="flex items-center justify-between gap-2">
+                            <span class="font-medium" x-text="dayLabels[slot.day] ?? slot.day"></span>
+                            <span class="text-heading-foreground/70" x-text="slot.enabled ? `${slot.start} - ${slot.end}` : '{{ __('Offline') }}'"></span>
+                        </li>
+                    </template>
+                </template>
+                <template
+                    x-if="!activeChat?.chatbot?.human_agent_schedule || activeChat.chatbot.human_agent_schedule.length === 0"
+                >
+                    <li class="text-heading-foreground/60">
+                        {{ __('No schedule configured') }}
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
 </div>

@@ -358,6 +358,35 @@ class ChatbotAgentController extends Controller
 
     }
 
+    public function toggleAiHandling(Request $request): JsonResponse
+    {
+        if (Helper::appIsDemo()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'This feature is disabled in Demo version.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'chatbot_id'          => ['required', 'integer', 'exists:ext_chatbots,id'],
+            'ai_handling_enabled' => ['required', 'boolean'],
+        ]);
+
+        $chatbot = Chatbot::query()
+            ->where('id', $validated['chatbot_id'])
+            ->where('user_id', $request->user()->getAuthIdentifier())
+            ->firstOrFail();
+
+        $chatbot->update([
+            'ai_handling_enabled' => $validated['ai_handling_enabled'],
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'chatbot' => $chatbot->fresh(),
+        ]);
+    }
+
     private function sendWhatsappMessage(
         ChatbotChannel $chatbotChannel,
         ChatbotConversation $conversation,
