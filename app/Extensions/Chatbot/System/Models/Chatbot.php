@@ -195,4 +195,9 @@ class Chatbot extends Model
     {
         return $this->hasMany(ChatbotAgent::class, 'chatbot_id', 'id');
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 }

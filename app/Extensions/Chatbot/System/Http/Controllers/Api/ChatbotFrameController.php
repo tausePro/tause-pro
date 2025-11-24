@@ -7,14 +7,14 @@ use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cookie;
 
 class ChatbotFrameController extends Controller
 {
-    public function frame(Request $request, Chatbot $chatbot): View
+    public function frame(Request $request, Chatbot $chatbot): Response
     {
         $session = $this->getVisitor();
 
@@ -31,7 +31,13 @@ class ChatbotFrameController extends Controller
 
         $this->updateChatbotConversation($conversations, $customerId);
 
-        return view('chatbot::frame', compact('chatbot', 'session', 'conversations'));
+        $view = view('chatbot::frame', compact('chatbot', 'session', 'conversations'));
+
+        $response = response($view);
+        $response->headers->remove('X-Frame-Options');
+        $response->headers->set('Content-Security-Policy', 'frame-ancestors *', false);
+
+        return $response;
     }
 
     public function updateChatbotConversation(Collection $conversations, $customerId): void
