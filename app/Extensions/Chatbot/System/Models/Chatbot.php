@@ -198,6 +198,15 @@ class Chatbot extends Model
 
     public function getRouteKeyName(): string
     {
+        // Use 'id' for dashboard routes, 'uuid' for public API routes
+        // Dashboard routes use numeric IDs: /dashboard/chatbot/1/ecommerce
+        // Public API routes use UUIDs: /api/v2/chatbot/{uuid}/frame
+        $route = request()->route();
+        
+        if ($route && str_starts_with($route->getName() ?? '', 'dashboard.')) {
+            return 'id';
+        }
+        
         return 'uuid';
     }
 }
