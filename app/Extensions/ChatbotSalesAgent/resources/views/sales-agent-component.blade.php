@@ -18,7 +18,9 @@
         purchaseMode: false,
         selectedProduct: null,
         customerData: {},
-        currentStep: null, // quantity, name, phone, address, city
+        currentStep: null, // quantity, post_quantity, name, phone, address, city
+        // Usar negotiation_min_cart_value como umbral de ticket/envío sugerido
+        freeShippingThreshold: {{ (int) ($chatbot->negotiation_min_cart_value ?? 0) }},
         
         // Initialize - load products once
         async init() {
@@ -1218,20 +1220,37 @@
             const input = message.trim();
             
             switch (this.currentStep) {
-                case 'quantity':
+                case 'quantity': {
                     const qty = parseInt(input);
                     if (isNaN(qty) || qty < 1) {
                         this.addAssistantMessage('Por favor escribe un número válido (ejemplo: 1, 2, 3...)');
                         return true;
                     }
                     this.selectedProduct.quantity = qty;
-                    const total = this.selectedProduct.price * qty;
-                    this.addAssistantMessage(`Perfecto, ${qty} ${qty === 1 ? 'unidad' : 'unidades'}.\n\n💰 **Subtotal: $${new Intl.NumberFormat('es-CO').format(total)} COP**\n\n_(El costo de envío se coordinará por WhatsApp)_`);
-                    setTimeout(() => {
-                        this.currentStep = 'first_name';
-                        this.addAssistantMessage('¿Cuál es tu **nombre**? (solo el primer nombre)');
-                    }, 1000);
+                    const subtotal = this.selectedProduct.price * qty;
+                    const subtotalLabel = new Intl.NumberFormat('es-CO').format(subtotal);
+                    
+                    let messageText = `Perfecto, ${qty} ${qty === 1 ? 'unidad' : 'unidades'}.\n\n💰 **Subtotal: $${subtotalLabel} COP**\n\n_(El costo de envío se coordinará por WhatsApp)_`;
+                    
+                    // Usar umbral configurado (negotiation_min_cart_value) como referencia de ticket/envío
+                    if (this.freeShippingThreshold && this.freeShippingThreshold > 0) {
+                        const thresholdLabel = new Intl.NumberFormat('es-CO').format(this.freeShippingThreshold);
+                        
+                        if (subtotal >= this.freeShippingThreshold) {
+                            messageText += `\n\n✅ Con este pedido ya alcanzas el valor sugerido (~$${thresholdLabel} COP).`;
+                        } else {
+                            const diff = this.freeShippingThreshold - subtotal;
+                            const diffLabel = new Intl.NumberFormat('es-CO').format(diff);
+                            messageText += `\n\n💡 Si tu pedido supera aproximadamente los $${thresholdLabel} COP podrías acceder a promociones o envío preferencial.\nTe faltan alrededor de $${diffLabel} COP.`;
+                        }
+                    }
+                    
+                    messageText += `\n\n¿Quieres **seguir comprando** o **pasar al pago**?\nEscribe **\"seguir\"** para ver más productos o **\"pagar\"** para continuar con el pedido.`;
+                    
+                    this.addAssistantMessage(messageText);
+                    this.currentStep = 'post_quantity';
                     return true;
+                }
                     
                 case 'first_name':
                     if (input.length < 2) {
@@ -1332,6 +1351,27 @@
                     this.customerData.notes = input.toLowerCase() === 'no' ? '' : input;
                     this.showOrderConfirmation();
                     return true;
+                    
+                case 'post_quantity': {
+                    const choice = input.toLowerCase();
+                    
+                    if (choice.includes('pagar') || choice.includes('pago') || choice.includes('checkout') || choice.includes('listo') || choice.includes('confirmar')) {
+                        // Continuar al flujo de datos del cliente
+                        this.addAssistantMessage('Perfecto, sigamos con tus datos para coordinar el envío. 🙂\n\n¿Cuál es tu **nombre**? (solo el primer nombre)');
+                        this.currentStep = 'first_name';
+                        return true;
+                    }
+                    
+                    if (choice.includes('seguir') || choice.includes('comprando') || choice.includes('ver') || choice.includes('productos') || choice.includes('agregar')) {
+                        this.addAssistantMessage('Perfecto, seguimos viendo opciones. 🛍️\nDime qué otro producto te interesa (por ejemplo: \"aceite energía\", \"mascarilla exfoliante\"), o cuando quieras avanzar solo dime **\"pagar\"**.');
+                        // Cerramos este intento de compra, pero mantenemos el contexto del chat
+                        this.resetPurchase();
+                        return true;
+                    }
+                    
+                    this.addAssistantMessage('Para continuar, por favor escribe **\"pagar\"** si quieres seguir al pago o **\"seguir\"** si prefieres ver más productos.');
+                    return true;
+                }
                     
                 case 'confirmation':
                     const confirm = input.toLowerCase();

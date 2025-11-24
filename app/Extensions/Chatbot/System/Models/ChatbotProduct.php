@@ -48,6 +48,20 @@ class ChatbotProduct extends Model
     ];
 
     /**
+     * Atributos calculados que deben estar disponibles en JSON
+     * para el Sales Agent (frontend).
+     *
+     * - formatted_price: precio formateado en COP
+     * - has_discount: si el producto tiene descuento
+     * - discount_percentage: porcentaje de descuento aplicado
+     */
+    protected $appends = [
+        'formatted_price',
+        'has_discount',
+        'discount_percentage',
+    ];
+
+    /**
      * Relación con Chatbot
      */
     public function chatbot(): BelongsTo
