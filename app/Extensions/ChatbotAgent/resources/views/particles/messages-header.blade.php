@@ -27,10 +27,10 @@
 
         <div class="ms-auto hidden grow items-center justify-end gap-2 lg:flex">
             <x-button
-                class="size-7 shrink-0"
+                class="size-7 shrink-0 bg-foreground/5"
                 size="none"
                 variant="none"
-                :class="activeChat?.chatbot?.ai_handling_enabled ? 'bg-foreground/5 text-foreground' : 'bg-red-50 text-red-600'"
+                ::class="activeChat?.chatbot?.ai_handling_enabled ? 'text-foreground' : 'bg-red-50 text-red-600'"
                 title="{{ __('Toggle AI handling') }}"
                 @click.prevent="toggleAiHandling()"
                 x-bind:disabled="!activeChat?.chatbot"
