@@ -196,17 +196,21 @@ class Chatbot extends Model
         return $this->hasMany(ChatbotAgent::class, 'chatbot_id', 'id');
     }
 
-    public function getRouteKeyName(): string
+    /**
+     * Resolve route binding to handle both numeric IDs (dashboard) and UUIDs (public API)
+     * 
+     * Dashboard routes use numeric IDs: /dashboard/chatbot/1/ecommerce
+     * Public API routes use UUIDs: /api/v2/chatbot/{uuid}/frame
+     * Embed script uses UUID: data-chatbot-uuid="60b1a23f-6eca-4a6d-b76a-314e452f413f"
+     */
+    public function resolveRouteBinding($value, $field = null)
     {
-        // Use 'id' for dashboard routes, 'uuid' for public API routes
-        // Dashboard routes use numeric IDs: /dashboard/chatbot/1/ecommerce
-        // Public API routes use UUIDs: /api/v2/chatbot/{uuid}/frame
-        $route = request()->route();
-        
-        if ($route && str_starts_with($route->getName() ?? '', 'dashboard.')) {
-            return 'id';
+        // If value is numeric, search by ID (dashboard routes)
+        if (is_numeric($value)) {
+            return $this->where('id', $value)->first();
         }
         
-        return 'uuid';
+        // If not numeric, search by UUID (public API routes and embed script)
+        return $this->where('uuid', $value)->first();
     }
 }
