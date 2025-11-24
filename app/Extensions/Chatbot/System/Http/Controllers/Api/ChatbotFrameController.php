@@ -97,10 +97,10 @@ class ChatbotFrameController extends Controller
         // Decode URL-encoded path
         $path = urldecode($path);
 
-        // Remove 'uploads/avatars/' prefix if present
+        // Normalizar ruta: eliminar prefijos comunes
         $path = preg_replace('#^uploads/avatars/#', '', $path);
         $path = preg_replace('#^uploads/#', '', $path);
-        
+        $path = preg_replace('#^avatars/#', '', $path);
         // Remove any leading slashes
         $path = ltrim($path, '/');
 

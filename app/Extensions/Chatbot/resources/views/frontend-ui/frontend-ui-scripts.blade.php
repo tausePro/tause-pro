@@ -996,7 +996,8 @@
                     this.scrollMessagesToBottom();
                     
                     @if (!$is_editor)
-                        // ✨ ORQUESTADOR: Integrar con Sales Agent Component
+                        // ✨ ORQUESTADOR: Integrar con Sales Agent Component (cuando el backend activa agentes)
+                        let salesAgentHandled = false;
                         if (data.orchestration && data.orchestration.agents_activated && window.SalesAgent) {
                             setTimeout(() => {
                                 console.log('🎯 Orquestador Backend: Procesando agentes activados...');
@@ -1042,6 +1043,7 @@
                                             // Usar el método del Sales Agent Component para renderizar con botones de compra
                                             window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
                                             console.log('✅ Productos renderizados con flujo de compra integrado');
+                                            salesAgentHandled = true;
                                             
                                             // Asegurar que los event listeners estén registrados
                                             setTimeout(() => {
@@ -1064,9 +1066,26 @@
                                         }
                                     }
                                 } else {
-                                    console.log('ℹ️ Sales Agent no activado o sin productos para mostrar');
+                                    console.log('ℹ️ Sales Agent no activado o sin productos para mostrar por orquestador');
                                 }
                             }, 1500);
+                        }
+                        
+                        // Fallback: aunque el backend no haya activado explícitamente al Sales Agent,
+                        // si está habilitado y tiene productos cargados, intentar mejorar el mensaje
+                        // del asistente con cards basadas solo en el texto de la respuesta del AI.
+                        if (!salesAgentHandled && window.SalesAgent && window.SalesAgent.enabled && window.SalesAgent.productsLoaded) {
+                            console.log('✨ Fallback Sales Agent: intentando detectar productos en el mensaje del asistente');
+                            
+                            const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
+                            if (assistantMessages.length > 0) {
+                                const lastMessageEl = assistantMessages[assistantMessages.length - 1];
+                                const contentWrap = lastMessageEl.querySelector('.lqd-ext-chatbot-window-conversation-message-content-wrap');
+                                
+                                if (contentWrap) {
+                                    window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
+                                }
+                            }
                         }
                         
                         // Sales Agent: Make product links functional (inline purchase flow)
