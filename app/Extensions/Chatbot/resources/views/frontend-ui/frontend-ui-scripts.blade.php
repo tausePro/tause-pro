@@ -45,6 +45,11 @@
                     this.doNotConnectToAgent = this.doNotConnectToAgent.bind(this);
                     this.onTypingDone = this.onTypingDone.bind(this);
 
+                    // Exponer referencia global al componente principal del chatbot
+                    // para que otros módulos (por ejemplo, el Sales Agent) puedan
+                    // interactuar con la conversación sin depender de detalles internos de Alpine.
+                    window.ExternalChatbot = this;
+
                     @if ($is_editor)
                         this.$data.externalChatbot = this;
 

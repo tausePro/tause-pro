@@ -482,9 +482,16 @@
             const maxRetries = 30; // Aumentado a 30 intentos = 6 segundos máximo
             const retryDelay = 200; // 200ms entre intentos
             
-            // Method 1: Find the externalChatbot element directly
-            const chatbotEl = document.querySelector('.lqd-ext-chatbot-window');
-            console.log('   Looking for .lqd-ext-chatbot-window element... (attempt', retryCount + 1, '/', maxRetries, ')');
+            // Method 0: Usar referencia global si está disponible
+            if (window.ExternalChatbot && Array.isArray(window.ExternalChatbot.messages)) {
+                console.log('   ✅ Using global ExternalChatbot instance');
+                this.alpineReady = true;
+                return window.ExternalChatbot;
+            }
+            
+            // Method 1: Buscar el elemento con x-data="externalChatbot"
+            const chatbotEl = document.querySelector('[x-data=\"externalChatbot\"]');
+            console.log('   Looking for [x-data=\"externalChatbot\"] element... (attempt', retryCount + 1, '/', maxRetries, ')');
             
             if (chatbotEl) {
                 console.log('   Element found, checking Alpine initialization...');
@@ -496,7 +503,7 @@
                     console.log('   Has messages:', !!chatbotEl.__x.$data.messages);
                     console.log('   Messages count:', chatbotEl.__x.$data.messages ? chatbotEl.__x.$data.messages.length : 0);
                     
-                    if (chatbotEl.__x.$data.messages) {
+                    if (Array.isArray(chatbotEl.__x.$data.messages)) {
                         this.alpineReady = true;
                         return chatbotEl.__x.$data;
                     }
@@ -510,16 +517,16 @@
                     });
                 }
             } else {
-                console.log('   ⚠️ Element .lqd-ext-chatbot-window not found in DOM');
+                console.log('   ⚠️ Element [x-data=\"externalChatbot\"] not found in DOM');
             }
             
-            // Method 2: Fallback - search all x-data elements
+            // Method 2: Fallback - buscar todos los elementos con x-data
             console.log('   Fallback: Searching all x-data elements...');
             const allXData = document.querySelectorAll('[x-data]');
             console.log('   Found', allXData.length, 'x-data elements');
             
             for (let el of allXData) {
-                if (el.__x && el.__x.$data && el.__x.$data.messages && Array.isArray(el.__x.$data.messages)) {
+                if (el.__x && el.__x.$data && Array.isArray(el.__x.$data.messages)) {
                     console.log('   ✅ Chatbot instance found via fallback! Messages:', el.__x.$data.messages.length);
                     this.alpineReady = true;
                     return el.__x.$data;
@@ -591,7 +598,16 @@
         
         // Inject message directly into DOM (fallback when Alpine is not available)
         injectMessageIntoDOM(message, role = 'assistant') {
-            const messagesContainer = document.querySelector('.lqd-ext-chatbot-window-conversation-messages');
+            // Buscar un contenedor de mensajes existente y usar su padre como lista
+            let messagesContainer = document.querySelector('.lqd-ext-chatbot-window-conversation-messages');
+            
+            if (!messagesContainer) {
+                const lastMessage = document.querySelector('.lqd-ext-chatbot-window-conversation-message:last-of-type');
+                if (lastMessage && lastMessage.parentElement) {
+                    messagesContainer = lastMessage.parentElement;
+                }
+            }
+            
             if (!messagesContainer) {
                 console.error('   ❌ Messages container not found');
                 return;
