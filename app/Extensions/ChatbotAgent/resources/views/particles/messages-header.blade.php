@@ -39,7 +39,7 @@
                     class="size-4"
                     x-show="activeChat?.chatbot?.ai_handling_enabled"
                 />
-                <x-tabler-user-cancel
+                <x-tabler-hand-stop
                     class="size-4"
                     x-cloak
                     x-show="activeChat?.chatbot && !activeChat.chatbot.ai_handling_enabled"
