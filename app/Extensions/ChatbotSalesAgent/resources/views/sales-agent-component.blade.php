@@ -172,18 +172,34 @@
             const lowerMessage = message.toLowerCase().trim();
             console.log('🔍 Sales Agent: Detectando producto específico en:', lowerMessage);
             
-            // Use configured keywords from chatbot settings (sales_agent_keywords)
-            // These are the keywords the user configured in the dashboard
+            // Keywords configuradas (para logging, no todas implican compra directa)
             const configuredKeywords = this.keywords || [];
             console.log('   - Keywords configuradas:', configuredKeywords);
             
-            // Check if message contains any configured keyword
-            const hasPurchaseIntent = configuredKeywords.length > 0 && 
-                configuredKeywords.some(keyword => {
-                    const keywordLower = keyword.toLowerCase().trim();
-                    return lowerMessage.includes(keywordLower);
-                });
-            console.log('   - Tiene intención de compra (usando keywords configuradas):', hasPurchaseIntent);
+            // Palabras que sí indican intención de compra fuerte
+            const strongPurchaseKeywords = [
+                'quiero comprar',
+                'quiero este',
+                'quiero ese',
+                'comprar',
+                'comprarme',
+                'compraría',
+                'compraria',
+                'adquirir',
+                'llevar',
+                'llevarme',
+                'añadir al carrito',
+                'agregar al carrito',
+            ];
+            
+            const hasStrongPurchaseIntent = strongPurchaseKeywords.some(k => lowerMessage.includes(k));
+            const hasConfiguredKeyword = configuredKeywords.length > 0 && configuredKeywords.some(keyword => {
+                const keywordLower = keyword.toLowerCase().trim();
+                return keywordLower && lowerMessage.includes(keywordLower);
+            });
+            
+            console.log('   - Tiene intención fuerte de compra:', hasStrongPurchaseIntent);
+            console.log('   - Contiene alguna keyword configurada:', hasConfiguredKeyword);
             
             // Patterns to detect product references by number: "item 3", "producto 3", "el 3", "número 3", etc.
             const numberPatterns = [
@@ -224,8 +240,8 @@
                 }
             }
             
-            // If purchase intent detected, search for products by name in the message
-            if (hasPurchaseIntent) {
+            // Solo buscar por nombre cuando hay intención de compra FUERTE
+            if (hasStrongPurchaseIntent) {
                 console.log('   🔍 Buscando productos por nombre en el mensaje...');
                 
                 // Extract significant words from message (4+ characters)

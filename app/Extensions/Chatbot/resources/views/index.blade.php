@@ -13,6 +13,42 @@
         __('When the request is outside the AI\'s scope or permissions.'),
         __('When the customer explicitly requests a human.'),
     ];
+
+    $human_agent_timezone_options = [
+        'America/Bogota'      => 'America/Bogota (GMT-05:00)',
+        'America/Lima'        => 'America/Lima (GMT-05:00)',
+        'America/Mexico_City' => 'America/Mexico_City (GMT-06:00)',
+        'America/Santiago'    => 'America/Santiago (GMT-03:00)',
+        'Europe/Madrid'       => 'Europe/Madrid (GMT+01:00)',
+        'UTC'                 => 'UTC',
+    ];
+
+    $human_agent_schedule_days = [
+        ['key' => 'monday',    'label' => __('Monday')],
+        ['key' => 'tuesday',   'label' => __('Tuesday')],
+        ['key' => 'wednesday', 'label' => __('Wednesday')],
+        ['key' => 'thursday',  'label' => __('Thursday')],
+        ['key' => 'friday',    'label' => __('Friday')],
+        ['key' => 'saturday',  'label' => __('Saturday')],
+        ['key' => 'sunday',    'label' => __('Sunday')],
+    ];
+
+    $human_agent_schedule_day_labels = collect($human_agent_schedule_days)
+        ->mapWithKeys(fn ($day) => [$day['key'] => $day['label']])
+        ->toArray();
+
+    $default_human_agent_schedule = collect($human_agent_schedule_days)
+        ->map(function ($day) {
+            $isWeekend = in_array($day['key'], ['saturday', 'sunday'], true);
+
+            return [
+                'day'     => $day['key'],
+                'start'   => $isWeekend ? '09:00' : '08:00',
+                'end'     => $isWeekend ? '13:00' : '18:00',
+                'enabled' => ! $isWeekend,
+            ];
+        })
+        ->toArray();
 @endphp
 
 @extends('panel.layout.app', ['disable_tblr' => true])
@@ -103,8 +139,13 @@
                         bubble_message: '{{ __('Hey there, How can I help you?') }}',
                         welcome_message: '{{ __('Hi, how can I help you?') }}',
                         connect_message: '{{ __('I’ve forwarded your request to a human agent. An agent will connect with you as soon as possible.') }}',
+                        human_agent_offline_message: @js(__('Our human team will reach you during the next business hours.')),
                         human_agent_command: 'agente',
                         human_agent_tip_message: '💡 **Tip:** En cualquier momento puedes escribir #agente para ser atendido por un asesor humano.',
+                        ai_handling_enabled: true,
+                        human_agent_schedule_enabled: false,
+                        human_agent_timezone: 'America/Bogota',
+                        human_agent_schedule: @js($default_human_agent_schedule),
                         instructions: '',
                         do_not_go_beyond_instructions: 0,
                         language: '',

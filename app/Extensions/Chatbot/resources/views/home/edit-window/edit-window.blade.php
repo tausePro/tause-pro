@@ -98,7 +98,13 @@
                     @include('chatbot::home.edit-window.edit-steps.edit-step-train')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-triggers')
                     @include('chatbot::home.edit-window.edit-steps.edit-step-embed')
-                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents')
+                    @include('chatbot::home.edit-window.edit-steps.edit-step-agents', [
+                        'human_agent_conditions' => $human_agent_conditions,
+                        'human_agent_schedule_days' => $human_agent_schedule_days,
+                        'human_agent_schedule_day_labels' => $human_agent_schedule_day_labels,
+                        'default_human_agent_schedule' => $default_human_agent_schedule,
+                        'human_agent_timezone_options' => $human_agent_timezone_options,
+                    ])
                     @if (\App\Extensions\Chatbot\System\Helpers\ChatbotHelper::existChannels())
                         @include('chatbot::home.edit-window.edit-steps.edit-step-channel')
                     @endif

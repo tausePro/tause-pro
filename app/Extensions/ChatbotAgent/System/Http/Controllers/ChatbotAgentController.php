@@ -13,6 +13,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Services\ChatbotService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForFrameEventAbly;
 use App\Extensions\ChatbotTelegram\System\Services\Telegram\TelegramService;
+use App\Extensions\ChatbotWhatsapp\System\Services\Evolution\EvolutionWhatsappService;
 use App\Extensions\ChatbotWhatsapp\System\Services\Twillio\TwilioWhatsappService;
 use App\Helpers\Classes\Helper;
 use App\Http\Controllers\Controller;
@@ -20,7 +21,9 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Throwable;
 
 class ChatbotAgentController extends Controller
@@ -231,13 +234,15 @@ class ChatbotAgentController extends Controller
 
                 if ($chatbotChannel) {
                     if ($chatbotChannel?->channel === 'whatsapp' && $chatbotConversation->getAttribute('customer_channel_id')) {
-                        app(TwilioWhatsappService::class)
-                            ->setChatbotChannel($chatbotChannel)
-                            ->sendText(
-                                $request['message'],
-                                $chatbotConversation->getAttribute('customer_channel_id')
-                            );
+                        $this->sendWhatsappMessage(
+                            chatChannel: $chatbotChannel,
+                            conversation: $chatbotConversation,
+                            message: $request['message'],
+                            mediaUrl: $mediaUrl,
+                            mediaFile: $request->file('media')
+                        );
                     }
+
                     if ($chatbotChannel?->channel === 'telegram') {
                         app(TelegramService::class)
                             ->setChannel($chatbotChannel)
@@ -247,11 +252,11 @@ class ChatbotAgentController extends Controller
                             );
                     }
                 }
-
             } else {
                 ChatbotForFrameEventAbly::dispatch($history, $chatbotConversation->sessionId());
             }
         } catch (Exception $e) {
+            //
         }
 
         return ChatbotHistoryResource::make($history)->additional([
@@ -351,5 +356,87 @@ class ChatbotAgentController extends Controller
             ]);
         }
 
+    }
+
+    private function sendWhatsappMessage(
+        ChatbotChannel $chatbotChannel,
+        ChatbotConversation $conversation,
+        ?string $message,
+        ?string $mediaUrl,
+        ?UploadedFile $mediaFile = null
+    ): void {
+        if (! $message && ! $mediaUrl) {
+            return;
+        }
+
+        $receiver = $conversation->getAttribute('customer_channel_id');
+        $provider = data_get($chatbotChannel->credentials, 'provider', 'twilio');
+
+        if ($provider === 'evolution') {
+            $service = app(EvolutionWhatsappService::class)
+                ->setChatbotChannel($chatbotChannel);
+
+            if ($mediaUrl) {
+                $service->sendMedia(
+                    $this->absoluteMediaUrl($mediaUrl),
+                    $receiver,
+                    $message ?? '',
+                    $this->detectEvolutionMediaType($mediaFile)
+                );
+
+                return;
+            }
+
+            $service->sendText($message ?? '', $receiver);
+
+            return;
+        }
+
+        if (! $message) {
+            return;
+        }
+
+        app(TwilioWhatsappService::class)
+            ->setChatbotChannel($chatbotChannel)
+            ->sendText(
+                $message,
+                $receiver
+            );
+    }
+
+    private function absoluteMediaUrl(?string $mediaUrl): ?string
+    {
+        if (! $mediaUrl) {
+            return null;
+        }
+
+        if (Str::startsWith($mediaUrl, ['http://', 'https://'])) {
+            return $mediaUrl;
+        }
+
+        return url($mediaUrl);
+    }
+
+    private function detectEvolutionMediaType(?UploadedFile $mediaFile): string
+    {
+        if (! $mediaFile) {
+            return 'document';
+        }
+
+        $mimeType = $mediaFile->getMimeType();
+
+        if ($mimeType && Str::startsWith($mimeType, 'image/')) {
+            return 'image';
+        }
+
+        if ($mimeType && Str::startsWith($mimeType, 'video/')) {
+            return 'video';
+        }
+
+        if ($mimeType && Str::startsWith($mimeType, 'audio/')) {
+            return 'audio';
+        }
+
+        return 'document';
     }
 }

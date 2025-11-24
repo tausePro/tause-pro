@@ -11,8 +11,7 @@
     {{-- Registrar componente Alpine ANTES de usarlo --}}
     @push('script')
     <script>
-        // Registrar el componente antes de que Alpine lo necesite
-        if (typeof Alpine !== 'undefined' && Alpine.data) {
+        const registerHumanAgentComponents = () => {
             Alpine.data('agentsManager', () => ({
                 agents: [],
                 loading: false,
@@ -55,55 +54,66 @@
                     }
                 }
             }));
-        } else {
-            // Si Alpine aún no está disponible, usar el listener
-            document.addEventListener('alpine:init', () => {
-                Alpine.data('agentsManager', () => ({
-                    agents: [],
-                    loading: false,
 
-                    async loadAgents() {
-                        this.loading = true;
-                        
-                        // Obtener ID del chatbot desde el store o input hidden
-                        let chatbotId = null;
-                        try {
-                            const store = Alpine.store('externalChatbotEditor');
-                            chatbotId = store?.activeChatbot?.id;
-                        } catch (_) {}
+            Alpine.data('humanAgentScheduleCard', (dayLabels, defaultSchedule) => ({
+                dayLabels,
+                defaultSchedule,
+                store: null,
 
-                        if (!chatbotId || chatbotId === 'new_chatbot') {
-                            this.agents = [];
-                            this.loading = false;
-                            return;
-                        }
+                init() {
+                    this.store = Alpine.store('externalChatbotEditor');
+                    this.ensureSchedule(true);
 
-                        try {
-                            const response = await fetch(`/dashboard/chatbot/${chatbotId}/agents`, {
-                                credentials: 'same-origin',
-                                headers: {
-                                    'Accept': 'application/json',
-                                }
-                            });
+                    this.$watch(
+                        () => this.store?.activeChatbot?.id,
+                        () => this.ensureSchedule(true)
+                    );
+                },
 
-                            if (response.ok) {
-                                const data = await response.json();
-                                this.agents = data.agents || [];
-                            } else {
-                                this.agents = [];
-                            }
-                        } catch (error) {
-                            console.error('Failed to load agents:', error);
-                            this.agents = [];
-                        } finally {
-                            this.loading = false;
-                        }
+                get chatbot() {
+                    return this.store?.activeChatbot ?? null;
+                },
+
+                ensureSchedule(force = false) {
+                    if (! this.chatbot) {
+                        return;
                     }
-                }));
-            });
+
+                    const schedule = this.chatbot.human_agent_schedule;
+
+                    if (
+                        force ||
+                        ! Array.isArray(schedule) ||
+                        schedule.length === 0
+                    ) {
+                        this.chatbot.human_agent_schedule = JSON.parse(JSON.stringify(this.defaultSchedule));
+                    }
+                },
+
+                resetSchedule() {
+                    if (! this.chatbot) {
+                        return;
+                    }
+
+                    this.chatbot.human_agent_schedule = JSON.parse(JSON.stringify(this.defaultSchedule));
+                    submitData();
+                }
+            }));
+        };
+
+        if (typeof Alpine !== 'undefined' && Alpine.data) {
+            registerHumanAgentComponents();
+        } else {
+            document.addEventListener('alpine:init', registerHumanAgentComponents);
         }
     </script>
     @endpush
+
+    @php
+        $human_agent_timezone_options = $human_agent_timezone_options ?? ['UTC' => 'UTC'];
+        $default_human_agent_schedule = $default_human_agent_schedule ?? [];
+        $human_agent_schedule_day_labels = $human_agent_schedule_day_labels ?? [];
+    @endphp
 
     <h2 class="mb-3.5">
         @lang('Agents Hub')
@@ -358,6 +368,151 @@
                     ></textarea>
                     <p class="mt-1 text-2xs opacity-60">
                         @lang('Mensaje que se envía cuando el usuario se conecta con un agente')
+                    </p>
+                </div>
+
+                <div class="rounded-lg border border-border/60 p-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-medium text-heading-foreground">
+                                @lang('Atención con IA')
+                            </p>
+                            <p class="text-2xs text-heading-foreground/60">
+                                @lang('Desactiva esta opción para que todas las conversaciones pasen directo a agentes humanos.')
+                            </p>
+                        </div>
+                        <label class="ml-auto inline-flex items-center gap-2 text-xs font-semibold text-heading-foreground">
+                            <input
+                                type="checkbox"
+                                class="peer sr-only"
+                                x-model="activeChatbot.ai_handling_enabled"
+                                @change="submitData()"
+                            >
+                            <span
+                                class="flex h-6 w-11 items-center rounded-full border border-border px-1 transition peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30"
+                                :class="activeChatbot.ai_handling_enabled ? 'bg-primary text-primary-foreground' : 'bg-background'"
+                            >
+                                <span
+                                    class="h-4 w-4 rounded-full bg-white shadow transition"
+                                    :class="activeChatbot.ai_handling_enabled ? 'translate-x-4' : 'translate-x-0'"
+                                ></span>
+                            </span>
+                            <span x-text="activeChatbot.ai_handling_enabled ? '{{ __('IA activa') }}' : '{{ __('IA en pausa') }}'"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-xs font-medium text-heading-foreground">
+                        @lang('Mensaje fuera de horario')
+                    </label>
+                    <textarea
+                        rows="2"
+                        class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        x-model="activeChatbot.human_agent_offline_message"
+                        @input="submitData()"
+                        placeholder="@lang('Nuestro equipo humano responderá tan pronto volvamos al horario laboral.')"
+                    ></textarea>
+                    <p class="mt-1 text-2xs opacity-60">
+                        @lang('Se envía automáticamente cuando la conversación llega fuera del horario configurado.')
+                    </p>
+                </div>
+
+                <div
+                    class="rounded-lg border border-border/60 p-3"
+                    x-data="humanAgentScheduleCard(@js($human_agent_schedule_day_labels), @js($default_human_agent_schedule))"
+                >
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-medium text-heading-foreground">
+                                @lang('Horario de agentes humanos')
+                            </p>
+                            <p class="text-2xs text-heading-foreground/60">
+                                @lang('Define la disponibilidad semanal para redirigir conversaciones a personas.')
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button
+                                type="button"
+                                class="rounded-full border border-border px-3 py-1.5 text-2xs font-semibold text-heading-foreground transition hover:border-primary hover:text-primary"
+                                @click.prevent="resetSchedule()"
+                            >
+                                @lang('Usar horario estándar')
+                            </button>
+                            <label class="inline-flex items-center gap-2 text-2xs font-semibold text-heading-foreground">
+                                <input
+                                    type="checkbox"
+                                    class="rounded border-input text-primary focus:ring-primary/20"
+                                    x-model="chatbot.human_agent_schedule_enabled"
+                                    @change="submitData()"
+                                >
+                                <span>@lang('Activar')</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-4 space-y-4"
+                        x-cloak
+                        x-show="activeChatbot.human_agent_schedule_enabled"
+                    >
+                        <div>
+                            <label class="mb-1.5 block text-2xs font-medium uppercase tracking-wide text-heading-foreground/60">
+                                @lang('Zona horaria')
+                            </label>
+                            <select
+                                class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                x-model="chatbot.human_agent_timezone"
+                                @change="submitData()"
+                            >
+                                @foreach ($human_agent_timezone_options as $value => $label)
+                                    <option value="{{ $value }}">
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <template
+                                x-for="(slot, index) in chatbot.human_agent_schedule"
+                                :key="slot.day"
+                            >
+                                <div class="flex flex-wrap items-center gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2">
+                                    <label class="flex items-center gap-2 text-sm font-medium text-heading-foreground">
+                                        <input
+                                            type="checkbox"
+                                            class="rounded border-input text-primary focus:ring-primary/20"
+                                            x-model="chatbot.human_agent_schedule[index].enabled"
+                                            @change="submitData()"
+                                        >
+                                        <span x-text="dayLabels[slot.day] ?? slot.day"></span>
+                                    </label>
+                                    <div class="ms-auto flex flex-wrap items-center gap-2 text-xs font-medium">
+                                        <input
+                                            type="time"
+                                            class="rounded-lg border border-input bg-background px-2 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            x-model="chatbot.human_agent_schedule[index].start"
+                                            @change="submitData()"
+                                        >
+                                        <span>—</span>
+                                        <input
+                                            type="time"
+                                            class="rounded-lg border border-input bg-background px-2 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                            x-model="chatbot.human_agent_schedule[index].end"
+                                            @change="submitData()"
+                                        >
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <p
+                        class="mt-3 text-2xs text-heading-foreground/60"
+                        x-show="!(chatbot && chatbot.human_agent_schedule_enabled)"
+                    >
+                        @lang('Si está desactivado, la IA seguirá disponible las 24 horas.')
                     </p>
                 </div>
             </div>

@@ -8,6 +8,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotChannel;
 use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use App\Extensions\Chatbot\System\Models\ChatbotHistory;
 use App\Extensions\Chatbot\System\Services\GeneratorService;
+use App\Extensions\Chatbot\System\Services\HumanAgentAvailabilityService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForPanelEventAbly;
 use App\Helpers\Classes\MarketplaceHelper;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,10 @@ class EvolutionConversationService
     protected ?string $ipAddress = null;
     protected ?array $payload = null;
     protected bool $existMessage = false;
+
+    public function __construct(
+        protected HumanAgentAvailabilityService $availabilityService
+    ) {}
 
     public function handleWhatsapp(): void
     {
@@ -97,6 +102,11 @@ class EvolutionConversationService
         string $phoneNumber
     ): void {
         if ($this->isHumanAgentCommand($chatbot, $messageBody)) {
+            $this->connectToHumanAgent($chatbot, $conversation, $service, $phoneNumber);
+            return;
+        }
+
+        if ($this->shouldRouteToHuman($chatbot)) {
             $this->connectToHumanAgent($chatbot, $conversation, $service, $phoneNumber);
             return;
         }
@@ -199,6 +209,15 @@ class EvolutionConversationService
         $service->sendText($message, $phoneNumber);
     }
 
+    protected function shouldRouteToHuman(Chatbot $chatbot): bool
+    {
+        if ($chatbot->interaction_type === InteractionType::HUMAN_SUPPORT) {
+            return true;
+        }
+
+        return ! $this->availabilityService->aiShouldHandle($chatbot);
+    }
+
     protected function connectToHumanAgent(
         Chatbot $chatbot,
         ChatbotConversation $conversation,
@@ -212,11 +231,44 @@ class EvolutionConversationService
             'chatbot_id' => $chatbot->id
         ]);
 
+        $chatbotHistory = null;
+
         if ($connectMessage = $chatbot->connect_message) {
             $chatbotHistory = $this->insertMessage($conversation, $connectMessage, 'assistant', $chatbot->ai_model, true);
             $service->sendText($connectMessage, $phoneNumber);
-            $this->dispatchAgentEvent($chatbot, $conversation, $chatbotHistory);
         }
+
+        $offlineHistory = $this->sendOfflineNoticeIfNeeded($chatbot, $conversation, $service, $phoneNumber);
+
+        if (! $chatbotHistory && $offlineHistory) {
+            $chatbotHistory = $offlineHistory;
+        }
+
+        $this->dispatchAgentEvent($chatbot, $conversation, $chatbotHistory);
+    }
+
+    protected function sendOfflineNoticeIfNeeded(
+        Chatbot $chatbot,
+        ChatbotConversation $conversation,
+        EvolutionWhatsappService $service,
+        string $phoneNumber
+    ): ?ChatbotHistory {
+        $availability = $this->availabilityService->evaluate($chatbot);
+
+        $shouldSendOffline = $chatbot->human_agent_offline_message
+            && $availability['schedule_enabled']
+            && ! $availability['within_schedule'];
+
+        if (! $shouldSendOffline) {
+            return null;
+        }
+
+        $offlineMessage = $chatbot->human_agent_offline_message;
+
+        $history = $this->insertMessage($conversation, $offlineMessage, 'assistant', $chatbot->ai_model);
+        $service->sendText($offlineMessage, $phoneNumber);
+
+        return $history;
     }
 
     protected function dispatchAgentEvent(

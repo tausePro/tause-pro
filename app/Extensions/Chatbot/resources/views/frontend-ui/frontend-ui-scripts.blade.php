@@ -703,12 +703,32 @@
 
                     @if (!$is_editor)
                         // Check if Sales Agent should handle this message (during purchase flow)
-                        if (window.SalesAgent && window.SalesAgent.handlePurchaseMessage && window.SalesAgent.handlePurchaseMessage(messageString)) {
-                            // Message was handled by Sales Agent, don't send to AI
-                            this.$refs.message.value = '';
-                            this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
-                            this.$refs.sendBtn.classList.remove('active');
-                            return;
+                        if (window.SalesAgent && window.SalesAgent.handlePurchaseMessage) {
+                            const handled = window.SalesAgent.handlePurchaseMessage(messageString);
+                            if (handled) {
+                                // Mostrar también el mensaje del usuario en el chat,
+                                // aunque la lógica la maneje el Sales Agent y no se envíe al AI.
+                                if (!this.activeConversation) {
+                                    console.error('No active conversation');
+                                } else {
+                                    const conversation = this.conversations.find(conversation => conversation.id === this.activeConversation);
+                                    const newUserMessage = {
+                                        id: new Date().getTime(),
+                                        message: messageString,
+                                        role: 'user',
+                                        created_at: new Date().toISOString()
+                                    };
+
+                                    this.messages.push(newUserMessage);
+                                    this.scrollMessagesToBottom();
+                                }
+
+                                // Limpiar input y no enviar al AI
+                                this.$refs.message.value = '';
+                                this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
+                                this.$refs.sendBtn.classList.remove('active');
+                                return;
+                            }
                         }
                         
                         // Check if Sales Agent should auto-activate purchase flow for specific product mention
@@ -718,9 +738,9 @@
                                 console.log('🎯 Sales Agent: Detectado producto específico en mensaje:', detectedProduct.name);
                                 // Store the user message to send after purchase flow starts
                                 const originalMessage = messageString;
-                                this.$refs.message.value = '';
-                                this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
-                                this.$refs.sendBtn.classList.remove('active');
+                            this.$refs.message.value = '';
+                            this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
+                            this.$refs.sendBtn.classList.remove('active');
                                 
                                 // Start purchase flow automatically
                                 setTimeout(() => {

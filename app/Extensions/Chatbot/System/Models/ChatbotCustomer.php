@@ -24,6 +24,12 @@ class ChatbotCustomer extends Model
         'gdpr_consent_at',
         'crm_tags',
         'crm_status',
+        'lead_value',
+        'lead_priority',
+        'next_action_at',
+        'negotiation_notes',
+        'quote_payload',
+        'last_quote_sent_at',
     ];
 
     protected $casts = [
@@ -31,5 +37,9 @@ class ChatbotCustomer extends Model
         'gdpr_consent' => 'boolean',
         'gdpr_consent_at' => 'datetime',
         'crm_tags' => 'array',
+        'lead_value' => 'float',
+        'next_action_at' => 'datetime',
+        'quote_payload' => 'array',
+        'last_quote_sent_at' => 'datetime',
     ];
 }
