@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 Check our main [developer changelog](https://developer.paddle.com/?utm_source=dx&utm_medium=paddle-php-sdk) for information about changes to the Paddle Billing platform, the Paddle API, and other developer tools.
 
+## [1.14.0] - 2025-11-12
+
+### Added
+
+- Added additional support for local Korean payment methods. See [related changelog](https://developer.paddle.com/changelog/2025/improved-korean-payment-methods?utm_source=dx&utm_medium=paddle-php-sdk)
+- Support for payout reconciliation reports and `remittance_reference`, see [changelog](https://developer.paddle.com/changelog/2025/payout-reconciliation-report?utm_source=dx&utm_medium=paddle-php-sdk)
+- Added `location` value for `price.tax_mode`, see [changelog](https://developer.paddle.com/changelog/2025/default-automatic-tax-setting?utm_source=dx&utm_medium=paddle-php-sdk)
+
+### Deprecated
+
+- `korea_local` payment method type is deprecated. Use `south_korea_local_card`, `kakao_pay`, `naver_pay`, `payco`, or `samsung_pay` instead.
+- `underlying_details` is deprecated on payment `method_details` and saved payment method responses. Use specific payment method fields such as `south_korea_local_card`.
+
+## [1.13.1] - 2025-11-03
+
+_No functional change — aligns versioning metadata with release_ 
+
+## [1.13.0] - 2025-11-03
+
+_Note: Incorrectly published as a minor but suitable as a patch upgrade_
+
+## Fixed
+
+- Calls to fetch an empty page of events no longer fail — handling `null` pagination `next` response
+
 ## [1.12.0] - 2025-10-07
 
 ### Added

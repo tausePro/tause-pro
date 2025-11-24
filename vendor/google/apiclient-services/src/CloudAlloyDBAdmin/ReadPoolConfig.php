@@ -19,29 +19,17 @@ namespace Google\Service\CloudAlloyDBAdmin;
 
 class ReadPoolConfig extends \Google\Model
 {
-  protected $autoScalingConfigType = AutoScalingConfig::class;
-  protected $autoScalingConfigDataType = '';
   /**
+   * Read capacity, i.e. number of nodes in a read pool instance.
+   *
    * @var int
    */
   public $nodeCount;
 
   /**
-   * @param AutoScalingConfig
-   */
-  public function setAutoScalingConfig(AutoScalingConfig $autoScalingConfig)
-  {
-    $this->autoScalingConfig = $autoScalingConfig;
-  }
-  /**
-   * @return AutoScalingConfig
-   */
-  public function getAutoScalingConfig()
-  {
-    return $this->autoScalingConfig;
-  }
-  /**
-   * @param int
+   * Read capacity, i.e. number of nodes in a read pool instance.
+   *
+   * @param int $nodeCount
    */
   public function setNodeCount($nodeCount)
   {

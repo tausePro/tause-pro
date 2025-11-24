@@ -1,0 +1,32 @@
+# 🔧 Arreglar Columna 'hidden' Faltante
+
+# El error indica que falta la columna 'hidden' en la tabla 'plans'
+# Ejecuta estos comandos en EC2 Instance Connect:
+
+# 1. Verificar estructura actual de la tabla
+sudo mysql magicai_staging -e "DESCRIBE plans;"
+
+# 2. Agregar columna 'hidden' si falta
+sudo mysql magicai_staging << 'SQL_EOF'
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS hidden TINYINT(1) DEFAULT 0 AFTER active;
+SQL_EOF
+
+# Si el comando anterior no funciona (MySQL puede no soportar IF NOT EXISTS), usar:
+sudo mysql magicai_staging << 'SQL_EOF'
+ALTER TABLE plans ADD COLUMN hidden TINYINT(1) DEFAULT 0 AFTER active;
+SQL_EOF
+
+# 3. Verificar que se agregó
+sudo mysql magicai_staging -e "DESCRIBE plans;" | grep hidden
+
+# 4. Limpiar cache
+cd /var/www/magicai
+php artisan config:clear
+php artisan cache:clear
+
+# 5. Probar de nuevo
+curl -I http://localhost
+
+# ✅ Listo! Prueba: http://test.tause.pro
+
+

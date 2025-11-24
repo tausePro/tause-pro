@@ -24,6 +24,7 @@
 | Visibility | Name | Flag | Summary |
 | ----------:| ---- | ---- | ------- |
 | public | [$account_number](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_account_number) |  | Номер лицевого счета на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `unified_account_number` или `service_id`. |
+| public | [$accountNumber](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_accountNumber) |  | Номер лицевого счета на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `unified_account_number` или `service_id`. |
 | public | [$amount](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_amount) |  | Сумма платежного поручения — сумма, которую пользователь переводит получателю платежа. Равна общей сумме платежа. |
 | public | [$kbk](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_kbk) |  | Код бюджетной классификации (КБК). |
 | public | [$oktmo](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_oktmo) |  | Код ОКТМО (Общероссийский классификатор территорий муниципальных образований). |
@@ -31,11 +32,17 @@
 | public | [$payment_document_number](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_payment_document_number) |  | Номер платежного документа на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `account_number`, `unified_account_number` или `service_id`. |
 | public | [$payment_period](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_payment_period) |  | Период оплаты, за который выставлены начисления и за который вносится оплата. |
 | public | [$payment_purpose](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_payment_purpose) |  | Назначение платежа (не больше 210 символов). |
+| public | [$paymentDocumentId](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_paymentDocumentId) |  | Идентификатор платежного документа.  Обязательный параметр, если не передан `payment_document_number`, `account_number`, `unified_account_number` или `service_id`. |
+| public | [$paymentDocumentNumber](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_paymentDocumentNumber) |  | Номер платежного документа на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `account_number`, `unified_account_number` или `service_id`. |
+| public | [$paymentPeriod](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_paymentPeriod) |  | Период оплаты, за который выставлены начисления и за который вносится оплата. |
+| public | [$paymentPurpose](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_paymentPurpose) |  | Назначение платежа (не больше 210 символов). |
 | public | [$recipient](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_recipient) |  | Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг. |
 | public | [$service_id](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_service_id) |  | Идентификатор жилищно-коммунальной услуги (ЖКУ).  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `unified_account_number`. |
-| public | [$type](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_type) |  | Код вида платежного поручения. |
+| public | [$serviceId](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_serviceId) |  | Идентификатор жилищно-коммунальной услуги (ЖКУ).  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `unified_account_number`. |
 | public | [$type](../classes/YooKassa-Request-Payments-PaymentOrderData-AbstractPaymentOrder.md#property_type) |  | Код вида платежного поручения |
+| public | [$type](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_type) |  | Код вида платежного поручения. |
 | public | [$unified_account_number](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_unified_account_number) |  | Единый лицевой счет. Уникальный идентификатор в ГИС ЖКХ, который характеризует связку «собственник-помещение».  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `service_id`. |
+| public | [$unifiedAccountNumber](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md#property_unifiedAccountNumber) |  | Единый лицевой счет. Уникальный идентификатор в ГИС ЖКХ, который характеризует связку «собственник-помещение».  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `service_id`. |
 | protected | [$_type](../classes/YooKassa-Request-Payments-PaymentOrderData-AbstractPaymentOrder.md#property__type) |  | Код вида платежного поручения |
 
 ---
@@ -111,6 +118,18 @@
 ## Properties
 <a name="property_account_number"></a>
 #### public $account_number : string
+---
+***Description***
+
+Номер лицевого счета на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `unified_account_number` или `service_id`.
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_accountNumber"></a>
+#### public $accountNumber : string
 ---
 ***Description***
 
@@ -205,14 +224,62 @@
 **Details:**
 
 
+<a name="property_paymentDocumentId"></a>
+#### public $paymentDocumentId : string
+---
+***Description***
+
+Идентификатор платежного документа.  Обязательный параметр, если не передан `payment_document_number`, `account_number`, `unified_account_number` или `service_id`.
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_paymentDocumentNumber"></a>
+#### public $paymentDocumentNumber : string
+---
+***Description***
+
+Номер платежного документа на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `account_number`, `unified_account_number` или `service_id`.
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_paymentPeriod"></a>
+#### public $paymentPeriod : \YooKassa\Request\Payments\PaymentPeriod
+---
+***Description***
+
+Период оплаты, за который выставлены начисления и за который вносится оплата.
+
+**Type:** <a href="../classes/YooKassa-Request-Payments-PaymentPeriod.html"><abbr title="\YooKassa\Request\Payments\PaymentPeriod">PaymentPeriod</abbr></a>
+
+**Details:**
+
+
+<a name="property_paymentPurpose"></a>
+#### public $paymentPurpose : string
+---
+***Description***
+
+Назначение платежа (не больше 210 символов).
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
 <a name="property_recipient"></a>
-#### public $recipient : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient
+#### public $recipient : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities
 ---
 ***Description***
 
 Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
 
-**Type:** <a href="../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipient.html"><abbr title="\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient">PaymentOrderRecipient</abbr></a>
+**Type:** <a href="../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipientUtilities.html"><abbr title="\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities">PaymentOrderRecipientUtilities</abbr></a>
 
 **Details:**
 
@@ -229,12 +296,12 @@
 **Details:**
 
 
-<a name="property_type"></a>
-#### public $type : string
+<a name="property_serviceId"></a>
+#### public $serviceId : string
 ---
 ***Description***
 
-Код вида платежного поручения.
+Идентификатор жилищно-коммунальной услуги (ЖКУ).  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `unified_account_number`.
 
 **Type:** <a href="../string"><abbr title="string">string</abbr></a>
 
@@ -254,8 +321,32 @@
 * Inherited From: [\YooKassa\Request\Payments\PaymentOrderData\AbstractPaymentOrder](../classes/YooKassa-Request-Payments-PaymentOrderData-AbstractPaymentOrder.md)
 
 
+<a name="property_type"></a>
+#### public $type : string
+---
+***Description***
+
+Код вида платежного поручения.
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
 <a name="property_unified_account_number"></a>
 #### public $unified_account_number : string
+---
+***Description***
+
+Единый лицевой счет. Уникальный идентификатор в ГИС ЖКХ, который характеризует связку «собственник-помещение».  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `service_id`.
+
+**Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_unifiedAccountNumber"></a>
+#### public $unifiedAccountNumber : string
 ---
 ***Description***
 
@@ -548,10 +639,10 @@ public getPaymentPurpose() : string|null
 
 
 <a name="method_getRecipient" class="anchor"></a>
-#### public getRecipient() : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient|null
+#### public getRecipient() : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities|null
 
 ```php
-public getRecipient() : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient|null
+public getRecipient() : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities|null
 ```
 
 **Summary**
@@ -561,7 +652,7 @@ public getRecipient() : \YooKassa\Request\Payments\PaymentOrderData\PaymentOrder
 **Details:**
 * Inherited From: [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderUtilities](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md)
 
-**Returns:** \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient|null - 
+**Returns:** \YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities|null - 
 
 
 <a name="method_getServiceId" class="anchor"></a>
@@ -999,7 +1090,7 @@ public setPaymentPurpose(string|array|null $payment_purpose = null) : self
 #### public setRecipient() : self
 
 ```php
-public setRecipient(\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient|array|null $recipient = null) : self
+public setRecipient(\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities|array|null $recipient = null) : self
 ```
 
 **Summary**
@@ -1012,7 +1103,7 @@ public setRecipient(\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderReci
 ##### Parameters:
 | Type | Name | Description |
 | ---- | ---- | ----------- |
-| <code lang="php">\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient OR array OR null</code> | recipient  | Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг. |
+| <code lang="php">\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities OR array OR null</code> | recipient  | Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг. |
 
 **Returns:** self - 
 
@@ -1170,6 +1261,6 @@ protected validatePropertyValue(string $propertyName, mixed $propertyValue) : mi
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

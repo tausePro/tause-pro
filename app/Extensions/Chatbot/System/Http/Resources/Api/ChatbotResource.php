@@ -19,7 +19,7 @@ class ChatbotResource extends JsonResource
             'bubble_message'             => trans($this->bubble_message),
             'welcome_message'            => $this->welcome_message,
             'logo'                       => asset($this->logo),
-            'avatar'                     => asset($this->avatar),
+            'avatar'                     => $this->avatar ? route('chatbot.avatar', ['path' => preg_replace('#^uploads/avatars/#', '', $this->avatar)]) : null,
             'trigger_avatar_size'        => $this->trigger_avatar_size,
             'trigger_background'         => $this->trigger_background,
             'trigger_foreground'         => $this->trigger_foreground,

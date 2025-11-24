@@ -1,0 +1,37 @@
+# 🔧 Comandos Finales para Completar Migraciones
+
+# El problema: menu_migrate necesita que la tabla 'menus' exista primero
+# Ejecuta estos comandos EN ORDEN:
+
+# 1. Crear tabla menus PRIMERO
+php artisan migrate --path=database/migrations/2024_05_16_092520_create_menus_table.php --force
+
+# 2. Ahora ejecutar menu_migrate (actualiza datos en menus)
+php artisan migrate --path=database/migrations/2024_05_08_163635_menu_migrate.php --force
+
+# 3. Crear otras tablas que faltan (antes de sus migraciones de datos)
+php artisan migrate --path=database/migrations/2024_05_08_163636_create_banner_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163637_create_banner_user_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163638_create_survey_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163639_create_survey_user_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163641_create_introduction_style_table.php --force
+
+# 4. Ejecutar TODAS las demás migraciones pendientes
+php artisan migrate --force
+
+# 5. Arreglar permisos de cache (el error de permisos)
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# 6. Limpiar cache
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
+# 7. Verificar
+curl -I http://localhost
+
+# ✅ Listo! Prueba: http://test.tause.pro
+
+

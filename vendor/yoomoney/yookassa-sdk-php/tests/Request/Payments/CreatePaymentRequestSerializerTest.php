@@ -199,6 +199,9 @@ class CreatePaymentRequestSerializerTest extends TestCase
             if (!empty($options['receipt']['tax_system_code'])) {
                 $expected['receipt']['tax_system_code'] = $options['receipt']['tax_system_code'];
             }
+            if (!empty($options['receipt']['send'])) {
+                $expected['receipt']['send'] = $options['receipt']['send'];
+            }
         }
 
         if (array_key_exists('capture', $options)) {
@@ -322,6 +325,7 @@ class CreatePaymentRequestSerializerTest extends TestCase
                             'email' => 'johndoe@yoomoney.ru',
                         ],
                         'tax_system_code' => Random::int(1, 6),
+                        'send' => true,
                     ],
                     'description' => Random::str(10),
                     'capture' => true,
@@ -449,6 +453,7 @@ class CreatePaymentRequestSerializerTest extends TestCase
                         'phone' => Random::str(12, '0123456789'),
                     ],
                     'tax_system_code' => Random::int(1, 6),
+                    'send' => true,
                 ],
                 'airline' => $airline->toArray(),
                 'deal' => [

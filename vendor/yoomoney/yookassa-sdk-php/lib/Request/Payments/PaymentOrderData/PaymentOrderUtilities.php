@@ -47,15 +47,22 @@ use YooKassa\Validator\Constraints as Assert;
  * @property string $type Код вида платежного поручения.
  * @property MonetaryAmount $amount Сумма платежного поручения — сумма, которую пользователь переводит получателю платежа. Равна общей сумме платежа.
  * @property string $payment_purpose Назначение платежа (не больше 210 символов).
- * @property PaymentOrderRecipient $recipient Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
+ * @property string $paymentPurpose Назначение платежа (не больше 210 символов).
+ * @property PaymentOrderRecipientUtilities $recipient Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
  * @property string $kbk Код бюджетной классификации (КБК).
  * @property string $oktmo Код ОКТМО (Общероссийский классификатор территорий муниципальных образований).
  * @property PaymentPeriod $payment_period Период оплаты, за который выставлены начисления и за который вносится оплата.
+ * @property PaymentPeriod $paymentPeriod Период оплаты, за который выставлены начисления и за который вносится оплата.
  * @property string $payment_document_id Идентификатор платежного документа.  Обязательный параметр, если не передан `payment_document_number`, `account_number`, `unified_account_number` или `service_id`.
+ * @property string $paymentDocumentId Идентификатор платежного документа.  Обязательный параметр, если не передан `payment_document_number`, `account_number`, `unified_account_number` или `service_id`.
  * @property string $payment_document_number Номер платежного документа на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `account_number`, `unified_account_number` или `service_id`.
+ * @property string $paymentDocumentNumber Номер платежного документа на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `account_number`, `unified_account_number` или `service_id`.
  * @property string $account_number Номер лицевого счета на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `unified_account_number` или `service_id`.
+ * @property string $accountNumber Номер лицевого счета на стороне поставщика ЖКУ.  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `unified_account_number` или `service_id`.
  * @property string $unified_account_number Единый лицевой счет. Уникальный идентификатор в ГИС ЖКХ, который характеризует связку «собственник-помещение».  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `service_id`.
+ * @property string $unifiedAccountNumber Единый лицевой счет. Уникальный идентификатор в ГИС ЖКХ, который характеризует связку «собственник-помещение».  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `service_id`.
  * @property string $service_id Идентификатор жилищно-коммунальной услуги (ЖКУ).  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `unified_account_number`.
+ * @property string $serviceId Идентификатор жилищно-коммунальной услуги (ЖКУ).  Обязательный параметр, если не передан `payment_document_id`, `payment_document_number`, `account_number` или `unified_account_number`.
  */
 class PaymentOrderUtilities extends AbstractPaymentOrder
 {
@@ -84,12 +91,12 @@ class PaymentOrderUtilities extends AbstractPaymentOrder
     /**
      * Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
      *
-     * @var PaymentOrderRecipient|null
+     * @var PaymentOrderRecipientUtilities|null
      */
     #[Assert\NotBlank]
     #[Assert\Valid]
-    #[Assert\Type(PaymentOrderRecipient::class)]
-    private ?PaymentOrderRecipient $_recipient = null;
+    #[Assert\Type(PaymentOrderRecipientUtilities::class)]
+    private ?PaymentOrderRecipientUtilities $_recipient = null;
 
     /**
      * Код бюджетной классификации (КБК).
@@ -234,9 +241,9 @@ class PaymentOrderUtilities extends AbstractPaymentOrder
     /**
      * Возвращает recipient.
      *
-     * @return PaymentOrderRecipient|null
+     * @return PaymentOrderRecipientUtilities|null
      */
-    public function getRecipient(): ?PaymentOrderRecipient
+    public function getRecipient(): ?PaymentOrderRecipientUtilities
     {
         return $this->_recipient;
     }
@@ -244,7 +251,7 @@ class PaymentOrderUtilities extends AbstractPaymentOrder
     /**
      * Устанавливает recipient.
      *
-     * @param PaymentOrderRecipient|array|null $recipient Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
+     * @param PaymentOrderRecipientUtilities|array|null $recipient Получатель платежа — государственная или коммерческая организация, которая предоставляет услуги или является информационным посредником, который собирает и обрабатывает начисления от других поставщиков услуг.
      *
      * @return self
      */

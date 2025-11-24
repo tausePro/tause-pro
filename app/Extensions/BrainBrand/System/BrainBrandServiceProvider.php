@@ -7,7 +7,6 @@ namespace App\Extensions\BrainBrand\System;
 use App\Domains\Marketplace\Contracts\ExtensionRegisterKeyProviderInterface;
 use App\Extensions\BrainBrand\System\Http\Controllers\BrainBrandTrainController;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class BrainBrandServiceProvider extends ServiceProvider implements ExtensionRegisterKeyProviderInterface
@@ -37,12 +36,14 @@ class BrainBrandServiceProvider extends ServiceProvider implements ExtensionRegi
     protected function registerTranslations(): static
     {
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', $this->registerKey());
+
         return $this;
     }
 
     public function registerViews(): static
     {
         $this->loadViewsFrom([__DIR__ . '/../resources/views'], $this->registerKey());
+
         return $this;
     }
 
@@ -66,6 +67,7 @@ class BrainBrandServiceProvider extends ServiceProvider implements ExtensionRegi
                         $router->post('{brainBrand}/text', 'trainTextBrainBrand')->name('text');
                         $router->post('{brainBrand}/qa', 'trainQaBrainBrand')->name('qa');
                         $router->post('{brainBrand}/embedding', 'generateEmbeddingBrainBrand')->name('embedding');
+                        $router->post('{brainBrand}/distribute', 'distribute')->name('distribute');
                         $router->post('', 'store')->name('store');
                     });
             });
@@ -76,12 +78,14 @@ class BrainBrandServiceProvider extends ServiceProvider implements ExtensionRegi
     public function registerMigrations(): static
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
         return $this;
     }
 
     public function registerConfig(): static
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/brainbrand.php', $this->registerKey());
+
         return $this;
     }
 

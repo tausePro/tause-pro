@@ -1,0 +1,45 @@
+# ✅ COMANDOS CORRECTOS PARA INSTALACIÓN MAGICAI
+# Según documentación: https://docs.magicproject.ai/installation/
+
+# 1. Verificar que todo está bien
+cd /var/www/magicai
+php artisan --version
+
+# 2. Buscar archivo SQL (si existe)
+find . -name "*.sql" -type f
+
+# 3. Si existe magicai.sql, importarlo ANTES de migraciones
+# sudo mysql magicai_staging < magicai.sql
+
+# 4. Verificar estructura de tabla plans
+sudo mysql magicai_staging -e "DESCRIBE plans;" 2>&1
+
+# 5. Si falta la columna 'hidden', hay dos opciones:
+
+# OPCIÓN A: Usar el wizard de instalación (RECOMENDADO)
+# Ir a: http://test.tause.pro/install
+# El wizard configura todo automáticamente
+
+# OPCIÓN B: Ejecutar migraciones manualmente
+php artisan migrate --force
+
+# 6. Verificar que la columna 'hidden' existe ahora
+sudo mysql magicai_staging -e "DESCRIBE plans;" | grep hidden
+
+# 7. Si sigue faltando, agregar columna manualmente
+sudo mysql magicai_staging << 'SQL_EOF'
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS hidden TINYINT(1) DEFAULT 0;
+SQL_EOF
+
+# 8. Limpiar cache
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
+# 9. Verificar
+curl -I http://localhost
+
+# ✅ Listo! Prueba: http://test.tause.pro
+
+

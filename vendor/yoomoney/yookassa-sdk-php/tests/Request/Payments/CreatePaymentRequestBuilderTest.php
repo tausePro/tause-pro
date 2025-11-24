@@ -30,6 +30,7 @@ use Exception;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Tests\YooKassa\AbstractTestCase;
 use YooKassa\Helpers\Random;
 use YooKassa\Model\AmountInterface;
 use YooKassa\Model\CurrencyCode;
@@ -52,6 +53,9 @@ use YooKassa\Request\Payments\PaymentOrderData\PaymentOrderUtilities;
 use YooKassa\Request\Payments\ReceiverData\ReceiverDigitalWallet;
 use YooKassa\Request\Payments\ReceiverData\ReceiverType;
 use YooKassa\Request\Payments\Recipient;
+use YooKassa\Request\Payments\StatementData\AbstractStatement;
+use YooKassa\Request\Payments\StatementData\StatementFactory;
+use YooKassa\Request\Payments\StatementData\StatementType;
 use YooKassa\Validator\Exceptions\ValidatorParameterException;
 
 /**
@@ -61,7 +65,7 @@ use YooKassa\Validator\Exceptions\ValidatorParameterException;
  * @author      cms@yoomoney.ru
  * @link        https://yookassa.ru/developers/api
  */
-class CreatePaymentRequestBuilderTest extends TestCase
+class CreatePaymentRequestBuilderTest extends AbstractTestCase
 {
     /**
      * @dataProvider validDataProvider
@@ -922,9 +926,40 @@ class CreatePaymentRequestBuilderTest extends TestCase
     }
 
     /**
+     * @dataProvider validDataProvider
+     *
+     * @param mixed $options
+     *
      * @throws Exception
      */
-    public static function validDataProvider(): array
+    public function testAddRStatement(mixed $options): void
+    {
+        $builder = new CreatePaymentRequestBuilder();
+
+        if (!empty($options['statements'])) {
+            $statementFabric = new StatementFactory();
+            foreach ($options['statements'] as $item) {
+                $builder->addStatement(is_array($item) ? $statementFabric->factoryFromArray($item) : $item);
+            }
+        }
+        $instance = $builder->build($this->getRequiredData());
+
+        if (empty($options['statements'])) {
+            self::assertTrue($instance->getStatements()->isEmpty());
+        } else {
+            self::assertNotNull($instance->getStatements());
+            self::assertSameSize($options['statements'], $instance->getStatements());
+            foreach ($instance->getStatements() as $item) {
+                self::assertInstanceOf(AbstractStatement::class, $item);
+            }
+        }
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    public function validDataProvider(): array
     {
         $receiptItem = new ReceiptItem();
         $receiptItem->setPrice(new ReceiptItemAmount(1));
@@ -970,6 +1005,7 @@ class CreatePaymentRequestBuilderTest extends TestCase
                     'receiptOperationalDetails' => null,
                     'receiver' => null,
                     'paymentOrder' => null,
+                    'statements' => null,
                 ],
             ],
             [
@@ -1020,6 +1056,7 @@ class CreatePaymentRequestBuilderTest extends TestCase
                     'receiptOperationalDetails' => null,
                     'receiver' => null,
                     'paymentOrder' => null,
+                    'statements' => null,
                 ],
             ],
         ];
@@ -1088,6 +1125,14 @@ class CreatePaymentRequestBuilderTest extends TestCase
             'service_id' => Random::str(13),
         ];
         $paymentOrders = [$paymentOrderArr, new PaymentOrderUtilities($paymentOrderArr)];
+        $statementsArray = [];
+        $statementFactory = new StatementFactory();
+        for ($i = 0; $i < 3; $i++) {
+            foreach (StatementType::getValidValues() as $statemenType) {
+                $statementObject = $statementFactory->factory($statemenType);
+                $statementsArray[] = $this->getValidDataProviderByClass($statementObject, (bool)$i % 2);
+            }
+        }
         for ($i = 0; $i < 10; $i++) {
             $request = [
                 'accountId' => uniqid('', true),
@@ -1143,6 +1188,7 @@ class CreatePaymentRequestBuilderTest extends TestCase
                 'merchant_customer_id' => Random::str(3, 100),
                 'receiver' => Random::value($receivers),
                 'paymentOrder' => Random::value($paymentOrders),
+                'statements' => Random::value($statementsArray),
             ];
             $result[] = [$request];
         }

@@ -205,9 +205,9 @@ class TwitterOAuth extends Config
         $url = sprintf('%s/%s', self::API_HOST, $path);
         $request = Request::fromConsumerAndToken(
             $this->consumer,
-            $this->token,
             $method,
             $url,
+            $this->token,
             $parameters,
         );
         $authorization =
@@ -387,7 +387,9 @@ class TwitterOAuth extends Config
             ['jsonPayload' => false],
         );
         if (!property_exists($init, 'media_id_string')) {
-            throw new TwitterOAuthException('Missing "media_id_string"');
+            throw new TwitterOAuthException(
+                $init->errors[0]->message ?? 'Missing "media_id_string"',
+            );
         }
         // Append
         $segmentIndex = 0;
@@ -606,9 +608,9 @@ class TwitterOAuth extends Config
     ) {
         $request = Request::fromConsumerAndToken(
             $this->consumer,
-            $this->token,
             $method,
             $url,
+            $this->token,
             $parameters,
             $options,
         );
@@ -743,7 +745,6 @@ class TwitterOAuth extends Config
         if (curl_errno($curlHandle) > 0) {
             $error = curl_error($curlHandle);
             $errorNo = curl_errno($curlHandle);
-            curl_close($curlHandle);
             throw new TwitterOAuthException($error, $errorNo);
         }
 
@@ -754,8 +755,6 @@ class TwitterOAuth extends Config
         $responseBody = array_pop($parts);
         $responseHeader = array_pop($parts);
         $this->response->setHeaders($this->parseHeaders($responseHeader));
-
-        curl_close($curlHandle);
 
         return $responseBody;
     }

@@ -28,8 +28,6 @@ namespace Tests\YooKassa\Request\Payments\PaymentOrderData;
 
 use Exception;
 use Tests\YooKassa\AbstractTestCase;
-use Datetime;
-use YooKassa\Model\Metadata;
 use YooKassa\Request\Payments\PaymentOrderData\PaymentOrderUtilities;
 
 /**
@@ -170,8 +168,10 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance->setPaymentPurpose($value);
         self::assertNotNull($instance->getPaymentPurpose());
         self::assertNotNull($instance->payment_purpose);
+        self::assertNotNull($instance->paymentPurpose);
         self::assertEquals($value, $instance->getPaymentPurpose());
         self::assertEquals($value, $instance->payment_purpose);
+        self::assertEquals($value, $instance->paymentPurpose);
     }
 
     /**
@@ -405,12 +405,15 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getPaymentPeriod());
         self::assertEmpty($instance->payment_period);
+        self::assertEmpty($instance->paymentPeriod);
         $instance->setPaymentPeriod($value);
         self::assertEquals($value, is_array($value) ? $instance->getPaymentPeriod()->toArray() : $instance->getPaymentPeriod());
         self::assertEquals($value, is_array($value) ? $instance->payment_period->toArray() : $instance->payment_period);
+        self::assertEquals($value, is_array($value) ? $instance->paymentPeriod->toArray() : $instance->paymentPeriod);
         if (!empty($value)) {
             self::assertNotNull($instance->getPaymentPeriod());
             self::assertNotNull($instance->payment_period);
+            self::assertNotNull($instance->paymentPeriod);
         }
     }
 
@@ -463,18 +466,23 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getPaymentDocumentId());
         self::assertEmpty($instance->payment_document_id);
+        self::assertEmpty($instance->paymentDocumentId);
         $instance->setPaymentDocumentId($value);
         self::assertEquals($value, $instance->getPaymentDocumentId());
         self::assertEquals($value, $instance->payment_document_id);
+        self::assertEquals($value, $instance->paymentDocumentId);
         if (!empty($value)) {
             self::assertNotNull($instance->getPaymentDocumentId());
             self::assertNotNull($instance->payment_document_id);
+            self::assertNotNull($instance->paymentDocumentId);
             self::assertTrue($instance->hasPaymentDocumentId());
             self::assertTrue($instance->validate());
             self::assertLessThanOrEqual(18, is_string($instance->getPaymentDocumentId()) ? mb_strlen($instance->getPaymentDocumentId()) : $instance->getPaymentDocumentId());
             self::assertLessThanOrEqual(18, is_string($instance->payment_document_id) ? mb_strlen($instance->payment_document_id) : $instance->payment_document_id);
+            self::assertLessThanOrEqual(18, is_string($instance->paymentDocumentId) ? mb_strlen($instance->paymentDocumentId) : $instance->paymentDocumentId);
             self::assertGreaterThanOrEqual(18, is_string($instance->getPaymentDocumentId()) ? mb_strlen($instance->getPaymentDocumentId()) : $instance->getPaymentDocumentId());
             self::assertGreaterThanOrEqual(18, is_string($instance->payment_document_id) ? mb_strlen($instance->payment_document_id) : $instance->payment_document_id);
+            self::assertGreaterThanOrEqual(18, is_string($instance->paymentDocumentId) ? mb_strlen($instance->paymentDocumentId) : $instance->paymentDocumentId);
         }
     }
 
@@ -527,20 +535,26 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getPaymentDocumentNumber());
         self::assertEmpty($instance->payment_document_number);
+        self::assertEmpty($instance->paymentDocumentNumber);
         $instance->setPaymentDocumentNumber($value);
         self::assertEquals($value, $instance->getPaymentDocumentNumber());
         self::assertEquals($value, $instance->payment_document_number);
+        self::assertEquals($value, $instance->paymentDocumentNumber);
         if (!empty($value)) {
             self::assertNotNull($instance->getPaymentDocumentNumber());
             self::assertNotNull($instance->payment_document_number);
+            self::assertNotNull($instance->paymentDocumentNumber);
             self::assertTrue($instance->hasPaymentDocumentNumber());
             self::assertTrue($instance->validate());
             self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->getPaymentDocumentNumber());
             self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->payment_document_number);
+            self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->paymentDocumentNumber);
             self::assertLessThanOrEqual(30, is_string($instance->getPaymentDocumentNumber()) ? mb_strlen($instance->getPaymentDocumentNumber()) : $instance->getPaymentDocumentNumber());
             self::assertLessThanOrEqual(30, is_string($instance->payment_document_number) ? mb_strlen($instance->payment_document_number) : $instance->payment_document_number);
+            self::assertLessThanOrEqual(30, is_string($instance->paymentDocumentNumber) ? mb_strlen($instance->paymentDocumentNumber) : $instance->paymentDocumentNumber);
             self::assertGreaterThanOrEqual(1, is_string($instance->getPaymentDocumentNumber()) ? mb_strlen($instance->getPaymentDocumentNumber()) : $instance->getPaymentDocumentNumber());
             self::assertGreaterThanOrEqual(1, is_string($instance->payment_document_number) ? mb_strlen($instance->payment_document_number) : $instance->payment_document_number);
+            self::assertGreaterThanOrEqual(1, is_string($instance->paymentDocumentNumber) ? mb_strlen($instance->paymentDocumentNumber) : $instance->paymentDocumentNumber);
         }
     }
 
@@ -593,20 +607,26 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getAccountNumber());
         self::assertEmpty($instance->account_number);
+        self::assertEmpty($instance->accountNumber);
         $instance->setAccountNumber($value);
         self::assertEquals($value, $instance->getAccountNumber());
         self::assertEquals($value, $instance->account_number);
+        self::assertEquals($value, $instance->accountNumber);
         if (!empty($value)) {
             self::assertNotNull($instance->getAccountNumber());
             self::assertNotNull($instance->account_number);
+            self::assertNotNull($instance->accountNumber);
             self::assertTrue($instance->hasAccountNumber());
             self::assertTrue($instance->validate());
             self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->getAccountNumber());
             self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->account_number);
+            self::assertMatchesRegularExpression("/^[0-9а-яА-Яa-zA-Z]{1,30}$/u", $instance->accountNumber);
             self::assertLessThanOrEqual(30, is_string($instance->getAccountNumber()) ? mb_strlen($instance->getAccountNumber()) : $instance->getAccountNumber());
             self::assertLessThanOrEqual(30, is_string($instance->account_number) ? mb_strlen($instance->account_number) : $instance->account_number);
+            self::assertLessThanOrEqual(30, is_string($instance->accountNumber) ? mb_strlen($instance->accountNumber) : $instance->accountNumber);
             self::assertGreaterThanOrEqual(1, is_string($instance->getAccountNumber()) ? mb_strlen($instance->getAccountNumber()) : $instance->getAccountNumber());
             self::assertGreaterThanOrEqual(1, is_string($instance->account_number) ? mb_strlen($instance->account_number) : $instance->account_number);
+            self::assertGreaterThanOrEqual(1, is_string($instance->accountNumber) ? mb_strlen($instance->accountNumber) : $instance->accountNumber);
         }
     }
 
@@ -659,18 +679,23 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getUnifiedAccountNumber());
         self::assertEmpty($instance->unified_account_number);
+        self::assertEmpty($instance->unifiedAccountNumber);
         $instance->setUnifiedAccountNumber($value);
         self::assertEquals($value, $instance->getUnifiedAccountNumber());
         self::assertEquals($value, $instance->unified_account_number);
+        self::assertEquals($value, $instance->unifiedAccountNumber);
         if (!empty($value)) {
             self::assertNotNull($instance->getUnifiedAccountNumber());
             self::assertNotNull($instance->unified_account_number);
+            self::assertNotNull($instance->unifiedAccountNumber);
             self::assertTrue($instance->hasUnifiedAccountNumber());
             self::assertTrue($instance->validate());
             self::assertLessThanOrEqual(10, is_string($instance->getUnifiedAccountNumber()) ? mb_strlen($instance->getUnifiedAccountNumber()) : $instance->getUnifiedAccountNumber());
             self::assertLessThanOrEqual(10, is_string($instance->unified_account_number) ? mb_strlen($instance->unified_account_number) : $instance->unified_account_number);
+            self::assertLessThanOrEqual(10, is_string($instance->unifiedAccountNumber) ? mb_strlen($instance->unifiedAccountNumber) : $instance->unifiedAccountNumber);
             self::assertGreaterThanOrEqual(10, is_string($instance->getUnifiedAccountNumber()) ? mb_strlen($instance->getUnifiedAccountNumber()) : $instance->getUnifiedAccountNumber());
             self::assertGreaterThanOrEqual(10, is_string($instance->unified_account_number) ? mb_strlen($instance->unified_account_number) : $instance->unified_account_number);
+            self::assertGreaterThanOrEqual(10, is_string($instance->unifiedAccountNumber) ? mb_strlen($instance->unifiedAccountNumber) : $instance->unifiedAccountNumber);
         }
     }
 
@@ -723,18 +748,23 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         $instance = $this->getTestInstance();
         self::assertEmpty($instance->getServiceId());
         self::assertEmpty($instance->service_id);
+        self::assertEmpty($instance->serviceId);
         $instance->setServiceId($value);
         self::assertEquals($value, $instance->getServiceId());
         self::assertEquals($value, $instance->service_id);
+        self::assertEquals($value, $instance->serviceId);
         if (!empty($value)) {
             self::assertNotNull($instance->getServiceId());
             self::assertNotNull($instance->service_id);
+            self::assertNotNull($instance->serviceId);
             self::assertTrue($instance->hasServiceId());
             self::assertTrue($instance->validate());
             self::assertLessThanOrEqual(13, is_string($instance->getServiceId()) ? mb_strlen($instance->getServiceId()) : $instance->getServiceId());
             self::assertLessThanOrEqual(13, is_string($instance->service_id) ? mb_strlen($instance->service_id) : $instance->service_id);
+            self::assertLessThanOrEqual(13, is_string($instance->serviceId) ? mb_strlen($instance->serviceId) : $instance->serviceId);
             self::assertGreaterThanOrEqual(13, is_string($instance->getServiceId()) ? mb_strlen($instance->getServiceId()) : $instance->getServiceId());
             self::assertGreaterThanOrEqual(13, is_string($instance->service_id) ? mb_strlen($instance->service_id) : $instance->service_id);
+            self::assertGreaterThanOrEqual(13, is_string($instance->serviceId) ? mb_strlen($instance->serviceId) : $instance->serviceId);
         }
     }
 

@@ -10,8 +10,8 @@
 | ---- | ------- |
 | [\YooKassa\Request\Payments\PaymentOrderData\AbstractPaymentOrder](../classes/YooKassa-Request-Payments-PaymentOrderData-AbstractPaymentOrder.md) | Класс, представляющий модель PaymentOrder. |
 | [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderFactory](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderFactory.md) | Класс, представляющий модель PaymentOrderFactory. |
-| [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipient](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipient.md) | Класс, представляющий модель PaymentOrderRecipient. |
-| [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientBank](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipientBank.md) | Класс, представляющий модель PaymentOrderRecipientBank. |
+| [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientBankUtilities](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipientBankUtilities.md) | Класс, представляющий модель PaymentOrderRecipientBank. |
+| [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderRecipientUtilities](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderRecipientUtilities.md) | Класс, представляющий модель PaymentOrderRecipient. |
 | [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderType](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderType.md) | Класс, представляющий модель PaymentOrderType. |
 | [\YooKassa\Request\Payments\PaymentOrderData\PaymentOrderUtilities](../classes/YooKassa-Request-Payments-PaymentOrderData-PaymentOrderUtilities.md) | Класс, представляющий модель PaymentOrderUtilities. |
 
@@ -30,6 +30,6 @@
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

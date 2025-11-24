@@ -135,6 +135,7 @@ class CreateRefundRequestSerializerTest extends TestCase
                             'phone' => Random::str(10, '0123456789'),
                         ],
                         'tax_system_code' => Random::int(1, 6),
+                        'send' => true,
                     ],
                     'sources' => [
                         new Source([
@@ -182,6 +183,7 @@ class CreateRefundRequestSerializerTest extends TestCase
                             'email' => 'johndoe@yoomoney.ru',
                         ],
                         'tax_system_code' => Random::int(1, 6),
+                        'send' => true,
                     ],
                     'sources' => [
                         new Source([
@@ -232,6 +234,7 @@ class CreateRefundRequestSerializerTest extends TestCase
                         'phone' => Random::str(10, '0123456789'),
                     ],
                     'tax_system_code' => Random::int(1, 6),
+                    'send' => true,
                 ],
                 'sources' => [
                     new Source([

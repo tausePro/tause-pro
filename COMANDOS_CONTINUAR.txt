@@ -1,0 +1,39 @@
+# 🔧 COMANDOS PARA CONTINUAR (Copia y Pega)
+
+# 1. Arreglar permisos primero
+sudo chown -R ubuntu:ubuntu /var/www/magicai
+sudo mkdir -p storage/framework/{cache,sessions,views,testing} storage/logs bootstrap/cache
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# 2. Crear .env (ahora con permisos correctos)
+cat > .env << 'ENVEOF'
+APP_NAME=MagicAI
+APP_ENV=staging
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://test.tause.pro
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=magicai_staging
+DB_USERNAME=magicai_staging
+DB_PASSWORD=staging_password_2024
+ENVEOF
+
+# 3. Generar APP_KEY
+php artisan key:generate --force
+
+# 4. Limpiar cache
+php artisan config:clear
+php artisan cache:clear
+
+# 5. Verificar
+php artisan --version
+curl -I http://localhost
+
+# ✅ Listo! Ahora prueba en navegador: http://test.tause.pro
+# La BD se configurará en el wizard como dijiste
+
+

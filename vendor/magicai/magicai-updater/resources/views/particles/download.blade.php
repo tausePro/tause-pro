@@ -39,7 +39,6 @@
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 url: "{{ route('updater.upgrade') }}",
@@ -48,9 +47,7 @@
                     _token: '{{ csrf_token() }}',
                     _method: 'POST',
                 },
-                // Dosya yüklemesi varsa aşağıdaki ayarları eklemelisiniz
-                processData: false,
-                contentType: false,
+                timeout: 300000, // 5 minutes timeout
                 success: function (response) {
 
                     if(response.type === 'success')

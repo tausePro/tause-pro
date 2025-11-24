@@ -103,6 +103,9 @@ class CreateCaptureRequestSerializerTest extends TestCase
             if (!empty($options['taxSystemCode'])) {
                 $expected['receipt']['tax_system_code'] = $options['taxSystemCode'];
             }
+            if (!empty($options['send'])) {
+                $expected['receipt']['send'] = $options['send'];
+            }
         } elseif (!empty($options['receipt'])) {
             $expected['receipt'] = $options['receipt'];
             if (!empty($expected['receipt']['phone'])) {
@@ -198,6 +201,7 @@ class CreateCaptureRequestSerializerTest extends TestCase
                             ],
                         ],
                     ],
+                    'send' => true,
                 ],
             ],
             [
@@ -255,6 +259,7 @@ class CreateCaptureRequestSerializerTest extends TestCase
                             'inn' => Random::str(12, 12, '1234567890'),
                         ],
                         'tax_system_code' => Random::int(1, 6),
+                        'send' => true,
                     ],
                     'deal' => [
                         'id' => Random::str(36, 50),

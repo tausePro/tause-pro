@@ -297,6 +297,6 @@ protected parseErrorBody(array $errorData) : void
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

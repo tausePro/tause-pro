@@ -50,6 +50,8 @@ use YooKassa\Model\AmountInterface;
  * @property ListObjectInterface|ReceiptItemInterface[] $shipping_items Список товаров в заказе, являющихся доставкой
  * @property int $taxSystemCode Код системы налогообложения. Число 1-6.
  * @property int $tax_system_code Код системы налогообложения. Число 1-6.
+ * @property bool $internet Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+ * @property int $timezone Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
  * @property AdditionalUserProps $additionalUserProps Дополнительный реквизит пользователя (тег в 54 ФЗ — 1084)
  * @property AdditionalUserProps $additional_user_props Дополнительный реквизит пользователя (тег в 54 ФЗ — 1084)
  * @property ListObjectInterface|IndustryDetails[] $receiptIndustryDetails Отраслевой реквизит чека (тег в 54 ФЗ — 1261)
@@ -74,6 +76,40 @@ class Receipt extends AbstractObject implements ReceiptInterface
     #[Assert\AllType(ReceiptItem::class)]
     #[Assert\Type(ListObject::class)]
     private ?ListObject $_items = null;
+
+    /**
+     * Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+     *
+     * Возможные значения:
+     * * `true` — оплата прошла онлайн, через интернет (например, на вашем сайте или в приложении);
+     * * `false` — оплата прошла офлайн, при личном взаимодействии (например, в торговой точке или при встрече с курьером).
+     *
+     * По умолчанию `true`. Если вы принимаете платежи офлайн, передайте в запросе значение `false`.
+     *
+     * @var bool|null
+     */
+    #[Assert\Type('bool')]
+    private ?bool $_internet = null;
+
+    /**
+     * Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
+     * Указывается, только если в чеке есть товары, которые подлежат обязательной маркировке (в `items.mark_code_info` передается параметр `gs_1m`, `short` или `fur`).
+     *
+     * Перечень возможных значений:
+     * * [для Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/parameters-values#timezone)
+     * * [для сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/parameters-values#timezone)
+     *
+     * @var int|null
+     */
+    #[Assert\Type('int')]
+    #[Assert\GreaterThanOrEqual(1)]
+    #[Assert\LessThanOrEqual(11)]
+    private ?int $_timezone = null;
+
+    /** @var bool Признак отложенной отправки чека. */
+    #[Assert\NotNull]
+    #[Assert\Type('bool')]
+    private bool $_send = true;
 
     /**
      * @var SettlementInterface[]|ListObjectInterface|null Массив оплат, обеспечивающих выдачу товара
@@ -212,6 +248,29 @@ class Receipt extends AbstractObject implements ReceiptInterface
             $this->getShippingItems()->add($value);
         }
         $this->getItems()->add($value);
+    }
+
+    /**
+     * Возвращает признак отложенной отправки чека.
+     *
+     * @return bool Признак отложенной отправки чека
+     */
+    public function getSend(): bool
+    {
+        return $this->_send;
+    }
+
+    /**
+     * Устанавливает признак отложенной отправки чека.
+     *
+     * @param bool $send Признак отложенной отправки чека
+     *
+     * @return self
+     */
+    public function setSend(?bool $send = null): self
+    {
+        $this->_send = $this->validatePropertyValue('_send', $send);
+        return $this;
     }
 
     /**
@@ -377,6 +436,52 @@ class Receipt extends AbstractObject implements ReceiptInterface
     public function setReceiptOperationalDetails(mixed $receipt_operational_details = null): self
     {
         $this->_receipt_operational_details = $this->validatePropertyValue('_receipt_operational_details', $receipt_operational_details);
+        return $this;
+    }
+
+    /**
+     * Возвращает признак проведения платежа в интернете.
+     *
+     * @return bool|null Признак проведения платежа в интернете
+     */
+    public function getInternet(): ?bool
+    {
+        return $this->_internet;
+    }
+
+    /**
+     * Устанавливает признак проведения платежа в интернете.
+     *
+     * @param bool|null $internet Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+     *
+     * @return self
+     */
+    public function setInternet(bool $internet = null): self
+    {
+        $this->_internet = $this->validatePropertyValue('_internet', $internet);
+        return $this;
+    }
+
+    /**
+     * Возвращает номер часовой зоны.
+     *
+     * @return int|null Номер часовой зоны
+     */
+    public function getTimezone(): ?int
+    {
+        return $this->_timezone;
+    }
+
+    /**
+     * Устанавливает номер часовой зоны.
+     *
+     * @param int|null $timezone Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
+     *
+     * @return self
+     */
+    public function setTimezone(?int $timezone = null): self
+    {
+        $this->_timezone = $this->validatePropertyValue('_timezone', $timezone);
         return $this;
     }
 

@@ -10,6 +10,7 @@
 * [\YooKassa\Request\Payments\PaymentData](../namespaces/yookassa-request-payments-paymentdata.md)
 * [\YooKassa\Request\Payments\PaymentOrderData](../namespaces/yookassa-request-payments-paymentorderdata.md)
 * [\YooKassa\Request\Payments\ReceiverData](../namespaces/yookassa-request-payments-receiverdata.md)
+* [\YooKassa\Request\Payments\StatementData](../namespaces/yookassa-request-payments-statementdata.md)
 
 ### Interfaces
 
@@ -69,6 +70,6 @@
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

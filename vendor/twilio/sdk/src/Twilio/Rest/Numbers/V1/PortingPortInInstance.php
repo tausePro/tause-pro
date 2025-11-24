@@ -41,6 +41,8 @@ use Twilio\Deserialize;
  * @property string|null $autoCancelApprovalNumbers
  * @property string[]|null $documents
  * @property \DateTime|null $dateCreated
+ * @property int $supportTicketId
+ * @property string|null $signatureRequestUrl
  */
 class PortingPortInInstance extends InstanceResource
 {
@@ -73,6 +75,8 @@ class PortingPortInInstance extends InstanceResource
             'autoCancelApprovalNumbers' => Values::array_get($payload, 'auto_cancel_approval_numbers'),
             'documents' => Values::array_get($payload, 'documents'),
             'dateCreated' => Deserialize::dateTime(Values::array_get($payload, 'date_created')),
+            'supportTicketId' => Values::array_get($payload, 'support_ticket_id'),
+            'signatureRequestUrl' => Values::array_get($payload, 'signature_request_url'),
         ];
 
         $this->solution = ['portInRequestSid' => $portInRequestSid ?: $this->properties['portInRequestSid'], ];

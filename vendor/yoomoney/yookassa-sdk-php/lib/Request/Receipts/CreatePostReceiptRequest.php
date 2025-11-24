@@ -57,14 +57,16 @@ use YooKassa\Validator\Constraints as Assert;
  * @property bool $send Формирование чека в онлайн-кассе сразу после создания объекта чека. Сейчас можно передать только значение ~`true`.
  * @property int $taxSystemCode Система налогообложения магазина (тег в 54 ФЗ — 1055).
  * @property int $tax_system_code Система налогообложения магазина (тег в 54 ФЗ — 1055).
+ * @property bool $internet Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+ * @property int $timezone Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
  * @property AdditionalUserProps $additionalUserProps Дополнительный реквизит пользователя.
  * @property AdditionalUserProps $additional_user_props Дополнительный реквизит пользователя.
- * @property array $receiptIndustryDetails Отраслевой реквизит предмета расчета.
- * @property array $receipt_industry_details Отраслевой реквизит предмета расчета.
+ * @property IndustryDetails[]|ListObjectInterface $receiptIndustryDetails Отраслевой реквизит предмета расчета.
+ * @property IndustryDetails[]|ListObjectInterface $receipt_industry_details Отраслевой реквизит предмета расчета.
  * @property OperationalDetails $receiptOperationalDetails Операционный реквизит чека.
  * @property OperationalDetails $receipt_operational_details Операционный реквизит чека.
- * @property array $items Список товаров в заказе: для [Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/basics) — не более 80 товаров, для [сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/basics) — не более 100 товаров.
- * @property array $settlements Список платежей
+ * @property ReceiptItemInterface[]|ListObjectInterface $items Список товаров в заказе: для [Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/basics) — не более 80 товаров, для [сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/basics) — не более 100 товаров.
+ * @property SettlementInterface[]|ListObjectInterface $settlements Список платежей
  * @property string $objectId Идентификатор объекта оплаты
  * @property string $object_id Идентификатор объекта оплаты
  * @property string $objectType Тип объекта: приход "payment" или возврат "refund".
@@ -119,6 +121,35 @@ class CreatePostReceiptRequest extends AbstractRequest implements CreatePostRece
     #[Assert\AllType(ReceiptItem::class)]
     #[Assert\Type(ListObject::class)]
     private ?ListObject $_items = null;
+
+    /**
+     * Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+     *
+     * Возможные значения:
+     * * `true` — оплата прошла онлайн, через интернет (например, на вашем сайте или в приложении);
+     * * `false` — оплата прошла офлайн, при личном взаимодействии (например, в торговой точке или при встрече с курьером).
+     *
+     * По умолчанию `true`. Если вы принимаете платежи офлайн, передайте в запросе значение `false`.
+     *
+     * @var bool|null
+     */
+    #[Assert\Type('bool')]
+    private ?bool $_internet = null;
+
+    /**
+     * Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
+     * Указывается, только если в чеке есть товары, которые подлежат обязательной маркировке (в `items.mark_code_info` передается параметр `gs_1m`, `short` или `fur`).
+     *
+     * Перечень возможных значений:
+     * * [для Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/parameters-values#timezone)
+     * * [для сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/parameters-values#timezone)
+     *
+     * @var int|null
+     */
+    #[Assert\Type('int')]
+    #[Assert\GreaterThanOrEqual(1)]
+    #[Assert\LessThanOrEqual(11)]
+    private ?int $_timezone = null;
 
     /** @var SettlementInterface[]|ListObjectInterface Список платежей */
     #[Assert\NotBlank]
@@ -457,6 +488,52 @@ class CreatePostReceiptRequest extends AbstractRequest implements CreatePostRece
     public function setOnBehalfOf(?string $on_behalf_of = null): self
     {
         $this->_on_behalf_of = $this->validatePropertyValue('_on_behalf_of', $on_behalf_of);
+        return $this;
+    }
+
+    /**
+     * Возвращает признак проведения платежа в интернете.
+     *
+     * @return bool|null Признак проведения платежа в интернете
+     */
+    public function getInternet(): ?bool
+    {
+        return $this->_internet;
+    }
+
+    /**
+     * Устанавливает признак проведения платежа в интернете.
+     *
+     * @param bool|null $internet Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+     *
+     * @return self
+     */
+    public function setInternet(bool $internet = null): self
+    {
+        $this->_internet = $this->validatePropertyValue('_internet', $internet);
+        return $this;
+    }
+
+    /**
+     * Возвращает номер часовой зоны.
+     *
+     * @return int|null Номер часовой зоны
+     */
+    public function getTimezone(): ?int
+    {
+        return $this->_timezone;
+    }
+
+    /**
+     * Устанавливает номер часовой зоны.
+     *
+     * @param int|null $timezone Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
+     *
+     * @return self
+     */
+    public function setTimezone(?int $timezone = null): self
+    {
+        $this->_timezone = $this->validatePropertyValue('_timezone', $timezone);
         return $this;
     }
 

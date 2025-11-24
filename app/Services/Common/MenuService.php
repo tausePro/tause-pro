@@ -314,6 +314,23 @@ class MenuService
                 ],
                 'show_condition' => Route::has('dashboard.chatbot.chatbot-customer.index'),
             ],
+            'brainbrand_center' => [
+                'parent_key'       => null,
+                'key'              => 'brainbrand_center',
+                'route'            => 'dashboard.user.brain-brand.index',
+                'label'            => 'BrainBrand',
+                'icon'             => 'tabler-brain',
+                'svg'              => null,
+                'order'            => 5,
+                'is_active'        => true,
+                'params'           => [],
+                'type'             => 'item',
+                'extension'        => true,
+                'active_condition' => [
+                    'dashboard.user.brain-brand.*',
+                ],
+                'show_condition' => Route::has('dashboard.user.brain-brand.index'),
+            ],
             'ext_voice_chatbot' => [
                 'parent_key'       => null,
                 'key'              => 'ext_voice_chatbot',

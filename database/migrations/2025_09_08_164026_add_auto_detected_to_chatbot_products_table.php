@@ -11,8 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('ext_chatbot_products')) {
+            return;
+        }
+
         Schema::table('ext_chatbot_products', function (Blueprint $table) {
-            $table->boolean('auto_detected')->default(false)->after('availability');
+            if (! Schema::hasColumn('ext_chatbot_products', 'auto_detected')) {
+                $table->boolean('auto_detected')->default(false)->after('availability');
+            }
         });
     }
 
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('ext_chatbot_products')) {
+            return;
+        }
+
         Schema::table('ext_chatbot_products', function (Blueprint $table) {
-            $table->dropColumn('auto_detected');
+            if (Schema::hasColumn('ext_chatbot_products', 'auto_detected')) {
+                $table->dropColumn('auto_detected');
+            }
         });
     }
 };

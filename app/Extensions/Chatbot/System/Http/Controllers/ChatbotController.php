@@ -166,19 +166,19 @@ class ChatbotController extends Controller
             ->get()
             ->map(function ($trigger) {
                 return [
-                    'type' => $trigger->trigger_type,
-                    'name' => $trigger->name,
-                    'message' => $trigger->message_template,
-                    'enabled' => $trigger->is_active,
-                    'cooldown' => $trigger->cooldown_minutes,
-                    'priority' => $trigger->priority,
-                    'category' => 'universal',
+                    'type'        => $trigger->trigger_type,
+                    'name'        => $trigger->name,
+                    'message'     => $trigger->message_template,
+                    'enabled'     => $trigger->is_active,
+                    'cooldown'    => $trigger->cooldown_minutes,
+                    'priority'    => $trigger->priority,
+                    'category'    => 'universal',
                     'description' => $this->getTriggerDescription($trigger->trigger_type),
                 ];
             });
 
         return response()->json([
-            'triggers' => $triggers
+            'triggers' => $triggers,
         ]);
     }
 
@@ -203,26 +203,26 @@ class ChatbotController extends Controller
         foreach ($triggersData as $triggerData) {
             ChatbotTrigger::updateOrCreate(
                 [
-                    'chatbot_id' => $chatbot->id,
-                    'trigger_type' => $triggerData['type']
+                    'chatbot_id'   => $chatbot->id,
+                    'trigger_type' => $triggerData['type'],
                 ],
                 [
-                    'name' => $this->getTriggerName($triggerData['type']),
+                    'name'             => $this->getTriggerName($triggerData['type']),
                     'message_template' => $triggerData['message'],
-                    'is_active' => $triggerData['enabled'],
-                    'action' => 'show_message',
-                    'priority' => $triggerData['priority'] ?? 3,
+                    'is_active'        => $triggerData['enabled'],
+                    'action'           => 'show_message',
+                    'priority'         => $triggerData['priority'] ?? 3,
                     'cooldown_minutes' => $triggerData['cooldown'] ?? 5,
-                    'frequency_limit' => 3,
-                    'conditions' => [],
-                    'display_config' => ['position' => 'bottom-right', 'animation' => 'slide-up'],
+                    'frequency_limit'  => 3,
+                    'conditions'       => [],
+                    'display_config'   => ['position' => 'bottom-right', 'animation' => 'slide-up'],
                 ]
             );
         }
 
         return response()->json([
             'message' => 'Triggers saved successfully',
-            'type' => 'success'
+            'type'    => 'success',
         ]);
     }
 
@@ -232,12 +232,12 @@ class ChatbotController extends Controller
     private function getTriggerName(string $type): string
     {
         $names = [
-            'welcome_30s' => 'Welcome After 30 Seconds',
-            'exit_intent' => 'Exit Intent Offer',
-            'page_dwell_2min' => 'Long Page Dwell (2min)',
+            'welcome_30s'            => 'Welcome After 30 Seconds',
+            'exit_intent'            => 'Exit Intent Offer',
+            'page_dwell_2min'        => 'Long Page Dwell (2min)',
             'first_visitor_discount' => 'First Visitor Welcome',
-            'cart_abandonment' => 'Cart Abandonment',
-            'wellness_consultation' => 'Wellness Consultation',
+            'cart_abandonment'       => 'Cart Abandonment',
+            'wellness_consultation'  => 'Wellness Consultation',
         ];
 
         return $names[$type] ?? ucfirst(str_replace('_', ' ', $type));
@@ -249,12 +249,12 @@ class ChatbotController extends Controller
     private function getTriggerDescription(string $type): string
     {
         $descriptions = [
-            'welcome_30s' => 'Greet visitors who stay on the site for 30 seconds',
-            'exit_intent' => 'Show offer when user attempts to leave',
-            'page_dwell_2min' => 'Offer help after 2 minutes on the same page',
+            'welcome_30s'            => 'Greet visitors who stay on the site for 30 seconds',
+            'exit_intent'            => 'Show offer when user attempts to leave',
+            'page_dwell_2min'        => 'Offer help after 2 minutes on the same page',
             'first_visitor_discount' => 'Welcome message for first-time visitors',
-            'cart_abandonment' => 'Recover abandoned carts',
-            'wellness_consultation' => 'Offer personalized wellness consultation',
+            'cart_abandonment'       => 'Recover abandoned carts',
+            'wellness_consultation'  => 'Offer personalized wellness consultation',
         ];
 
         return $descriptions[$type] ?? 'Proactive trigger';
@@ -269,24 +269,36 @@ class ChatbotController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
+        // Si sales_agent_enabled está activo pero no existe el Sales Agent, crearlo
+        if ($chatbot->sales_agent_enabled) {
+            $salesAgentExists = ChatbotAgent::where('chatbot_id', $chatbot->id)
+                ->where('agent_type', 'sales')
+                ->exists();
+
+            if (! $salesAgentExists) {
+                // Usar el servicio para crear el Sales Agent
+                $this->service->ensureSalesAgent($chatbot);
+            }
+        }
+
         $agents = ChatbotAgent::where('chatbot_id', $chatbot->id)
             ->orderBy('priority', 'desc')
             ->get()
             ->map(function ($agent) {
                 return [
-                    'id' => $agent->id,
-                    'agent_type' => $agent->agent_type,
-                    'name' => $agent->name,
-                    'description' => $agent->description,
-                    'is_enabled' => $agent->is_enabled,
-                    'priority' => $agent->priority,
-                    'triggers' => $agent->triggers ?? [],
+                    'id'            => $agent->id,
+                    'agent_type'    => $agent->agent_type,
+                    'name'          => $agent->name,
+                    'description'   => $agent->description,
+                    'is_enabled'    => $agent->is_enabled,
+                    'priority'      => $agent->priority,
+                    'triggers'      => $agent->triggers ?? [],
                     'configuration' => $agent->configuration ?? [],
                 ];
             });
 
         return response()->json([
-            'agents' => $agents
+            'agents' => $agents,
         ]);
     }
 }

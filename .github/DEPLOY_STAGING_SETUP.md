@@ -107,3 +107,4 @@ tail -50 storage/logs/laravel.log
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [SSH Action](https://github.com/appleboy/ssh-action)
 
+

@@ -44,6 +44,8 @@ use YooKassa\Model\Receipt\SettlementInterface;
  * @property string $status Статус доставки данных для чека в онлайн-кассу ("pending", "succeeded" или "canceled").
  * @property int $taxSystemCode Код системы налогообложения. Число 1-6.
  * @property int $tax_system_code Код системы налогообложения. Число 1-6.
+ * @property bool $internet Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+ * @property int $timezone Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
  * @property ReceiptResponseItemInterface[] $items Список товаров в заказе: для [Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/basics) — не более 80 товаров, для [сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/basics) — не более 100 товаров.
  * @property SettlementInterface[] $settlements Перечень совершенных расчетов.
  */

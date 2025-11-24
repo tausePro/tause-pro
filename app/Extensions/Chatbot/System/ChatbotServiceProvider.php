@@ -109,6 +109,7 @@ class ChatbotServiceProvider extends ServiceProvider implements ExtensionRegiste
                     ->controller(ChatbotFrameController::class)
                     ->group(function (Router $router) {
                         $router->get('chatbot/{chatbot:uuid}/frame', 'frame')->name('chatbot.frame');
+                        $router->get('chatbot/avatar/{path}', 'serveAvatar')->where('path', '.*')->name('chatbot.avatar');
                     });
             })
             ->group([

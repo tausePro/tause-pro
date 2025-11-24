@@ -705,6 +705,25 @@
                             this.$refs.sendBtn.classList.remove('active');
                             return;
                         }
+                        
+                        // Check if Sales Agent should auto-activate purchase flow for specific product mention
+                        if (window.SalesAgent && window.SalesAgent.enabled && window.SalesAgent.productsLoaded) {
+                            const detectedProduct = window.SalesAgent.detectSpecificProductInMessage(messageString);
+                            if (detectedProduct) {
+                                console.log('🎯 Sales Agent: Detectado producto específico en mensaje:', detectedProduct.name);
+                                // Store the user message to send after purchase flow starts
+                                const originalMessage = messageString;
+                                this.$refs.message.value = '';
+                                this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
+                                this.$refs.sendBtn.classList.remove('active');
+                                
+                                // Start purchase flow automatically
+                                setTimeout(() => {
+                                    window.SalesAgent.startPurchase(detectedProduct.id);
+                                }, 300);
+                                return;
+                            }
+                        }
                     @endif
 
                     this.$refs.message.value = '';
@@ -969,6 +988,25 @@
                                     // Inyectar productos del backend en el Sales Agent Component
                                     window.SalesAgent.products = salesAgent.data.products;
                                     window.SalesAgent.productsLoaded = true;
+                                    
+                                    // Check if user message contains specific product reference
+                                    const userMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="user"]');
+                                    let lastUserMessage = null;
+                                    if (userMessages.length > 0) {
+                                        lastUserMessage = userMessages[userMessages.length - 1];
+                                        const userMessageText = lastUserMessage.textContent.trim();
+                                        
+                                        // Detect specific product mention in user message
+                                        const detectedProduct = window.SalesAgent.detectSpecificProductInMessage(userMessageText);
+                                        if (detectedProduct) {
+                                            console.log('🎯 Sales Agent: Producto específico detectado en mensaje del usuario:', detectedProduct.name);
+                                            // Auto-activate purchase flow
+                                            setTimeout(() => {
+                                                window.SalesAgent.startPurchase(detectedProduct.id);
+                                            }, 500);
+                                            return; // Don't show product grid, go straight to purchase flow
+                                        }
+                                    }
                                     
                                     const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
                                     if (assistantMessages.length > 0) {

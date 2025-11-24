@@ -2,6 +2,8 @@
 
 namespace Sentry\Laravel;
 
+use Sentry\Logs\Logs;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Http\Kernel as HttpKernelInterface;
@@ -44,6 +46,8 @@ class ServiceProvider extends BaseServiceProvider
         'breadcrumbs',
         // We resolve the integrations through the container later, so we initially do not pass it to the SDK yet
         'integrations',
+        // We have this setting to allow us to capture the .env LOG_LEVEL for the sentry_logs channel
+        'logs_channel_level',
         // This is kept for backwards compatibility and can be dropped in a future breaking release
         'breadcrumbs.sql_bindings',
 
@@ -70,6 +74,7 @@ class ServiceProvider extends BaseServiceProvider
         Features\HttpClientIntegration::class,
         Features\FolioPackageIntegration::class,
         Features\NotificationsIntegration::class,
+        Features\PennantPackageIntegration::class,
         Features\LivewirePackageIntegration::class,
         Features\ConsoleSchedulingIntegration::class,
     ];
@@ -134,6 +139,8 @@ class ServiceProvider extends BaseServiceProvider
         $this->configureAndRegisterClient();
 
         $this->registerFeatures();
+
+        $this->registerLogChannels();
     }
 
     /**
@@ -157,6 +164,15 @@ class ServiceProvider extends BaseServiceProvider
 
             if (isset($userConfig['send_default_pii']) && $userConfig['send_default_pii'] !== false) {
                 $handler->subscribeAuthEvents($dispatcher);
+            }
+
+            if (isset($userConfig['enable_logs']) && $userConfig['enable_logs'] === true && method_exists($this->app, 'terminating')) {
+                // Listen to the terminating event to flush the logs before the application ends
+                // This ensures that all logs are sent to Sentry even if the application ends unexpectedly
+                // We need to check for method existence here for Lumen since this method was only introduced in Lumen 9.1.4
+                $this->app->terminating(static function () {
+                    Logs::getInstance()->flush();
+                });
             }
         } catch (BindingResolutionException $e) {
             // If we cannot resolve the event dispatcher we also cannot listen to events
@@ -182,6 +198,29 @@ class ServiceProvider extends BaseServiceProvider
             } catch (Throwable $e) {
                 // Ensure that features do not break the whole application
             }
+        }
+    }
+
+    /**
+     * Register the log channels.
+     */
+    protected function registerLogChannels(): void
+    {
+        $config = $this->app->make(Repository::class);
+
+        $logChannels = $config->get('logging.channels', []);
+
+        if (!array_key_exists('sentry', $logChannels)) {
+            $config->set('logging.channels.sentry', [
+                'driver' => 'sentry',
+            ]);
+        }
+
+        if (!array_key_exists('sentry_logs', $logChannels)) {
+            $config->set('logging.channels.sentry_logs', [
+                'driver' => 'sentry_logs',
+                'level' => $config->get('sentry.logs_channel_level', 'debug'),
+            ]);
         }
     }
 

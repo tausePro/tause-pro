@@ -252,6 +252,34 @@ class CreatePostReceiptRequestBuilder extends AbstractRequestBuilder
     }
 
     /**
+     * Устанавливает признак проведения платежа в интернете.
+     *
+     * @param bool|null $value Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет.
+     *
+     * @return self Инстанс билдера запросов
+     */
+    public function setInternet(?bool $value): self
+    {
+        $this->currentObject->setInternet($value);
+
+        return $this;
+    }
+
+    /**
+     * Устанавливает номер часовой зоны.
+     *
+     * @param int|null $value Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011).
+     *
+     * @return self Инстанс билдера запросов
+     */
+    public function setTimezone(?int $value): self
+    {
+        $this->currentObject->setTimezone($value);
+
+        return $this;
+    }
+
+    /**
      * Устанавливает Id объекта чека.
      *
      * @param string $value Id объекта чека

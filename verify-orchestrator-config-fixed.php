@@ -25,16 +25,16 @@ if ($chatbots->count() === 0) {
 } else {
     foreach ($chatbots as $chatbot) {
         echo "✅ ID: {$chatbot->id} | Nombre: " . ($chatbot->name ?: 'Sin nombre') . "\n";
-        echo "   - WooCommerce: " . ($chatbot->woocommerce_enabled ? '✅ Habilitado' : '❌ Deshabilitado') . "\n";
-        echo "   - Wompi: " . ($chatbot->wompi_enabled ? '✅ Habilitado' : '❌ Deshabilitado') . "\n";
-        
+        echo '   - WooCommerce: ' . ($chatbot->woocommerce_enabled ? '✅ Habilitado' : '❌ Deshabilitado') . "\n";
+        echo '   - Wompi: ' . ($chatbot->wompi_enabled ? '✅ Habilitado' : '❌ Deshabilitado') . "\n";
+
         // Keywords
         $keywords = $chatbot->sales_agent_keywords ?? [];
-        echo "   - Keywords: " . (empty($keywords) ? '⚠️  Ninguno configurado' : count($keywords) . " configurados") . "\n";
-        if (!empty($keywords)) {
-            echo "     " . implode(', ', array_slice($keywords, 0, 5)) . "\n";
+        echo '   - Keywords: ' . (empty($keywords) ? '⚠️  Ninguno configurado' : count($keywords) . ' configurados') . "\n";
+        if (! empty($keywords)) {
+            echo '     ' . implode(', ', array_slice($keywords, 0, 5)) . "\n";
         }
-        
+
         // Productos (usando availability en lugar de in_stock)
         $productsCount = DB::table('ext_chatbot_products')
             ->where('chatbot_id', $chatbot->id)
@@ -43,13 +43,13 @@ if ($chatbots->count() === 0) {
             ->where('chatbot_id', $chatbot->id)
             ->where('availability', 'in_stock')
             ->count();
-            
+
         echo "   - Productos: {$productsCount} total, {$productsAvailable} disponibles\n";
-        
+
         if ($productsAvailable === 0) {
             echo "   ⚠️  No hay productos disponibles. Sincroniza con WooCommerce o verifica availability.\n";
         }
-        
+
         echo "\n";
     }
 }
@@ -65,8 +65,8 @@ if (file_exists($frontendFile)) {
     $content = file_get_contents($frontendFile);
     $hasOrchestrator = strpos($content, 'ORQUESTADOR') !== false;
     echo "✅ frontend-ui-scripts.blade.php\n";
-    echo "   Orquestador: " . ($hasOrchestrator ? '✅ Presente' : '❌ Ausente') . "\n";
-    echo "   Tamaño: " . number_format(filesize($frontendFile)) . " bytes\n\n";
+    echo '   Orquestador: ' . ($hasOrchestrator ? '✅ Presente' : '❌ Ausente') . "\n";
+    echo '   Tamaño: ' . number_format(filesize($frontendFile)) . " bytes\n\n";
 } else {
     echo "❌ frontend-ui-scripts.blade.php - No encontrado\n\n";
 }
@@ -75,8 +75,8 @@ if (file_exists($salesAgentFile)) {
     $content = file_get_contents($salesAgentFile);
     $hasCommercialPhrases = strpos($content, 'commercialPhrases') !== false;
     echo "✅ sales-agent-component.blade.php\n";
-    echo "   Frases comerciales: " . ($hasCommercialPhrases ? '✅ Presente' : '❌ Ausente') . "\n";
-    echo "   Tamaño: " . number_format(filesize($salesAgentFile)) . " bytes\n\n";
+    echo '   Frases comerciales: ' . ($hasCommercialPhrases ? '✅ Presente' : '❌ Ausente') . "\n";
+    echo '   Tamaño: ' . number_format(filesize($salesAgentFile)) . " bytes\n\n";
 } else {
     echo "❌ sales-agent-component.blade.php - No encontrado\n\n";
 }
@@ -85,14 +85,14 @@ if (file_exists($salesAgentFile)) {
 if ($chatbots->count() > 0) {
     echo "\n3️⃣ Productos de Prueba:\n";
     echo "----------------------\n";
-    
+
     $testChatbot = $chatbots->first();
     $testProducts = DB::table('ext_chatbot_products')
         ->where('chatbot_id', $testChatbot->id)
         ->where('availability', 'in_stock')
         ->limit(5)
         ->get();
-    
+
     if ($testProducts->count() > 0) {
         echo "Productos del chatbot ID {$testChatbot->id}:\n\n";
         foreach ($testProducts as $product) {
@@ -101,11 +101,11 @@ if ($chatbots->count() > 0) {
             echo "     Precio: \${price} {$product->currency}\n";
             echo "     SKU: {$product->sku}\n";
             echo "     Availability: {$product->availability}\n\n";
-            
+
             echo "     🧪 Mensajes de prueba:\n";
             echo "        • \"¿Tienen {$product->name}?\"\n";
             echo "        • \"Quiero comprar {$product->name}\"\n";
-            echo "        • \"Cuál es el precio de " . strtolower($product->name) . "?\"\n\n";
+            echo '        • "Cuál es el precio de ' . strtolower($product->name) . "?\"\n\n";
         }
     } else {
         echo "⚠️  No hay productos disponibles para probar\n\n";
@@ -122,7 +122,7 @@ if ($chatbots->count() > 0) {
         ->where('chatbot_id', $chatbot->id)
         ->where('availability', 'in_stock')
         ->count();
-    
+
     if ($productsAvailable > 0) {
         echo "✅ TODO CONFIGURADO CORRECTAMENTE!\n\n";
         echo "1. Limpia caches:\n";
@@ -148,9 +148,5 @@ if ($chatbots->count() > 0) {
 }
 
 echo "=============================================\n";
-echo "Verificación completada: " . date('Y-m-d H:i:s') . "\n";
+echo 'Verificación completada: ' . date('Y-m-d H:i:s') . "\n";
 echo "=============================================\n";
-
-
-
-

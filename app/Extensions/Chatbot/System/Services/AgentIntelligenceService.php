@@ -221,4 +221,3 @@ class AgentIntelligenceService
         return array_unique($foundKeywords);
     }
 }
-

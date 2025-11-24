@@ -1,0 +1,55 @@
+# Archivos de documentación
+*.md
+*.MD
+
+# Scripts
+*.sh
+*.bash
+
+# Archivos comprimidos
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Node modules y vendor (se instalarán en servidor)
+node_modules/
+vendor/
+
+# Git
+.git/
+.gitignore
+
+# Archivos de entorno local
+.env
+.env.*
+!.env.example
+
+# Logs locales
+*.log
+storage/logs/*
+
+# Cache local
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Archivos temporales
+*.tmp
+*.bak
+*.backup

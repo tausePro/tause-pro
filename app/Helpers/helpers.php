@@ -219,11 +219,17 @@ function activeRouteBulkShow(...$route_names)
 if (! function_exists('custom_theme_url')) {
     function custom_theme_url($url, $slash = false)
     {
-        if (strpos($url, 'assets') !== false) {
-            return theme_url($url);
+        $url ??= '';
+
+        if (Str::contains($url, 'assets')) {
+            $cleanPath = ltrim($url, '/');
+            $theme = get_theme();
+
+            return asset('themes/' . $theme . '/' . $cleanPath);
         }
+
         if ($slash) {
-            return '/' . $url;
+            return '/' . ltrim($url, '/');
         }
 
         return $url;

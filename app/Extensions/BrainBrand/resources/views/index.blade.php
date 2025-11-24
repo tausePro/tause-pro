@@ -1,528 +1,302 @@
-@extends('panel.layout.app')
+@extends('panel.layout.app', ['disable_tblr' => true])
 
-@section('title', __('Brain Brand - Centralized Training'))
+@section('title', __('BrainBrand • Central intelligence'))
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ __('Brain Brand - Centralized Training') }}</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBrainBrandModal">
-                            <i class="fas fa-plus"></i> {{ __('Create Brain Brand') }}
+@php
+    $brainBrandCollection = collect($brainBrands ?? []);
+
+    $totalEmbeddings = $brainBrandCollection->sum(function ($brand) {
+        if (! is_null(data_get($brand, 'embeddings_count'))) {
+            return (int) data_get($brand, 'embeddings_count');
+        }
+
+        $embeddings = data_get($brand, 'embeddings');
+        if ($embeddings instanceof \Countable) {
+            return $embeddings->count();
+        }
+
+        if (is_array($embeddings)) {
+            return count($embeddings);
+        }
+
+        return method_exists($brand, 'embeddings') ? $brand->embeddings()->count() : 0;
+    });
+
+    $connectedChatbots = $brainBrandCollection->sum(function ($brand) {
+        return (int) data_get($brand, 'chatbots_count', 0);
+    });
+
+    $autoDistributionEnabled = $brainBrandCollection->contains(fn ($brand) => (bool) data_get($brand, 'auto_distribute', false));
+@endphp
+
+<div
+    x-data="{
+        showCreate: false,
+        openCreate() { this.showCreate = true },
+        closeCreate() { this.showCreate = false },
+    }"
+    class="py-10"
+>
+    <div class="container-fluid space-y-8">
+        <div class="flex flex-col items-start justify-between gap-4 rounded-3xl bg-gradient-to-r from-primary/10 to-primary/5 p-8 shadow-sm ring-1 ring-primary/20 md:flex-row md:items-center">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">{{ __('BrainBrand Command') }}</p>
+                <h1 class="mt-2 text-2xl font-semibold text-heading-foreground md:text-3xl">
+                    {{ __('Tu cerebro central para todos los agentes autónomos') }}
+                </h1>
+                <p class="mt-3 max-w-2xl text-sm text-muted-foreground">
+                    {{ __('Entrena una vez y distribuye a chatbots, agentes y canales externos con un solo clic. BrainBrand mantiene la voz, tono y conocimiento sincronizado en toda la plataforma.') }}
+                </p>
+            </div>
+        <div class="flex flex-wrap gap-3">
+                <button
+                    type="button"
+                    class="btn btn-primary btn-lg"
+                    @click="openCreate"
+                >
+                ✨ {{ __('Crear BrainBrand') }}
                         </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if(isset($error))
-                        <!-- Error Message -->
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            <strong>{{ __('Setup Required') }}</strong><br>
-                            {{ $error }}
-                        </div>
-                    @elseif($brainBrands->count() > 0)
-                        <!-- Quick Stats -->
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <div class="card bg-primary text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-brain fa-2x mb-2"></i>
-                                        <h4>{{ $brainBrands->count() }}</h4>
-                                        <small>{{ __('Brain Brands') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-database fa-2x mb-2"></i>
-                                        <h4>{{ $brainBrands->sum(fn($brand) => $brand->embeddings->count()) }}</h4>
-                                        <small>{{ __('Total Embeddings') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-info text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-robot fa-2x mb-2"></i>
-                                        <h4>2</h4>
-                                        <small>{{ __('Connected Chatbots') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-warning text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-sync fa-2x mb-2"></i>
-                                        <h4>Auto</h4>
-                                        <small>{{ __('Distribution') }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Brain Brands Grid -->
-                        <div class="row">
-                            @foreach($brainBrands as $brainBrand)
-                                <div class="col-md-6 mb-4">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h5 class="card-title mb-0">
-                                                    <i class="fas fa-brain mr-2"></i>{{ $brainBrand->name }}
-                                                </h5>
-                                                @if($brainBrand->tone)
-                                                    <small class="opacity-75">{{ ucfirst($brainBrand->tone) }} tone</small>
-                                                @endif
-                                            </div>
-                                            @if($brainBrand->is_favorite)
-                                                <i class="fas fa-star text-warning"></i>
-                                            @endif
-                                        </div>
-                                        <div class="card-body">
-                                            <p class="card-text">{{ $brainBrand->description ?? __('No description provided') }}</p>
-                                            
-                                            <!-- Training Status -->
-                                            <div class="row mb-3">
-                                                <div class="col-6">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-database text-primary mr-2"></i>
-                                                        <div>
-                                                            <small class="text-muted">{{ __('Embeddings') }}</small>
-                                                            <div class="fw-bold">{{ $brainBrand->embeddings->count() }}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-check-circle text-success mr-2"></i>
-                                                        <div>
-                                                            <small class="text-muted">{{ __('Status') }}</small>
-                                                            <div class="fw-bold text-success">{{ __('Active') }}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Training Types -->
-                                            <div class="mb-3">
-                                                <small class="text-muted d-block mb-2">{{ __('Training Sources') }}</small>
-                                                <div class="d-flex flex-wrap gap-1">
-                                                    @if($brainBrand->embeddings->where('url', '!=', null)->count() > 0)
-                                                        <span class="badge bg-primary">
-                                                            <i class="fas fa-globe mr-1"></i>{{ __('Website') }}
-                                                        </span>
-                                                    @endif
-                                                    @if($brainBrand->embeddings->where('file', '!=', null)->count() > 0)
-                                                        <span class="badge bg-secondary">
-                                                            <i class="fas fa-file mr-1"></i>{{ __('Documents') }}
-                                                        </span>
-                                                    @endif
-                                                    @if($brainBrand->embeddings->where('type', 'text')->count() > 0)
-                                                        <span class="badge bg-info">
-                                                            <i class="fas fa-keyboard mr-1"></i>{{ __('Text') }}
-                                                        </span>
-                                                    @endif
-                                                    @if($brainBrand->embeddings->where('type', 'qa')->count() > 0)
-                                                        <span class="badge bg-success">
-                                                            <i class="fas fa-question-circle mr-1"></i>{{ __('Q&A') }}
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-
-                                            <!-- Last Updated -->
-                                            <div class="text-muted">
-                                                <small>
-                                                    <i class="fas fa-clock mr-1"></i>
-                                                    {{ __('Last updated') }}: {{ $brainBrand->updated_at->diffForHumans() }}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div class="card-footer bg-transparent">
-                                            <div class="row">
-                                                <div class="col-6">
-                                                    <a href="{{ route('dashboard.user.brain-brand.train', $brainBrand) }}"
-                                                       class="btn btn-primary btn-sm w-100">
-                                                        <i class="fas fa-cogs mr-1"></i>{{ __('Train') }}
-                                                    </a>
-                                                </div>
-                                                <div class="col-6">
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100">
-                                                        <i class="fas fa-share-alt mr-1"></i>{{ __('Distribute') }}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <!-- Welcome Section -->
-                        <div class="text-center py-5">
-                            <div class="mb-4">
-                                <i class="fas fa-brain fa-4x text-primary mb-3"></i>
-                                <h2 class="mb-3">{{ __('Welcome to Brain Brand') }}</h2>
-                                <p class="lead text-muted mb-4">{{ __('The centralized training system for all your chatbots and agents') }}</p>
-                            </div>
-
-                            <!-- Features Grid -->
-                            <div class="row mb-5">
-                                <div class="col-md-3 mb-3">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-spider fa-2x text-primary mb-3"></i>
-                                            <h6>{{ __('Smart Crawling') }}</h6>
-                                            <small class="text-muted">{{ __('Automatically crawl websites with LinkParser') }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-share-alt fa-2x text-success mb-3"></i>
-                                            <h6>{{ __('Auto Distribution') }}</h6>
-                                            <small class="text-muted">{{ __('Train once, use in all chatbots') }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-voice fa-2x text-info mb-3"></i>
-                                            <h6>{{ __('Brand Voice') }}</h6>
-                                            <small class="text-muted">{{ __('Configure tone and personality') }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-cogs fa-2x text-warning mb-3"></i>
-                                            <h6>{{ __('AI Processing') }}</h6>
-                                            <small class="text-muted">{{ __('Generate embeddings automatically') }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- How it Works -->
-                            <div class="row mb-5">
-                                <div class="col-12">
-                                    <h4 class="mb-4">{{ __('How Brain Brand Works') }}</h4>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                                    <span class="fw-bold">1</span>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">{{ __('Train Your Brand') }}</h6>
-                                                    <small class="text-muted">{{ __('Upload docs, crawl websites, add Q&A') }}</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                                    <span class="fw-bold">2</span>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">{{ __('AI Processing') }}</h6>
-                                                    <small class="text-muted">{{ __('Generate embeddings and train models') }}</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                                    <span class="fw-bold">3</span>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-1">{{ __('Auto Distribution') }}</h6>
-                                                    <small class="text-muted">{{ __('All chatbots get the knowledge automatically') }}</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createBrainBrandModal">
-                                <i class="fas fa-plus mr-2"></i>{{ __('Create Your First Brain Brand') }}
-                            </button>
-                        </div>
-                    @endif
-                </div>
+                <a
+                    href="{{ route('dashboard.user.brain-brand.train', optional($brainBrandCollection->first())->id) }}"
+                    class="btn btn-outline-primary btn-lg {{ $brainBrandCollection->isEmpty() ? 'pointer-events-none opacity-50' : '' }}"
+                >
+                🧪 {{ __('Panel de entrenamiento') }}
+                </a>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Create Brain Brand Modal -->
-<div class="modal fade" id="createBrainBrandModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-gradient-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-brain mr-2"></i>{{ __('Create New Brain Brand') }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        @if(isset($error))
+            <x-alert variant="danger">
+                <p class="font-semibold">{{ __('Configuración pendiente') }}</p>
+                <p class="text-sm text-muted-foreground">{{ $error }}</p>
+            </x-alert>
+        @else
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                @foreach([
+                    ['label' => __('BrainBrands activos'), 'value' => $brainBrandCollection->count(), 'hint' => '+1 este mes'],
+                    ['label' => __('Embeddings globales'), 'value' => $totalEmbeddings, 'hint' => __('Actualizados')],
+                    ['label' => __('Chatbots conectados'), 'value' => $connectedChatbots, 'hint' => __('Live')],
+                    ['label' => __('Auto distribución'), 'value' => $autoDistributionEnabled ? __('Activa') : __('Manual'), 'hint' => $autoDistributionEnabled ? 'ON' : 'OFF'],
+                ] as $stat)
+                    <div class="rounded-2xl border border-border bg-white/80 p-5 shadow-sm ring-1 ring-black/5 dark:bg-background">
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">{{ $stat['label'] }}</p>
+                        <p class="mt-3 text-2xl font-semibold text-heading-foreground">{{ $stat['value'] }}</p>
+                        <p class="text-xs text-muted-foreground">{{ $stat['hint'] }}</p>
+                    </div>
+                @endforeach
             </div>
-            <form action="{{ route('dashboard.user.brain-brand.store') }}" method="POST" id="createBrainBrandForm">
+
+            @if($brainBrandCollection->isEmpty())
+                <div class="rounded-3xl border border-dashed border-border p-10 text-center">
+                    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary text-3xl">
+                        🧠
+                </div>
+                    <h2 class="text-2xl font-semibold text-heading-foreground">{{ __('Construye tu primer BrainBrand') }}</h2>
+                    <p class="mt-2 text-sm text-muted-foreground max-w-2xl mx-auto">
+                        {{ __('Centraliza todo el conocimiento de tu marca. Súbelo una vez, distribúyelo en todos los agentes y mantén coherencia absoluta.') }}
+                    </p>
+                    <div class="mt-6 flex flex-wrap justify-center gap-3">
+                        <div class="rounded-2xl bg-white/60 p-4 text-left shadow-sm ring-1 ring-border max-w-xs">
+                            <p class="font-semibold text-heading-foreground">{{ __('Entrenamiento inteligente') }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">{{ __('Crawling web, PDFs, texto estructurado y Q&A.') }}</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/60 p-4 text-left shadow-sm ring-1 ring-border max-w-xs">
+                            <p class="font-semibold text-heading-foreground">{{ __('Distribución automática') }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">{{ __('Sincroniza en chatbots, LiveChat y agentes externos.') }}</p>
+                        </div>
+                        <div class="rounded-2xl bg-white/60 p-4 text-left shadow-sm ring-1 ring-border max-w-xs">
+                            <p class="font-semibold text-heading-foreground">{{ __('Control del tono') }}</p>
+                            <p class="text-xs text-muted-foreground mt-1">{{ __('Define voz, personalidad y estilo por marca.') }}</p>
+                                                        </div>
+                                                    </div>
+                    <button
+                        class="btn btn-primary btn-lg mt-8"
+                        @click="openCreate"
+                    >
+                        {{ __('Crear BrainBrand ahora') }}
+                                                    </button>
+                                                </div>
+            @else
+                <div class="grid gap-6 lg:grid-cols-2">
+                    @foreach($brainBrandCollection as $brainBrand)
+                        <div class="rounded-3xl border border-border bg-white/80 p-6 shadow-sm ring-1 ring-black/5 dark:bg-background">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                                        {{ __('BrainBrand') }}
+                                    </p>
+                                    <h3 class="text-xl font-semibold text-heading-foreground">{{ $brainBrand->name }}</h3>
+                                    <p class="mt-2 text-sm text-muted-foreground">{{ $brainBrand->description ?? __('Sin descripción') }}</p>
+                                </div>
+                                @if($brainBrand->is_favorite)
+                                    <span class="text-amber-400">★</span>
+                                @endif
+                            </div>
+
+                            <dl class="mt-6 grid grid-cols-2 gap-4 text-sm">
+                                <div class="rounded-2xl bg-muted/50 p-3">
+                                    <dt class="text-muted-foreground">{{ __('Embeddings') }}</dt>
+                                    <dd class="text-lg font-semibold text-heading-foreground">{{ $brainBrand->embeddings->count() }}</dd>
+                                </div>
+                                <div class="rounded-2xl bg-muted/50 p-3">
+                                    <dt class="text-muted-foreground">{{ __('Tono') }}</dt>
+                                    <dd class="text-lg font-semibold text-heading-foreground">
+                                        {{ $brainBrand->tone ? ucfirst($brainBrand->tone) : __('No definido') }}
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            <div class="mt-6 flex flex-wrap gap-2 text-xs">
+                                @if($brainBrand->embeddings->whereNotNull('url')->count())
+                                    <span class="rounded-full bg-primary/10 px-3 py-1 text-primary">{{ __('Sitios web') }}</span>
+                                @endif
+                                @if($brainBrand->embeddings->whereNotNull('file')->count())
+                                    <span class="rounded-full bg-indigo-100 px-3 py-1 text-indigo-600">{{ __('Documentos') }}</span>
+                                @endif
+                                @if($brainBrand->embeddings->where('type', 'text')->count())
+                                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-600">{{ __('Texto') }}</span>
+                                @endif
+                                @if($brainBrand->embeddings->where('type', 'qa')->count())
+                                    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-600">{{ __('Q&A') }}</span>
+                                @endif
+                            </div>
+
+                            <div class="mt-8 flex flex-wrap gap-3">
+                                <a
+                                    href="{{ route('dashboard.user.brain-brand.train', $brainBrand) }}"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    🚀 {{ __('Entrenar') }}
+                                </a>
+                                <form
+                                    action="{{ route('dashboard.user.brain-brand.distribute', $brainBrand) }}"
+                                    method="POST"
+                                    class="{{ $brainBrand->auto_distribute ? 'pointer-events-none opacity-50' : '' }}"
+                                >
+                                    @csrf
+                                    <button class="btn btn-outline-primary btn-sm" {{ $brainBrand->auto_distribute ? 'disabled' : '' }}>
+                                        🔁 {{ __('Distribuir') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        @endif
+    </div>
+
+    <div
+        x-show="showCreate"
+        x-transition
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        @click.self="closeCreate"
+    >
+        <div class="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-border dark:bg-background">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.3em] text-primary/70">{{ __('Nuevo BrainBrand') }}</p>
+                    <h2 class="text-2xl font-semibold text-heading-foreground">{{ __('Define la voz de tu marca') }}</h2>
+</div>
+                <button class="btn btn-sm btn-light" @click="closeCreate">{{ __('Cerrar') }}</button>
+            </div>
+
+            <form action="{{ route('dashboard.user.brain-brand.store') }}" method="POST" class="mt-6 grid gap-5">
                 @csrf
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">
-                                    <i class="fas fa-tag mr-1"></i>{{ __('Brand Name') }}
-                                </label>
-                                <input type="text" class="form-control" id="name" name="name" 
-                                       placeholder="{{ __('e.g., My Company Brand') }}" required>
-                                <small class="text-muted">{{ __('Choose a memorable name for your brand') }}</small>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-1 text-sm">
+                        <label class="font-semibold text-heading-foreground" for="bb-name">{{ __('Nombre del BrainBrand') }}</label>
+                        <input
+                            id="bb-name"
+                            type="text"
+                            name="name"
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="ej. Marca Central LATAM"
+                            required
+                        >
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="tone" class="form-label">
-                                    <i class="fas fa-palette mr-1"></i>{{ __('Brand Tone') }}
-                                </label>
-                                <select class="form-control" id="tone" name="tone" required>
-                                    <option value="">{{ __('Select tone') }}</option>
-                                    <option value="professional">{{ __('Professional') }} - Formal and business-like</option>
-                                    <option value="friendly">{{ __('Friendly') }} - Warm and approachable</option>
-                                    <option value="casual">{{ __('Casual') }} - Relaxed and informal</option>
-                                    <option value="formal">{{ __('Formal') }} - Strict and official</option>
-                                    <option value="creative">{{ __('Creative') }} - Innovative and artistic</option>
-                                    <option value="witty">{{ __('Witty') }} - Clever and humorous</option>
-                                    <option value="dramatic">{{ __('Dramatic') }} - Bold and expressive</option>
+                    <div class="space-y-1 text-sm">
+                        <label class="font-semibold text-heading-foreground" for="bb-tone">{{ __('Tono principal') }}</label>
+                        <select
+                            id="bb-tone"
+                            name="tone"
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            required
+                        >
+                            <option value="friendly">{{ __('Amigable') }}</option>
+                            <option value="professional">{{ __('Profesional') }}</option>
+                            <option value="casual">{{ __('Casual') }}</option>
+                            <option value="formal">{{ __('Formal') }}</option>
                                 </select>
-                                <small class="text-muted">{{ __('This will influence how your chatbots respond') }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">
-                            <i class="fas fa-align-left mr-1"></i>{{ __('Description') }}
-                        </label>
-                        <textarea class="form-control" id="description" name="description" rows="3"
-                                  placeholder="{{ __('Describe your brand, what it does, and its main characteristics...') }}"></textarea>
-                        <small class="text-muted">{{ __('This helps AI understand your brand better') }}</small>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="personality" class="form-label">
-                                    <i class="fas fa-user mr-1"></i>{{ __('Personality Traits') }}
-                                </label>
-                                <input type="text" class="form-control" id="personality" name="personality"
-                                       placeholder="{{ __('e.g., Helpful, Knowledgeable, Enthusiastic') }}">
-                                <small class="text-muted">{{ __('Describe key personality traits') }}</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="language_style" class="form-label">
-                                    <i class="fas fa-language mr-1"></i>{{ __('Language Style') }}
-                                </label>
-                                <select class="form-control" id="language_style" name="language_style">
-                                    <option value="conversational">{{ __('Conversational') }} - Natural and chatty</option>
-                                    <option value="technical">{{ __('Technical') }} - Precise and detailed</option>
-                                    <option value="simple">{{ __('Simple & Clear') }} - Easy to understand</option>
-                                    <option value="detailed">{{ __('Detailed') }} - Comprehensive explanations</option>
-                                </select>
-                                <small class="text-muted">{{ __('How detailed should responses be') }}</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Setup Options -->
-                    <div class="card bg-light">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-rocket mr-1"></i>{{ __('Quick Setup Options') }}
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="auto_crawl" name="auto_crawl" value="1">
-                                        <label class="form-check-label" for="auto_crawl">
-                                            <strong>{{ __('Enable Auto Crawling') }}</strong>
-                                            <small class="d-block text-muted">{{ __('Automatically crawl your website when training') }}</small>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" id="auto_distribute" name="auto_distribute" value="1" checked>
-                                        <label class="form-check-label" for="auto_distribute">
-                                            <strong>{{ __('Auto Distribution') }}</strong>
-                                            <small class="d-block text-muted">{{ __('Automatically distribute to all chatbots') }}</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i>{{ __('Cancel') }}
-                    </button>
+
+                <div class="space-y-1 text-sm">
+                    <label class="font-semibold text-heading-foreground" for="bb-description">{{ __('Descripción / voice guide') }}</label>
+                    <textarea
+                        id="bb-description"
+                        name="description"
+                        rows="3"
+                        class="w-full rounded-xl border border-border bg-background px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        placeholder="{{ __('Describe contexto, palabras prohibidas, mensajes clave...') }}"
+                    ></textarea>
+                    </div>
+                    
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="space-y-1 text-sm">
+                        <label class="font-semibold text-heading-foreground" for="bb-personality">{{ __('Rasgos de personalidad') }}</label>
+                        <input
+                            id="bb-personality"
+                            type="text"
+                            name="personality"
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="Innovadora, experta, cercana"
+                        >
+                    </div>
+                    <div class="space-y-1 text-sm">
+                        <label class="font-semibold text-heading-foreground" for="bb-language">{{ __('Estilo de lenguaje') }}</label>
+                        <select
+                            id="bb-language"
+                            name="language_style"
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="conversational">{{ __('Conversacional') }}</option>
+                            <option value="technical">{{ __('Técnico') }}</option>
+                            <option value="simple">{{ __('Simple y claro') }}</option>
+                            <option value="detailed">{{ __('Detallado') }}</option>
+                                </select>
+                    </div>
+                        </div>
+
+                <div class="rounded-2xl border border-dashed border-border p-4">
+                    <p class="text-sm font-semibold text-heading-foreground">{{ __('Automatizaciones iniciales') }}</p>
+                    <div class="mt-3 grid gap-3 md:grid-cols-2">
+                        <label class="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/30 p-3">
+                            <input type="checkbox" name="auto_crawl" value="1" class="mt-1">
+                            <span class="text-sm">
+                                <strong>{{ __('Crawling automático') }}</strong>
+                                <p class="text-xs text-muted-foreground">{{ __('Ejecuta LinkParser luego de crear el BrainBrand.') }}</p>
+                            </span>
+                                        </label>
+                        <label class="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/30 p-3">
+                            <input type="checkbox" name="auto_distribute" value="1" checked class="mt-1">
+                            <span class="text-sm">
+                                <strong>{{ __('Distribución inmediata') }}</strong>
+                                <p class="text-xs text-muted-foreground">{{ __('Sincroniza automáticamente con todos los chatbots conectados.') }}</p>
+                            </span>
+                                        </label>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3">
+                    <button type="button" class="btn btn-light" @click="closeCreate">{{ __('Cancelar') }}</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-brain mr-1"></i>{{ __('Create Brain Brand') }}
+                        ✨ {{ __('Crear BrainBrand') }}
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle Brain Brand creation form
-    const createForm = document.getElementById('createBrainBrandForm');
-    if (createForm) {
-        createForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitBtn = createForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            
-            // Show loading state
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Creating...';
-            submitBtn.disabled = true;
-            
-            // Submit form data
-            const formData = new FormData(createForm);
-            
-            fetch(createForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-
-                if (!response.ok) {
-                    return response.json().then(errorData => {
-                        console.error('Server error response:', errorData);
-                        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-                    });
-                }
-
-                return response.json();
-            })
-            .then(data => {
-                console.log('Success response data:', data);
-
-                if (data.success) {
-                    // Show success message
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success(data.message);
-                    }
-
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('createBrainBrandModal'));
-                    modal.hide();
-
-                    // Redirect to training page
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    } else {
-                        // Reload page to show new Brain Brand
-                        window.location.reload();
-                    }
-                } else {
-                    throw new Error(data.message || 'Failed to create Brain Brand');
-                }
-            })
-            .catch(error => {
-                console.error('Error creating Brain Brand:', error);
-
-                // Try to get more detailed error information
-                let errorMessage = 'Failed to create Brain Brand';
-                if (error.message) {
-                    errorMessage = error.message;
-                }
-
-                // If the error is from a fetch response, try to parse it
-                if (error.response) {
-                    error.response.json().then(data => {
-                        console.error('Server error details:', data);
-                        if (data.errors) {
-                            const validationErrors = Object.values(data.errors).flat().join('\n');
-                            errorMessage = validationErrors;
-                        } else if (data.message) {
-                            errorMessage = data.message;
-                        }
-
-                        showError(errorMessage);
-                    }).catch(() => {
-                        showError(errorMessage);
-                    });
-                } else {
-                    showError(errorMessage);
-                }
-
-                function showError(message) {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error(message);
-                    } else {
-                        alert(message);
-                    }
-
-                    // Reset button
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }
-            });
-        });
-    }
-    
-    // Handle distribution buttons
-    document.querySelectorAll('button[data-action="distribute"]').forEach(button => {
-        button.addEventListener('click', function() {
-            const brainBrandId = this.dataset.brainBrandId;
-            if (brainBrandId) {
-                distributeBrainBrand(brainBrandId);
-            }
-        });
-    });
-    
-    function distributeBrainBrand(brainBrandId) {
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Distributing...';
-        btn.disabled = true;
-        
-        // Simulate distribution (replace with real API call)
-        setTimeout(() => {
-            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Distributed!';
-            btn.classList.remove('btn-outline-secondary');
-            btn.classList.add('btn-success');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-outline-secondary');
-            }, 2000);
-        }, 3000);
-    }
-});
-</script>
 @endsection

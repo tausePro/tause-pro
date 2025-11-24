@@ -27,10 +27,7 @@
 namespace Tests\YooKassa\Request\Receipts;
 
 use Exception;
-use Tests\YooKassa\AbstractTestCase;
-use Datetime;
 use YooKassa\Helpers\Random;
-use YooKassa\Model\Metadata;
 use YooKassa\Request\Receipts\RefundReceiptResponse;
 
 /**
@@ -40,18 +37,11 @@ use YooKassa\Request\Receipts\RefundReceiptResponse;
  * @author      cms@yoomoney.ru
  * @link        https://yookassa.ru/developers/api
  */
-class RefundReceiptResponseTest extends AbstractTestCase
+class RefundReceiptResponseTest extends AbstractTestReceiptResponse
 {
-    protected RefundReceiptResponse $object;
+    protected string $type = 'refund';
 
-    /**
-     * @param mixed|null $value
-     * @return RefundReceiptResponse
-     */
-    protected function getTestInstance(mixed $value = null): RefundReceiptResponse
-    {
-        return new RefundReceiptResponse($value);
-    }
+    protected RefundReceiptResponse $object;
 
     /**
      * @return void
@@ -126,12 +116,35 @@ class RefundReceiptResponseTest extends AbstractTestCase
     }
 
     /**
+     * @param array $options
      * @return void
      */
-    public function testSpecificProperties(): void
+    public function testSpecificProperties(array $options = []): void
     {
         $options = ['refund_id' => Random::str(36, 36)];
         $instance = $this->getTestInstance($options);
         self::assertEquals($options['refund_id'], $instance->getRefundId());
+    }
+
+    /**
+     * @param mixed|null $options
+     * @return RefundReceiptResponse
+     */
+    protected function getTestInstance(mixed $options = null): RefundReceiptResponse
+    {
+        return new RefundReceiptResponse($options);
+    }
+
+    protected function addSpecificProperties(mixed $options, mixed $i): array
+    {
+        $array = [
+            Random::str(30),
+            Random::str(40),
+        ];
+        $options['refund_id'] = !$this->valid
+            ? (Random::value($array))
+            : Random::value([null, '', Random::str(RefundReceiptResponse::LENGTH_REFUND_ID)]);
+
+        return $options;
     }
 }

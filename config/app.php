@@ -196,6 +196,7 @@ return [
         /*
          * Package Service Providers...
          */
+        App\Extensions\BrainBrand\System\BrainBrandServiceProvider::class,
 
         /*
          * Application Service Providers...

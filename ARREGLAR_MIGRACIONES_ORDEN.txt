@@ -1,0 +1,45 @@
+# 🔧 Arreglar Migraciones - Ejecutar en Orden Correcto
+
+# El problema: menu_migrate intenta actualizar tabla 'menus' que no existe todavía
+# Solución: Ejecutar migraciones que crean tablas PRIMERO
+
+# Ejecuta estos comandos en EC2 Instance Connect:
+
+# 1. Crear tabla menus primero
+php artisan migrate --path=database/migrations/2024_05_16_092520_create_menus_table.php --force
+
+# 2. Luego ejecutar menu_migrate
+php artisan migrate --path=database/migrations/2024_05_08_163635_menu_migrate.php --force
+
+# 3. Ejecutar TODAS las migraciones pendientes
+php artisan migrate --force
+
+# Si sigue fallando, ejecutar migraciones específicas que crean tablas primero:
+php artisan migrate --path=database/migrations/2024_05_08_163636_create_banner_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163637_create_banner_user_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163638_create_survey_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163639_create_survey_user_table.php --force
+php artisan migrate --path=database/migrations/2024_05_08_163641_create_introduction_style_table.php --force
+
+# Luego ejecutar menu_migrate
+php artisan migrate --path=database/migrations/2024_05_08_163635_menu_migrate.php --force
+
+# Finalmente, ejecutar todas las demás
+php artisan migrate --force
+
+# 4. Arreglar permisos de cache
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# 5. Limpiar cache
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
+# 6. Verificar
+curl -I http://localhost
+
+# ✅ Listo! Prueba: http://test.tause.pro
+
+

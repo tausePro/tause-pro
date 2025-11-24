@@ -44,6 +44,8 @@ Interface ReceiptInterface.
 | property |  | Статус доставки данных для чека в онлайн-кассу ("pending", "succeeded" или "canceled"). |
 | property |  | Код системы налогообложения. Число 1-6. |
 | property |  | Код системы налогообложения. Число 1-6. |
+| property |  | Признак проведения платежа в интернете (тег в 54 ФЗ — 1125) — указывает на оплату через интернет. |
+| property |  | Номер часовой зоны для адреса, по которому вы принимаете платежи (тег в 54 ФЗ — 1011). |
 | property |  | Список товаров в заказе: для [Чеков от ЮKassa](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/yoomoney/basics) — не более 80 товаров, для [сторонних онлайн-касс](https://yookassa.ru/developers/payment-acceptance/receipts/54fz/other-services/basics) — не более 100 товаров. |
 | property |  | Перечень совершенных расчетов. |
 
@@ -210,6 +212,6 @@ public notEmpty() : bool
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

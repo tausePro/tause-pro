@@ -37,12 +37,10 @@ use YooKassa\Request\Receipts\SimpleReceiptResponse;
  */
 class SimpleReceiptResponseTest extends AbstractTestReceiptResponse
 {
-    protected string $type = 'simple';
-
     /**
      * @dataProvider validDataProvider
      */
-    public function testSpecificProperties(array $options): void
+    public function testSpecificProperties(mixed $options = null): void
     {
         $instance = $this->getTestInstance($options);
         self::assertEquals($options['id'], $instance->getId());

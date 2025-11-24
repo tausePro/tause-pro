@@ -13,6 +13,9 @@ namespace Paddle\SDK\Entities\Shared;
 
 use Paddle\SDK\Entities\Entity;
 
+/**
+ * @deprecated
+ */
 class PaymentMethodUnderlyingDetails implements Entity
 {
     private function __construct(

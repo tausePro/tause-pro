@@ -83,7 +83,7 @@
 				@if ($is_editor)
 				:src="() => activeChatbot.avatar ? `${window.location.origin}/${activeChatbot.avatar}` : ''"
 			@else
-				src="/{{ $chatbot['avatar'] }}"
+				src="{{ $chatbot['avatar'] ? route('chatbot.avatar', ['path' => preg_replace('#^uploads/avatars/#', '', $chatbot['avatar'])]) : '' }}"
 				alt="{{ $chatbot['title'] }}"
 			@endif
 			{{-- blade-formatter-enable --}}

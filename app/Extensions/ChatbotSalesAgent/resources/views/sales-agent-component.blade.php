@@ -161,6 +161,61 @@
             return mentioned.slice(0, 4);
         },
         
+        // Detect specific product mention in user message (e.g., "item 3", "producto 3", "el tercero")
+        detectSpecificProductInMessage(message) {
+            if (!this.productsLoaded || this.products.length === 0) {
+                return null;
+            }
+            
+            const lowerMessage = message.toLowerCase().trim();
+            console.log('🔍 Sales Agent: Detectando producto específico en:', lowerMessage);
+            
+            // Patterns to detect product references: "item 3", "producto 3", "el 3", "número 3", etc.
+            const patterns = [
+                /(?:item|producto|product|artículo|artículo|el|la|número|num|#)\s*(\d+)/i,
+                /(\d+)(?:\s*(?:er|do|ro|to|mo|vo|no|vo|mo|to|er|do|ro))?/i,
+            ];
+            
+            let detectedNumber = null;
+            for (const pattern of patterns) {
+                const match = lowerMessage.match(pattern);
+                if (match && match[1]) {
+                    detectedNumber = parseInt(match[1]);
+                    console.log(`   ✅ Número detectado: ${detectedNumber}`);
+                    break;
+                }
+            }
+            
+            if (!detectedNumber || detectedNumber < 1) {
+                console.log('   ❌ No se detectó número de producto');
+                return null;
+            }
+            
+            // Find product by index (1-based, so "item 3" = products[2])
+            const productIndex = detectedNumber - 1;
+            if (productIndex >= 0 && productIndex < this.products.length) {
+                const product = this.products[productIndex];
+                console.log(`   ✅ Producto encontrado por índice ${detectedNumber}:`, product.name);
+                return product;
+            }
+            
+            // Also try to find by product name if it contains the number
+            const productWithNumber = this.products.find(p => {
+                const nameLower = p.name.toLowerCase();
+                return nameLower.includes(detectedNumber.toString()) || 
+                       nameLower.includes(`item ${detectedNumber}`) ||
+                       nameLower.includes(`producto ${detectedNumber}`);
+            });
+            
+            if (productWithNumber) {
+                console.log(`   ✅ Producto encontrado por nombre con número ${detectedNumber}:`, productWithNumber.name);
+                return productWithNumber;
+            }
+            
+            console.log(`   ❌ No se encontró producto con índice/número ${detectedNumber}`);
+            return null;
+        },
+        
         // Enhance AI message with product cards
         enhanceMessageWithProducts(contentWrap, message) {
             console.log('🎨 Sales Agent: enhanceMessageWithProducts called');

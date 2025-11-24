@@ -27,7 +27,7 @@ trait HasDownloader
         try {
 
             // Download the file from the URL
-            $response = Http::timeout(1800)
+            $response = Http::timeout(7200)
                 ->withOptions([
                     'sink' => $this->path,
                 ])

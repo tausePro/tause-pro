@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\File;
 
 class ChatbotFrameController extends Controller
 {
@@ -89,5 +90,45 @@ class ChatbotFrameController extends Controller
         Cookie::queue('CHATBOT_VISITOR', $sessionId, 60 * 24 * 365);
 
         return $sessionId;
+    }
+
+    public function serveAvatar(Request $request, string $path): Response
+    {
+        // Decode URL-encoded path
+        $path = urldecode($path);
+
+        // Remove 'uploads/avatars/' prefix if present
+        $path = preg_replace('#^uploads/avatars/#', '', $path);
+        $path = preg_replace('#^uploads/#', '', $path);
+
+        // Build full path - try avatars directory first
+        $fullPath = public_path('uploads/avatars/' . $path);
+
+        // Also try uploads directory
+        if (! File::exists($fullPath)) {
+            $fullPath = public_path('uploads/' . $path);
+        }
+
+        // Security: prevent directory traversal
+        $realPath = realpath($fullPath);
+        $publicPath = realpath(public_path('uploads'));
+
+        if (! $realPath || strpos($realPath, $publicPath) !== 0) {
+            abort(404);
+        }
+
+        if (! File::exists($fullPath)) {
+            abort(404);
+        }
+
+        $content = File::get($fullPath);
+        $mimeType = File::mimeType($fullPath) ?: 'image/png';
+
+        return response($content, 200)
+            ->header('Content-Type', $mimeType)
+            ->header('Access-Control-Allow-Origin', '*')
+            ->header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS')
+            ->header('Access-Control-Allow-Headers', 'Accept, Origin, Content-Type')
+            ->header('Cache-Control', 'public, max-age=31536000');
     }
 }

@@ -70,7 +70,7 @@
     <script>
         window.isDemo = "{{ $app_is_demo }}";
         window.liquid = {
-            assetsPath: '{{ url(custom_theme_url('assets')) }}'
+            assetsPath: "{{ custom_theme_url('assets') }}"
         };
     </script>
 

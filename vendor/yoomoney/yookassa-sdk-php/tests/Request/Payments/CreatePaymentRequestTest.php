@@ -1203,6 +1203,84 @@ class CreatePaymentRequestTest extends AbstractTestCase
     }
 
     /**
+     * Test property "statements"
+     * @dataProvider validStatementsDataProvider
+     * @param mixed $value
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testStatements(mixed $value): void
+    {
+        $instance = $this->getTestInstance();
+        self::assertEmpty($instance->getStatements());
+        self::assertEmpty($instance->statements);
+        self::assertIsObject($instance->getStatements());
+        self::assertIsObject($instance->statements);
+        self::assertCount(0, $instance->getStatements());
+        self::assertCount(0, $instance->statements);
+        $instance->setStatements($value);
+        if (!empty($value)) {
+            self::assertNotNull($instance->getStatements());
+            self::assertNotNull($instance->statements);
+            self::assertTrue($instance->hasStatements());
+            foreach ($value as $key => $element) {
+                if (is_array($element) && !empty($element)) {
+                    self::assertEquals($element, $instance->getStatements()[$key]->toArray());
+                    self::assertEquals($element, $instance->statements[$key]->toArray());
+                    self::assertIsArray($instance->getStatements()[$key]->toArray());
+                    self::assertIsArray($instance->statements[$key]->toArray());
+                }
+                if (is_object($element) && !empty($element)) {
+                    self::assertEquals($element, $instance->getStatements()->get($key));
+                    self::assertIsObject($instance->getStatements()->get($key));
+                    self::assertIsObject($instance->statements->get($key));
+                    self::assertIsObject($instance->getStatements());
+                    self::assertIsObject($instance->statements);
+                }
+            }
+            self::assertCount(count($value), $instance->getStatements());
+            self::assertCount(count($value), $instance->statements);
+        }
+    }
+
+    /**
+     * Test invalid property "statements"
+     * @dataProvider invalidStatementsDataProvider
+     * @param mixed $value
+     * @param string $exceptionClass
+     *
+     * @return void
+     */
+    public function testInvalidStatements(mixed $value, string $exceptionClass): void
+    {
+        $instance = $this->getTestInstance();
+
+        $this->expectException($exceptionClass);
+        $instance->setStatements($value);
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function validStatementsDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getValidDataProviderByType($instance->getValidator()->getRulesByPropName('_statements'));
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function invalidStatementsDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_statements'));
+    }
+
+    /**
      * Test valid method "builder"
      *
      * @return void

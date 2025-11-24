@@ -139,15 +139,15 @@
 #### [lib/Request/Payments/CreatePaymentRequest.php](../../lib/Request/Payments/CreatePaymentRequest.php)
 | Line | Element | Description |
 | ---- | ------- | ----------- |
-| 570 | \YooKassa\Request\Payments\CreatePaymentRequest::getFraudData() | Больше не поддерживается. Вместо него нужно использовать `getReceiver()` |
-| 581 | \YooKassa\Request\Payments\CreatePaymentRequest::setFraudData() | Больше не поддерживается. Вместо него нужно использовать `setReceiver()` |
-| 592 | \YooKassa\Request\Payments\CreatePaymentRequest::hasFraudData() | Больше не поддерживается. Вместо него нужно использовать `hasReceiver()` |
+| 587 | \YooKassa\Request\Payments\CreatePaymentRequest::getFraudData() | Больше не поддерживается. Вместо него нужно использовать `getReceiver()` |
+| 598 | \YooKassa\Request\Payments\CreatePaymentRequest::setFraudData() | Больше не поддерживается. Вместо него нужно использовать `setReceiver()` |
+| 609 | \YooKassa\Request\Payments\CreatePaymentRequest::hasFraudData() | Больше не поддерживается. Вместо него нужно использовать `hasReceiver()` |
 <a id="lib/Request/Payments/CreatePaymentRequestBuilder.php"></a>
 #### [lib/Request/Payments/CreatePaymentRequestBuilder.php](../../lib/Request/Payments/CreatePaymentRequestBuilder.php)
 | Line | Element | Description |
 | ---- | ------- | ----------- |
-| 93 | \YooKassa\Request\Payments\CreatePaymentRequestBuilder::setAccountId() | Больше не используется |
-| 330 | \YooKassa\Request\Payments\CreatePaymentRequestBuilder::setFraudData() | Больше не поддерживается. Вместо него нужно использовать `setReceiver()` |
+| 95 | \YooKassa\Request\Payments\CreatePaymentRequestBuilder::setAccountId() | Больше не используется |
+| 332 | \YooKassa\Request\Payments\CreatePaymentRequestBuilder::setFraudData() | Больше не поддерживается. Вместо него нужно использовать `setReceiver()` |
 <a id="lib/Request/Payments/FraudData.php"></a>
 #### [lib/Request/Payments/FraudData.php](../../lib/Request/Payments/FraudData.php)
 | Line | Element | Description |
@@ -184,6 +184,6 @@
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney

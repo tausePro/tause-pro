@@ -68,6 +68,12 @@ class CreatePostReceiptRequestSerializerTest extends TestCase
         if (!empty($options['tax_system_code'])) {
             $expected['tax_system_code'] = $options['tax_system_code'];
         }
+        if (isset($options['internet'])) {
+            $expected['internet'] = $options['internet'];
+        }
+        if (!empty($options['timezone'])) {
+            $expected['timezone'] = $options['timezone'];
+        }
         if (!empty($options['items'])) {
             foreach ($options['items'] as $item) {
                 $itemArray = $item;
@@ -157,6 +163,8 @@ class CreatePostReceiptRequestSerializerTest extends TestCase
                 'tax_system_code' => Random::int(1, 6),
                 'type' => $type,
                 'send' => true,
+                'internet' => Random::bool(),
+                'timezone' => Random::int(1, 11),
                 'settlements' => $this->getSettlements($i + 1),
                 'receipt_industry_details' => [],
                 $type . '_id' => uniqid('', true),

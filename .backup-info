@@ -1,0 +1,17 @@
+# Información del Backup Inicial
+# Creado: 2025-11-12 14:07:19
+
+BACKUP_INICIAL=backups/local-backup-20251112_140719
+BACKUP_BD=backups/local-backup-20251112_140719/database/backup_20251112_140719.sql.gz
+BACKUP_FILES=backups/local-backup-20251112_140719/files
+BACKUP_CONFIG=backups/local-backup-20251112_140719/config
+
+# Para restaurar BD:
+# gunzip backups/local-backup-20251112_140719/database/backup_20251112_140719.sql.gz
+# mysql -u root -p magicai_local < backups/local-backup-20251112_140719/database/backup_20251112_140719.sql
+
+# Para restaurar archivos:
+# cp -r backups/local-backup-20251112_140719/files/* ./
+
+
+

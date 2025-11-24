@@ -113,6 +113,7 @@ var_dump($response);
 | public | [__construct()](../classes/YooKassa-Common-AbstractRequestBuilder.md#method___construct) |  | Конструктор, инициализирует пустой запрос, который в будущем начнём собирать. |
 | public | [addReceiptItem()](../classes/YooKassa-Request-Payments-AbstractPaymentRequestBuilder.md#method_addReceiptItem) |  | Добавляет в чек товар |
 | public | [addReceiptShipping()](../classes/YooKassa-Request-Payments-AbstractPaymentRequestBuilder.md#method_addReceiptShipping) |  | Добавляет в чек доставку товара. |
+| public | [addStatement()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_addStatement) |  | Добавляет данные для получения справки. |
 | public | [addTransfer()](../classes/YooKassa-Request-Payments-AbstractPaymentRequestBuilder.md#method_addTransfer) |  | Добавляет трансфер. |
 | public | [build()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_build) |  | Строит и возвращает объект запроса для отправки в API ЮKassa. |
 | public | [setAccountId()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setAccountId) | *deprecated* | Устанавливает идентификатор магазина получателя платежа. |
@@ -287,6 +288,33 @@ public addReceiptShipping(string $title, string $price, int $vatCode, null|strin
 | <code lang="php">null OR string</code> | paymentSubject  | значение перечисления PaymentSubject |
 
 **Returns:** self - Инстанс билдера запросов
+
+
+<a name="method_addStatement" class="anchor"></a>
+#### public addStatement() : \YooKassa\Request\Payments\CreatePaymentRequestBuilder
+
+```php
+public addStatement(null|array|\YooKassa\Request\Payments\StatementData\AbstractStatement $value) : \YooKassa\Request\Payments\CreatePaymentRequestBuilder
+```
+
+**Summary**
+
+Добавляет данные для получения справки.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequestBuilder](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">null OR array OR \YooKassa\Request\Payments\StatementData\AbstractStatement</code> | value  | Данные для получения справки |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\InvalidPropertyValueTypeException |  |
+
+**Returns:** \YooKassa\Request\Payments\CreatePaymentRequestBuilder - Инстанс билдера запросов
 
 
 <a name="method_addTransfer" class="anchor"></a>
@@ -1128,6 +1156,6 @@ protected initCurrentObject() : \YooKassa\Request\Payments\CreatePaymentRequest
 
 ---
 
-This document was automatically generated from source code comments on 2025-09-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2025-10-31 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2025 YooMoney
