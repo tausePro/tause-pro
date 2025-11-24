@@ -100,11 +100,19 @@ class ChatbotFrameController extends Controller
         // Remove 'uploads/avatars/' prefix if present
         $path = preg_replace('#^uploads/avatars/#', '', $path);
         $path = preg_replace('#^uploads/#', '', $path);
+        
+        // Remove any leading slashes
+        $path = ltrim($path, '/');
+
+        // Security: prevent directory traversal and null bytes
+        if (strpos($path, '..') !== false || strpos($path, "\0") !== false) {
+            abort(404);
+        }
 
         // Build full path - try avatars directory first
         $fullPath = public_path('uploads/avatars/' . $path);
 
-        // Also try uploads directory
+        // Also try uploads directory if not found
         if (! File::exists($fullPath)) {
             $fullPath = public_path('uploads/' . $path);
         }
@@ -113,11 +121,21 @@ class ChatbotFrameController extends Controller
         $realPath = realpath($fullPath);
         $publicPath = realpath(public_path('uploads'));
 
-        if (! $realPath || strpos($realPath, $publicPath) !== 0) {
+        if (! $realPath || ! $publicPath || strpos($realPath, $publicPath) !== 0) {
+            \Log::warning('Chatbot avatar not found or security check failed', [
+                'requested_path' => $path,
+                'full_path' => $fullPath,
+                'real_path' => $realPath,
+                'public_path' => $publicPath,
+            ]);
             abort(404);
         }
 
         if (! File::exists($fullPath)) {
+            \Log::warning('Chatbot avatar file does not exist', [
+                'requested_path' => $path,
+                'full_path' => $fullPath,
+            ]);
             abort(404);
         }
 

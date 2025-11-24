@@ -30,7 +30,16 @@
 					@if ($is_editor)
 						:src="() => activeChatbot.avatar ? `${window.location.origin}/${activeChatbot.avatar}` : ''"
 					@else
-						src="{{ $chatbot['avatar'] ? route('chatbot.avatar', ['path' => preg_replace('#^uploads/avatars/#', '', $chatbot['avatar'])]) : '' }}"
+						@php
+							$avatarPath = $chatbot['avatar'] ?? '';
+							if ($avatarPath) {
+								// Clean the path: remove 'uploads/avatars/' prefix and any leading slashes
+								$avatarPath = preg_replace('#^uploads/avatars/#', '', $avatarPath);
+								$avatarPath = preg_replace('#^uploads/#', '', $avatarPath);
+								$avatarPath = ltrim($avatarPath, '/');
+							}
+						@endphp
+						src="{{ $avatarPath ? route('chatbot.avatar', ['path' => $avatarPath]) : '' }}"
 						alt="{{ $chatbot['title'] }}"
 						@if (!empty($chatbot['trigger_avatar_size']))
 							style="width: {{ (int) $chatbot['trigger_avatar_size'] }}px"

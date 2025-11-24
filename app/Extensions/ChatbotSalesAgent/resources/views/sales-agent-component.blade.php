@@ -161,7 +161,7 @@
             return mentioned.slice(0, 4);
         },
         
-        // Detect specific product mention in user message (e.g., "item 3", "producto 3", "el tercero")
+        // Detect specific product mention in user message (e.g., "item 3", "producto 3", "quiero comprar duo revitalizante")
         detectSpecificProductInMessage(message) {
             if (!this.productsLoaded || this.products.length === 0) {
                 return null;
@@ -170,14 +170,24 @@
             const lowerMessage = message.toLowerCase().trim();
             console.log('🔍 Sales Agent: Detectando producto específico en:', lowerMessage);
             
-            // Patterns to detect product references: "item 3", "producto 3", "el 3", "número 3", etc.
-            const patterns = [
+            // Purchase intent keywords
+            const purchaseKeywords = [
+                'quiero comprar', 'comprar', 'necesito', 'quiero', 'me interesa', 
+                'dame', 'traeme', 'quiero adquirir', 'adquirir', 'llevar', 'llevarme',
+                'tomar', 'tomarme', 'pedir', 'solicitar'
+            ];
+            
+            const hasPurchaseIntent = purchaseKeywords.some(keyword => lowerMessage.includes(keyword));
+            console.log('   - Tiene intención de compra:', hasPurchaseIntent);
+            
+            // Patterns to detect product references by number: "item 3", "producto 3", "el 3", "número 3", etc.
+            const numberPatterns = [
                 /(?:item|producto|product|artículo|artículo|el|la|número|num|#)\s*(\d+)/i,
                 /(\d+)(?:\s*(?:er|do|ro|to|mo|vo|no|vo|mo|to|er|do|ro))?/i,
             ];
             
             let detectedNumber = null;
-            for (const pattern of patterns) {
+            for (const pattern of numberPatterns) {
                 const match = lowerMessage.match(pattern);
                 if (match && match[1]) {
                     detectedNumber = parseInt(match[1]);
@@ -186,33 +196,71 @@
                 }
             }
             
-            if (!detectedNumber || detectedNumber < 1) {
-                console.log('   ❌ No se detectó número de producto');
-                return null;
+            // If number detected, try to find by index first
+            if (detectedNumber && detectedNumber >= 1) {
+                const productIndex = detectedNumber - 1;
+                if (productIndex >= 0 && productIndex < this.products.length) {
+                    const product = this.products[productIndex];
+                    console.log(`   ✅ Producto encontrado por índice ${detectedNumber}:`, product.name);
+                    return product;
+                }
+                
+                // Also try to find by product name if it contains the number
+                const productWithNumber = this.products.find(p => {
+                    const nameLower = p.name.toLowerCase();
+                    return nameLower.includes(detectedNumber.toString()) || 
+                           nameLower.includes(`item ${detectedNumber}`) ||
+                           nameLower.includes(`producto ${detectedNumber}`);
+                });
+                
+                if (productWithNumber) {
+                    console.log(`   ✅ Producto encontrado por nombre con número ${detectedNumber}:`, productWithNumber.name);
+                    return productWithNumber;
+                }
             }
             
-            // Find product by index (1-based, so "item 3" = products[2])
-            const productIndex = detectedNumber - 1;
-            if (productIndex >= 0 && productIndex < this.products.length) {
-                const product = this.products[productIndex];
-                console.log(`   ✅ Producto encontrado por índice ${detectedNumber}:`, product.name);
-                return product;
+            // If purchase intent detected, search for products by name in the message
+            if (hasPurchaseIntent) {
+                console.log('   🔍 Buscando productos por nombre en el mensaje...');
+                
+                // Extract significant words from message (4+ characters)
+                const messageWords = lowerMessage.match(/\b[a-záéíóúñ]{4,}\b/g) || [];
+                console.log('   - Palabras significativas:', messageWords);
+                
+                // Find products that match words in the message
+                const matchingProducts = this.products
+                    .map(product => {
+                        const productName = product.name.toLowerCase();
+                        const productWords = productName.split(/\s+/).filter(w => w.length >= 4);
+                        
+                        // Calculate match score based on word matches
+                        let matchScore = 0;
+                        messageWords.forEach(msgWord => {
+                            productWords.forEach(prodWord => {
+                                // Exact match gets high score
+                                if (prodWord === msgWord) {
+                                    matchScore += 10;
+                                } 
+                                // Partial match (word contains or is contained)
+                                else if (prodWord.includes(msgWord) || msgWord.includes(prodWord)) {
+                                    matchScore += 5;
+                                }
+                            });
+                        });
+                        
+                        return { product, matchScore };
+                    })
+                    .filter(item => item.matchScore > 0)
+                    .sort((a, b) => b.matchScore - a.matchScore);
+                
+                if (matchingProducts.length > 0) {
+                    const bestMatch = matchingProducts[0];
+                    console.log(`   ✅ Producto encontrado por nombre: "${bestMatch.product.name}" (score: ${bestMatch.matchScore})`);
+                    return bestMatch.product;
+                }
             }
             
-            // Also try to find by product name if it contains the number
-            const productWithNumber = this.products.find(p => {
-                const nameLower = p.name.toLowerCase();
-                return nameLower.includes(detectedNumber.toString()) || 
-                       nameLower.includes(`item ${detectedNumber}`) ||
-                       nameLower.includes(`producto ${detectedNumber}`);
-            });
-            
-            if (productWithNumber) {
-                console.log(`   ✅ Producto encontrado por nombre con número ${detectedNumber}:`, productWithNumber.name);
-                return productWithNumber;
-            }
-            
-            console.log(`   ❌ No se encontró producto con índice/número ${detectedNumber}`);
+            console.log('   ❌ No se detectó producto específico');
             return null;
         },
         
