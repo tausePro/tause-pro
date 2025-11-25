@@ -358,13 +358,25 @@
         
         // Handle user message during purchase flow
         handlePurchaseMessage(message) {
-            console.log('🛒 handlePurchaseMessage called:', { message, purchaseMode: this.purchaseMode, currentStep: this.currentStep });
+            console.log('🛒 handlePurchaseMessage called:', { message, purchaseMode: this.purchaseMode, currentStep: this.currentStep, cartItems: this.cart.length });
+            
+            const input = message.trim().toLowerCase();
+            
+            // Global "pagar" command - works anytime if cart has items
+            if (!this.purchaseMode && this.cart.length > 0 && 
+                (input === 'pagar' || input === 'checkout' || input === 'finalizar' || input === 'quiero pagar')) {
+                console.log('🛒 User wants to pay, starting checkout');
+                this.purchaseMode = true;
+                this.currentStep = 'first_name';
+                this.addAssistantMessage('Perfecto, sigamos con tus datos para coordinar el envío. 🙂\n\n¿Cuál es tu nombre? _(solo el primer nombre)_');
+                return true;
+            }
+            
             if (!this.purchaseMode) {
                 console.log('🛒 purchaseMode is false, returning false');
                 return false;
             }
             
-            const input = message.trim().toLowerCase();
             console.log('🛒 Processing input:', input, 'for step:', this.currentStep);
             
             switch (this.currentStep) {
@@ -442,19 +454,29 @@
         },
         
         handlePostQuantityChoice(input) {
-            if (input.includes('seguir') || input.includes('mas') || input.includes('más') || input.includes('otro')) {
+            // User wants to continue shopping - exit purchase mode and let them talk to AI
+            if (input.includes('seguir') || input.includes('mas') || input.includes('más') || input.includes('otro') || input.includes('ver')) {
                 this.purchaseMode = false;
                 this.currentStep = null;
-                this.addAssistantMessage(
-                    `Perfecto, seguimos viendo opciones. 🛍️\n\nDime qué otro producto te interesa, o cuando quieras avanzar solo dime "pagar".`
-                );
-                return true;
+                
+                // Show cart summary if there are items
+                let msg = `Perfecto, seguimos viendo opciones. 🛍️\n\n`;
+                if (this.cart.length > 0) {
+                    msg += `📦 _Tu carrito tiene ${this.getCartItemCount()} producto(s) por $${new Intl.NumberFormat('es-CO').format(this.getCartTotal())} COP_\n\n`;
+                }
+                msg += `Pregúntame lo que necesites o haz clic en **Comprar** en cualquier producto. Cuando quieras pagar, escribe "pagar".`;
+                
+                this.addAssistantMessage(msg);
+                return false; // Return false to let the message go to AI for natural conversation
             }
             
+            // User wants to pay
             if (input.includes('pagar') || input.includes('checkout') || input.includes('finalizar') || input.includes('listo')) {
                 if (this.cart.length === 0) {
-                    this.addAssistantMessage('Tu carrito está vacío. Primero agrega algunos productos.');
-                    return true;
+                    this.addAssistantMessage('Tu carrito está vacío. Primero agrega algunos productos haciendo clic en **Comprar**.');
+                    this.purchaseMode = false;
+                    this.currentStep = null;
+                    return false; // Let them continue talking
                 }
                 
                 this.currentStep = 'first_name';
@@ -462,17 +484,11 @@
                 return true;
             }
             
-            // Check if user is trying to add another product
-            const product = this.detectSpecificProductInMessage(input);
-            if (product) {
-                this.pendingProduct = { ...product };
-                this.currentStep = 'quantity';
-                this.askQuantity();
-                return true;
-            }
-            
-            this.addAssistantMessage('Por favor escribe "seguir" para ver más productos o "pagar" para continuar con el pedido.');
-            return true;
+            // Any other input - exit purchase mode and let AI handle naturally
+            // User can click "Comprar" button when they want to buy
+            this.purchaseMode = false;
+            this.currentStep = null;
+            return false; // Let the message go to AI
         },
         
         handleFirstNameInput(input) {

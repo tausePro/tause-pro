@@ -731,24 +731,9 @@
                             }
                         }
                         
-                        // Check if Sales Agent should auto-activate purchase flow for specific product mention
-                        if (window.SalesAgent && window.SalesAgent.enabled && window.SalesAgent.productsLoaded) {
-                            const detectedProduct = window.SalesAgent.detectSpecificProductInMessage(messageString);
-                            if (detectedProduct) {
-                                console.log('🎯 Sales Agent: Detectado producto específico en mensaje:', detectedProduct.name);
-                                // Store the user message to send after purchase flow starts
-                                const originalMessage = messageString;
-                            this.$refs.message.value = '';
-                            this.$refs.mediaInput && (this.$refs.mediaInput.value = null);
-                            this.$refs.sendBtn.classList.remove('active');
-                                
-                                // Start purchase flow automatically
-                                setTimeout(() => {
-                                    window.SalesAgent.startPurchase(detectedProduct.id);
-                                }, 300);
-                                return;
-                            }
-                        }
+                        // NOTE: Auto-detection of products removed to allow natural conversation flow.
+                        // Purchase flow only starts when user clicks "Comprar" button on product cards.
+                        // The AI will recommend products and show cards, user decides when to buy.
                     @endif
 
                     this.$refs.message.value = '';
