@@ -102,11 +102,27 @@ class ChatbotAgent extends Model
             return true;
         }
 
-        // Si tiene keywords, verificar si alguno está presente
-        if (isset($triggers['keywords']) && is_array($triggers['keywords']) && ! empty($triggers['keywords'])) {
-            $text = strtolower($userQuery . ' ' . $aiResponse);
+        // Keywords a verificar
+        $keywords = $triggers['keywords'] ?? [];
+        
+        // Para Sales Agent, agregar keywords por defecto si no hay configurados
+        if ($this->agent_type === 'sales' && empty($keywords)) {
+            $keywords = [
+                'comprar', 'quiero comprar', 'me interesa comprar',
+                'ver productos', 'mostrar productos', 'qué productos',
+                'catálogo', 'ver catálogo',
+                'precio', 'cuánto cuesta', 'cuanto cuesta',
+                'tienen', 'venden',
+            ];
+        }
+        
+        // Si tiene keywords, verificar si alguno está presente en el query del USUARIO
+        // IMPORTANTE: Solo verificar el userQuery, NO el aiResponse
+        // Esto evita que el bot se active porque el AI menciona productos
+        if (! empty($keywords)) {
+            $text = strtolower($userQuery);
 
-            foreach ($triggers['keywords'] as $keyword) {
+            foreach ($keywords as $keyword) {
                 if (str_contains($text, strtolower($keyword))) {
                     return true;
                 }
