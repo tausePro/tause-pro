@@ -113,24 +113,21 @@ class ChatbotAgent extends Model
             }
         }
 
-        // Si detecta intención comercial (mejorado con análisis de intención)
+        // Si detecta intención comercial (solo si está explícitamente configurado)
+        // NOTA: Deshabilitado por defecto para evitar activación agresiva.
+        // El Sales Agent solo debe activarse con keywords explícitos.
         if (isset($triggers['detect_commercial_intent']) && $triggers['detect_commercial_intent']) {
-            // Usar análisis de intención si está disponible
+            // Solo usar análisis de intención con alta confianza
             if (! empty($intent) && isset($intent['type']) && $intent['type'] === 'commercial') {
-                // Requiere al menos 30% de confianza para activar
-                return ($intent['confidence'] ?? 0) >= 30;
+                // Requiere al menos 70% de confianza para activar automáticamente
+                return ($intent['confidence'] ?? 0) >= 70;
             }
-
-            // Fallback a detección tradicional
-            return $this->detectCommercialIntent($userQuery, $aiResponse);
+            // NO usar fallback a detección tradicional - es muy agresivo
         }
 
-        // Para Sales Agent, activar si hay intención comercial detectada
-        if ($this->agent_type === 'sales' && ! empty($intent)) {
-            if (isset($intent['type']) && $intent['type'] === 'commercial') {
-                return ($intent['confidence'] ?? 0) >= 25; // Threshold más bajo para sales
-            }
-        }
+        // Para Sales Agent, NO activar automáticamente por intención comercial
+        // Solo activar si el usuario usa keywords explícitos (manejado arriba)
+        // Esto mantiene la conversación natural y el usuario en control
 
         return false;
     }

@@ -58,26 +58,29 @@ class ProductOrchestratorService
 
     /**
      * Determina si debe activar el Sales Agent
+     * SOLO se activa con keywords EXPLÍCITOS del usuario, no por la respuesta del AI
      */
     protected function shouldActivateSalesAgent(string $aiResponse, string $userQuery, Chatbot $chatbot): bool
     {
-        $text = strtolower($aiResponse . ' ' . $userQuery);
+        // IMPORTANTE: Solo verificar el mensaje del USUARIO, no la respuesta del AI
+        // Esto evita que el bot se active solo porque el AI menciona productos
+        $userText = strtolower($userQuery);
 
-        // Keywords configurables del chatbot
+        // Keywords configurables del chatbot (los que el usuario configura)
         $configuredKeywords = $chatbot->sales_agent_keywords ?? [];
         
-        // Keywords por defecto
+        // Keywords mínimos por defecto (solo intención clara de compra)
         $defaultKeywords = [
-            'producto', 'productos', 'comprar', 'precio', 'precios', 'costo', 'costos',
-            'vender', 'venta', 'disponible', 'stock', 'inventario', 'catálogo',
-            'tienda', 'adquirir', 'pagar', 'pago', 'pedido', 'orden',
+            'comprar', 'quiero comprar', 'me interesa comprar',
+            'ver productos', 'mostrar productos', 'qué productos',
+            'catálogo', 'ver catálogo',
         ];
 
         $allKeywords = array_merge($defaultKeywords, $configuredKeywords);
 
-        // Verificar si contiene algún keyword
+        // Verificar si el USUARIO usó algún keyword
         foreach ($allKeywords as $keyword) {
-            if (str_contains($text, strtolower($keyword))) {
+            if (str_contains($userText, strtolower($keyword))) {
                 return true;
             }
         }

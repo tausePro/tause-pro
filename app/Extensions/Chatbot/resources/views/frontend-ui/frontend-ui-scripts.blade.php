@@ -1056,84 +1056,11 @@
                             }, 1500);
                         }
                         
-                        // Fallback: aunque el backend no haya activado explícitamente al Sales Agent,
-                        // si está habilitado y tiene productos cargados, intentar mejorar el mensaje
-                        // del asistente con cards basadas solo en el texto de la respuesta del AI.
-                        if (!salesAgentHandled && window.SalesAgent && window.SalesAgent.enabled && window.SalesAgent.productsLoaded) {
-                            console.log('✨ Fallback Sales Agent: intentando detectar productos en el mensaje del asistente');
-                            
-                            const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
-                            if (assistantMessages.length > 0) {
-                                const lastMessageEl = assistantMessages[assistantMessages.length - 1];
-                                const contentWrap = lastMessageEl.querySelector('.lqd-ext-chatbot-window-conversation-message-content-wrap');
-                                
-                                if (contentWrap) {
-                                    window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
-                                }
-                            }
-                        }
-                        
-                        // Sales Agent: Make product links functional (inline purchase flow)
-                        if (window.SalesAgent && window.SalesAgent.enabled) {
-                            // Wait for message to be rendered
-                            setTimeout(() => {
-                                console.log('🔍 Looking for product links in assistant messages...');
-                                const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
-                                console.log(`   - Found ${assistantMessages.length} assistant messages`);
-                                
-                                if (assistantMessages.length > 0) {
-                                    const lastMessage = assistantMessages[assistantMessages.length - 1];
-                                    
-                                    // Try multiple selectors to find product links
-                                    let productLinks = lastMessage.querySelectorAll('a[href*="/producto"]');
-                                    if (productLinks.length === 0) {
-                                        productLinks = lastMessage.querySelectorAll('a[href*="aliviate"]');
-                                    }
-                                    if (productLinks.length === 0) {
-                                        // Find all links in the message
-                                        productLinks = lastMessage.querySelectorAll('a[href]');
-                                    }
-                                    
-                                    console.log(`   - Found ${productLinks.length} links total`);
-                                    
-                                    productLinks.forEach((link, idx) => {
-                                        console.log(`   - Link ${idx + 1}: ${link.textContent} -> ${link.href}`);
-                                        
-                                        // Store original href and remove it to prevent navigation
-                                        const originalHref = link.href;
-                                        link.dataset.originalHref = originalHref;
-                                        link.removeAttribute('href');
-                                        
-                                        // Make it look like a link still
-                                        link.style.color = 'inherit';
-                                        link.style.textDecoration = 'underline';
-                                        link.style.cursor = 'pointer';
-                                        
-                                        // Add multiple event listeners for maximum compatibility
-                                        const handleClick = (e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            e.stopImmediatePropagation();
-                                            console.log('🛒 Product link clicked!');
-                                            console.log('   - Text:', link.textContent);
-                                            console.log('   - Original URL:', originalHref);
-                                            window.SalesAgent.startPurchaseFromLink(link);
-                                            return false;
-                                        };
-                                        
-                                        link.addEventListener('click', handleClick, true); // Capture phase
-                                        link.addEventListener('touchstart', handleClick, { passive: false });
-                                        link.onclick = handleClick; // Fallback
-                                    });
-                                    
-                                    if (productLinks.length > 0) {
-                                        console.log(`✅ Made ${productLinks.length} product links functional`);
-                                    } else {
-                                        console.log('⚠️ No product links found in message');
-                                    }
-                                }
-                            }, 2000); // Increased timeout
-                        }
+                        // NOTE: Removed aggressive fallback and link detection.
+                        // Products are ONLY shown when:
+                        // 1. Orchestrator activates Sales Agent via keywords (e.g., "comprar", "productos")
+                        // 2. User clicks "Comprar" button on product cards
+                        // This keeps the conversation natural and user-controlled.
                     @endif
                 },
                 scrollMessagesToBottom(smooth = false) {
