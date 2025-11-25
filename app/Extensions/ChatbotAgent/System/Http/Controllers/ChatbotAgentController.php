@@ -468,4 +468,52 @@ class ChatbotAgentController extends Controller
 
         return 'document';
     }
+
+    /**
+     * Update lead data for a customer
+     */
+    public function updateLead(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'customer_id'       => 'required|integer|exists:ext_chatbot_customers,id',
+            'lead_value'        => 'nullable|numeric|min:0',
+            'lead_priority'     => 'nullable|integer|min:0|max:4',
+            'negotiation_notes' => 'nullable|string|max:5000',
+            'next_action_at'    => 'nullable|date',
+            'crm_tags'          => 'nullable|array',
+            'crm_tags.*'        => 'string|max:50',
+        ]);
+
+        try {
+            $customer = ChatbotCustomer::findOrFail($validated['customer_id']);
+
+            // Verify ownership through chatbot
+            $chatbot = Chatbot::find($customer->chatbot_id);
+            if (! $chatbot || $chatbot->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            $customer->update([
+                'lead_value'        => $validated['lead_value'] ?? $customer->lead_value,
+                'lead_priority'     => $validated['lead_priority'] ?? $customer->lead_priority,
+                'negotiation_notes' => $validated['negotiation_notes'] ?? $customer->negotiation_notes,
+                'next_action_at'    => $validated['next_action_at'] ?? $customer->next_action_at,
+                'crm_tags'          => $validated['crm_tags'] ?? $customer->crm_tags,
+            ]);
+
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Lead updated successfully',
+                'customer' => $customer->fresh(),
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating lead: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

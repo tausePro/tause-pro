@@ -183,6 +183,7 @@
 
             <div class="grid grow grid-cols-1 place-items-start overflow-y-auto">
                 @include('chatbot-agent::particles.contact-info-tab-details')
+                @include('chatbot-agent::particles.contact-info-tab-lead')
                 @include('chatbot-agent::particles.contact-info-tab-history')
             </div>
         </div>

@@ -28,6 +28,17 @@
         class="gap-2.5 p-2 text-base font-semibold opacity-50 [&.active]:opacity-100"
         variant="link"
         size="none"
+        ::class="{ 'active': contactInfo.activeTab === 'lead' }"
+        @click.prevent="contactInfo.activeTab = 'lead'"
+    >
+        <x-tabler-target class="size-5" />
+        {{ __('Lead') }}
+    </x-button>
+
+    <x-button
+        class="gap-2.5 p-2 text-base font-semibold opacity-50 [&.active]:opacity-100"
+        variant="link"
+        size="none"
         ::class="{ 'active': contactInfo.activeTab === 'history' }"
         @click.prevent="contactInfo.activeTab = 'history'"
     >
