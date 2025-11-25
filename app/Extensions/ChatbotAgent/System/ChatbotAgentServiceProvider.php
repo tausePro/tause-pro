@@ -83,6 +83,10 @@ class ChatbotAgentServiceProvider extends ServiceProvider implements UninstallEx
                         $router->post('chatbot/toggle-ai', 'toggleAiHandling')->name('chatbot.toggle-ai');
                         $router->post('customer/update-lead', 'updateLead')->name('customer.update-lead');
                         $router->get('customer/lead-history', 'getLeadHistory')->name('customer.lead-history');
+                        // Leads Dashboard
+                        $router->get('leads', 'leadsDashboard')->name('leads.dashboard');
+                        $router->get('leads/data', 'getLeads')->name('leads.data');
+                        $router->get('leads/export', 'exportLeads')->name('leads.export');
                     });
 
                 $router

@@ -657,4 +657,219 @@ class ChatbotAgentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Dashboard de Leads - Vista principal
+     */
+    public function leadsDashboard(Request $request)
+    {
+        $user = Auth::user();
+        $chatbotIds = $user->externalChatbots->pluck('id')->toArray();
+
+        // Obtener métricas
+        $metrics = $this->getLeadsMetrics($chatbotIds);
+
+        // Obtener chatbots para el filtro
+        $chatbots = $user->externalChatbots()->select('id', 'title')->get();
+
+        return view('chatbot-agent::leads.dashboard', [
+            'metrics'  => $metrics,
+            'chatbots' => $chatbots,
+        ]);
+    }
+
+    /**
+     * API para obtener leads con filtros
+     */
+    public function getLeads(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $chatbotIds = $user->externalChatbots->pluck('id')->toArray();
+
+        $query = ChatbotCustomer::query()
+            ->whereIn('chatbot_id', $chatbotIds)
+            ->with(['leadHistory' => function ($q) {
+                $q->latest()->limit(1);
+            }]);
+
+        // Filtro por chatbot
+        if ($request->filled('chatbot_id')) {
+            $query->where('chatbot_id', $request->chatbot_id);
+        }
+
+        // Filtro por prioridad
+        if ($request->filled('priority')) {
+            $query->where('lead_priority', $request->priority);
+        }
+
+        // Filtro por canal
+        if ($request->filled('channel')) {
+            $query->where('chatbot_channel', $request->channel);
+        }
+
+        // Filtro por valor mínimo
+        if ($request->filled('min_value')) {
+            $query->where('lead_value', '>=', $request->min_value);
+        }
+
+        // Filtro por valor máximo
+        if ($request->filled('max_value')) {
+            $query->where('lead_value', '<=', $request->max_value);
+        }
+
+        // Filtro por próxima acción
+        if ($request->filled('next_action')) {
+            switch ($request->next_action) {
+                case 'overdue':
+                    $query->where('next_action_at', '<', now());
+                    break;
+                case 'today':
+                    $query->whereDate('next_action_at', today());
+                    break;
+                case 'week':
+                    $query->whereBetween('next_action_at', [now(), now()->addWeek()]);
+                    break;
+            }
+        }
+
+        // Filtro por tags
+        if ($request->filled('tag')) {
+            $query->whereJsonContains('crm_tags', $request->tag);
+        }
+
+        // Búsqueda por nombre, email o teléfono
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Ordenamiento
+        $sortField = $request->get('sort', 'updated_at');
+        $sortDir = $request->get('dir', 'desc');
+        $allowedSorts = ['name', 'lead_value', 'lead_priority', 'next_action_at', 'updated_at', 'created_at'];
+
+        if (in_array($sortField, $allowedSorts)) {
+            $query->orderBy($sortField, $sortDir);
+        }
+
+        // Paginación
+        $perPage = $request->get('per_page', 20);
+        $leads = $query->paginate($perPage);
+
+        // Formatear datos
+        $leads->getCollection()->transform(function ($lead) {
+            return [
+                'id'              => $lead->id,
+                'name'            => $lead->name ?: 'Anonymous',
+                'email'           => $lead->email,
+                'phone'           => $lead->phone,
+                'avatar'          => $lead->avatar,
+                'channel'         => $lead->chatbot_channel,
+                'lead_value'      => $lead->lead_value,
+                'lead_priority'   => $lead->lead_priority,
+                'next_action_at'  => $lead->next_action_at?->format('Y-m-d H:i'),
+                'next_action_human' => $lead->next_action_at?->diffForHumans(),
+                'is_overdue'      => $lead->next_action_at && $lead->next_action_at->isPast(),
+                'tags'            => $lead->crm_tags ?? [],
+                'notes'           => $lead->negotiation_notes,
+                'last_activity'   => $lead->updated_at->diffForHumans(),
+                'created_at'      => $lead->created_at->format('M d, Y'),
+                'chatbot_id'      => $lead->chatbot_id,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'leads'   => $leads,
+        ]);
+    }
+
+    /**
+     * Obtener métricas de leads
+     */
+    protected function getLeadsMetrics(array $chatbotIds): array
+    {
+        $baseQuery = ChatbotCustomer::whereIn('chatbot_id', $chatbotIds);
+
+        return [
+            'total_leads'      => (clone $baseQuery)->count(),
+            'total_value'      => (clone $baseQuery)->sum('lead_value') ?? 0,
+            'high_priority'    => (clone $baseQuery)->whereIn('lead_priority', [3, 4])->count(),
+            'overdue_actions'  => (clone $baseQuery)->where('next_action_at', '<', now())->count(),
+            'today_actions'    => (clone $baseQuery)->whereDate('next_action_at', today())->count(),
+            'week_actions'     => (clone $baseQuery)->whereBetween('next_action_at', [now(), now()->addWeek()])->count(),
+            'by_priority'      => [
+                'urgent' => (clone $baseQuery)->where('lead_priority', 4)->count(),
+                'high'   => (clone $baseQuery)->where('lead_priority', 3)->count(),
+                'medium' => (clone $baseQuery)->where('lead_priority', 2)->count(),
+                'low'    => (clone $baseQuery)->where('lead_priority', 1)->count(),
+                'none'   => (clone $baseQuery)->where(function ($q) {
+                    $q->whereNull('lead_priority')->orWhere('lead_priority', 0);
+                })->count(),
+            ],
+            'by_channel'       => [
+                'whatsapp'  => (clone $baseQuery)->where('chatbot_channel', 'whatsapp')->count(),
+                'livechat'  => (clone $baseQuery)->where('chatbot_channel', 'frame')->count(),
+                'telegram'  => (clone $baseQuery)->where('chatbot_channel', 'telegram')->count(),
+                'messenger' => (clone $baseQuery)->where('chatbot_channel', 'messenger')->count(),
+            ],
+        ];
+    }
+
+    /**
+     * Exportar leads a CSV
+     */
+    public function exportLeads(Request $request)
+    {
+        $user = Auth::user();
+        $chatbotIds = $user->externalChatbots->pluck('id')->toArray();
+
+        $leads = ChatbotCustomer::whereIn('chatbot_id', $chatbotIds)
+            ->orderBy('lead_priority', 'desc')
+            ->orderBy('lead_value', 'desc')
+            ->get();
+
+        $filename = 'leads_' . now()->format('Y-m-d_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($leads) {
+            $file = fopen('php://output', 'w');
+
+            // Header
+            fputcsv($file, [
+                'Nombre', 'Email', 'Teléfono', 'Canal', 'Valor', 'Prioridad',
+                'Próxima Acción', 'Tags', 'Notas', 'Creado', 'Actualizado',
+            ]);
+
+            $priorityLabels = [0 => 'Sin asignar', 1 => 'Baja', 2 => 'Media', 3 => 'Alta', 4 => 'Urgente'];
+
+            foreach ($leads as $lead) {
+                fputcsv($file, [
+                    $lead->name ?: 'Anónimo',
+                    $lead->email,
+                    $lead->phone,
+                    $lead->chatbot_channel,
+                    $lead->lead_value ?? 0,
+                    $priorityLabels[$lead->lead_priority ?? 0],
+                    $lead->next_action_at?->format('Y-m-d H:i'),
+                    implode(', ', $lead->crm_tags ?? []),
+                    $lead->negotiation_notes,
+                    $lead->created_at->format('Y-m-d H:i'),
+                    $lead->updated_at->format('Y-m-d H:i'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

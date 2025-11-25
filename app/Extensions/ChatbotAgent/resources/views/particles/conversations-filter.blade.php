@@ -69,6 +69,17 @@
     </x-dropdown.dropdown>
 
     <div class="ms-auto flex gap-2">
+        {{-- Leads Dashboard Button --}}
+        <x-button
+            class="size-7 shrink-0 bg-violet-500/10 text-violet-600 hover:bg-violet-500/20"
+            size="none"
+            variant="none"
+            title="{{ __('Leads Dashboard') }}"
+            href="{{ route('dashboard.chatbot-agent.leads.dashboard') }}"
+        >
+            <x-tabler-target class="size-4" />
+        </x-button>
+
         <x-dropdown.dropdown
             anchor="end"
             triggerType="click"
