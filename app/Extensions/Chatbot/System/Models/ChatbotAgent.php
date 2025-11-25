@@ -6,6 +6,7 @@ namespace App\Extensions\Chatbot\System\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Modelo para agentes del chatbot
@@ -121,11 +122,35 @@ class ChatbotAgent extends Model
         // Esto evita que el bot se active porque el AI menciona productos
         if (! empty($keywords)) {
             $text = strtolower($userQuery);
+            
+            // Log para Sales Agent
+            if ($this->agent_type === 'sales') {
+                Log::info('🔍 Sales Agent Keyword Check', [
+                    'user_query' => $userQuery,
+                    'text_lowered' => $text,
+                    'keywords_count' => count($keywords),
+                    'keywords' => $keywords,
+                ]);
+            }
 
             foreach ($keywords as $keyword) {
-                if (str_contains($text, strtolower($keyword))) {
+                $keywordLower = strtolower($keyword);
+                $found = str_contains($text, $keywordLower);
+                
+                if ($this->agent_type === 'sales' && $found) {
+                    Log::info('✅ Sales Agent Keyword MATCH', [
+                        'keyword' => $keyword,
+                        'in_text' => $text,
+                    ]);
+                }
+                
+                if ($found) {
                     return true;
                 }
+            }
+            
+            if ($this->agent_type === 'sales') {
+                Log::info('❌ Sales Agent NO keyword match found');
             }
         }
 

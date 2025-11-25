@@ -150,9 +150,22 @@ class AgentOrchestratorService
         array $context = []
     ): Collection {
         return $agents->filter(function (ChatbotAgent $agent) use ($userQuery, $aiResponse, $intent, $context) {
-            // Log detallado para debugging
-            if (config('app.debug')) {
-                $shouldActivate = $agent->shouldActivate($userQuery, $aiResponse, $intent, $context);
+            $shouldActivate = $agent->shouldActivate($userQuery, $aiResponse, $intent, $context);
+            
+            // SIEMPRE loggear para Sales Agent para debugging
+            if ($agent->agent_type === 'sales') {
+                Log::info('🛒 Sales Agent Evaluation', [
+                    'agent_id'          => $agent->id,
+                    'agent_type'        => $agent->agent_type,
+                    'agent_name'        => $agent->name,
+                    'is_enabled'        => $agent->is_enabled,
+                    'should_activate'   => $shouldActivate,
+                    'user_query'        => $userQuery,
+                    'intent_type'       => $intent['type'] ?? 'unknown',
+                    'intent_confidence' => $intent['confidence'] ?? 0,
+                    'triggers'          => $agent->triggers,
+                ]);
+            } elseif (config('app.debug')) {
                 Log::debug('Agent Evaluation', [
                     'agent_id'          => $agent->id,
                     'agent_type'        => $agent->agent_type,
@@ -164,11 +177,9 @@ class AgentOrchestratorService
                     'intent_confidence' => $intent['confidence'] ?? 0,
                     'triggers'          => $agent->triggers,
                 ]);
-
-                return $shouldActivate;
             }
 
-            return $agent->shouldActivate($userQuery, $aiResponse, $intent, $context);
+            return $shouldActivate;
         });
     }
 
