@@ -1000,24 +1000,9 @@
                                     window.SalesAgent.products = salesAgent.data.products;
                                     window.SalesAgent.productsLoaded = true;
                                     
-                                    // Check if user message contains specific product reference
-                                    const userMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="user"]');
-                                    let lastUserMessage = null;
-                                    if (userMessages.length > 0) {
-                                        lastUserMessage = userMessages[userMessages.length - 1];
-                                        const userMessageText = lastUserMessage.textContent.trim();
-                                        
-                                        // Detect specific product mention in user message
-                                        const detectedProduct = window.SalesAgent.detectSpecificProductInMessage(userMessageText);
-                                        if (detectedProduct) {
-                                            console.log('🎯 Sales Agent: Producto específico detectado en mensaje del usuario:', detectedProduct.name);
-                                            // Auto-activate purchase flow
-                                            setTimeout(() => {
-                                                window.SalesAgent.startPurchase(detectedProduct.id);
-                                            }, 500);
-                                            return; // Don't show product grid, go straight to purchase flow
-                                        }
-                                    }
+                                    // Siempre mostrar las cards de productos
+                                    // El usuario debe hacer clic en "Comprar" para iniciar el flujo de compra
+                                    // NO auto-iniciar el flujo solo porque mencionó un producto
                                     
                                     const assistantMessages = document.querySelectorAll('.lqd-ext-chatbot-window-conversation-message[data-type="assistant"]');
                                     if (assistantMessages.length > 0) {
