@@ -338,11 +338,13 @@
                 return;
             }
             
-            console.log('🛒 Starting purchase for:', product.name);
+            console.log('🛒 Starting purchase for:', product.name, 'productId:', productId);
             
             this.purchaseMode = true;
             this.pendingProduct = { ...product };
             this.currentStep = 'quantity';
+            
+            console.log('🛒 State after startPurchase:', { purchaseMode: this.purchaseMode, currentStep: this.currentStep, pendingProduct: this.pendingProduct?.name });
             
             this.askQuantity();
         },
@@ -356,9 +358,14 @@
         
         // Handle user message during purchase flow
         handlePurchaseMessage(message) {
-            if (!this.purchaseMode) return false;
+            console.log('🛒 handlePurchaseMessage called:', { message, purchaseMode: this.purchaseMode, currentStep: this.currentStep });
+            if (!this.purchaseMode) {
+                console.log('🛒 purchaseMode is false, returning false');
+                return false;
+            }
             
             const input = message.trim().toLowerCase();
+            console.log('🛒 Processing input:', input, 'for step:', this.currentStep);
             
             switch (this.currentStep) {
                 case 'quantity':
