@@ -256,16 +256,37 @@ class ChatbotService
             ->where('agent_type', 'sales')
             ->first();
 
-        // Preparar keywords desde sales_agent_keywords
-        $keywords = [];
+        // Keywords por defecto para activar el Sales Agent
+        // Estos son keywords de intención clara de compra
+        $defaultKeywords = [
+            'comprar',
+            'quiero comprar',
+            'me interesa comprar',
+            'ver productos',
+            'mostrar productos',
+            'qué productos',
+            'catálogo',
+            'ver catálogo',
+            'precio',
+            'cuánto cuesta',
+            'cuanto cuesta',
+            'tienen',
+            'venden',
+        ];
+
+        // Preparar keywords desde sales_agent_keywords (configurados por el usuario)
+        $userKeywords = [];
         if (! empty($chatbot->sales_agent_keywords)) {
             if (is_string($chatbot->sales_agent_keywords)) {
                 // Si es string, convertir a array separado por comas
-                $keywords = array_map('trim', explode(',', $chatbot->sales_agent_keywords));
+                $userKeywords = array_map('trim', explode(',', $chatbot->sales_agent_keywords));
             } elseif (is_array($chatbot->sales_agent_keywords)) {
-                $keywords = $chatbot->sales_agent_keywords;
+                $userKeywords = $chatbot->sales_agent_keywords;
             }
         }
+
+        // Combinar keywords por defecto con los del usuario
+        $keywords = array_unique(array_merge($defaultKeywords, $userKeywords));
 
         // Configuración del agente
         $configuration = [
