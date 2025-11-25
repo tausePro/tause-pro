@@ -76,8 +76,8 @@
 
                 ensureSchedule(force = false) {
                     if (! this.chatbot) {
-                        return;
-                    }
+                            return;
+                        }
 
                     const schedule = this.chatbot.human_agent_schedule;
 
@@ -87,7 +87,7 @@
                         schedule.length === 0
                     ) {
                         this.chatbot.human_agent_schedule = JSON.parse(JSON.stringify(this.defaultSchedule));
-                    }
+                            }
                 },
 
                 resetSchedule() {
@@ -97,8 +97,8 @@
 
                     this.chatbot.human_agent_schedule = JSON.parse(JSON.stringify(this.defaultSchedule));
                     submitData();
-                }
-            }));
+                    }
+                }));
         };
 
         if (typeof Alpine !== 'undefined' && Alpine.data) {

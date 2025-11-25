@@ -244,8 +244,8 @@ class EvolutionConversationService
             $chatbotHistory = $offlineHistory;
         }
 
-        $this->dispatchAgentEvent($chatbot, $conversation, $chatbotHistory);
-    }
+            $this->dispatchAgentEvent($chatbot, $conversation, $chatbotHistory);
+        }
 
     protected function sendOfflineNoticeIfNeeded(
         Chatbot $chatbot,

@@ -238,8 +238,8 @@
                             overflow: hidden;
                             background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
                         ">
-                            <img src="${product.image_url}" 
-                                 alt="${this.escapeHtml(product.name)}" 
+                        <img src="${product.image_url}" 
+                             alt="${this.escapeHtml(product.name)}" 
                                  style="
                                      position: absolute;
                                      top: 0;
@@ -250,7 +250,7 @@
                                      transition: transform 0.4s ease;
                                  "
                                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27200%27 height=%27200%27%3E%3Crect fill=%27%23e2e8f0%27 width=%27200%27 height=%27200%27/%3E%3Ctext fill=%27%2394a3b8%27 x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 font-size=%2714%27%3E📦%3C/text%3E%3C/svg%3E'">
-                        </div>
+                            </div>
                         
                         <div style="padding: 12px;">
                             <h4 style="
@@ -346,7 +346,7 @@
             
             console.log('🛒 State after startPurchase:', { purchaseMode: this.purchaseMode, currentStep: this.currentStep, pendingProduct: this.pendingProduct?.name });
             
-            this.askQuantity();
+                this.askQuantity();
         },
         
         askQuantity() {
@@ -375,7 +375,7 @@
             if (!this.purchaseMode) {
                 console.log('🛒 purchaseMode is false, returning false');
                 return false;
-            }
+                }
             
             console.log('🛒 Processing input:', input, 'for step:', this.currentStep);
             
@@ -479,7 +479,7 @@
                     return false; // Let them continue talking
                 }
                 
-                this.currentStep = 'first_name';
+            this.currentStep = 'first_name';
                 this.addAssistantMessage('Perfecto, sigamos con tus datos para coordinar el envío. 🙂\n\n¿Cuál es tu nombre? _(solo el primer nombre)_');
                 return true;
             }
@@ -827,9 +827,9 @@
                 const idx = parseInt(numberMatch[1]) - 1;
                 if (idx >= 0 && idx < this.products.length) {
                     return this.products[idx];
-                }
-            }
-            
+                        }
+                    }
+                    
             // Detect by name
             const significantWords = lowerMessage.match(/\b[a-záéíóúñ]{4,}\b/g) || [];
             if (significantWords.length === 0) return null;
@@ -883,8 +883,8 @@
             if (chatbotEl?.__x?.$data && Array.isArray(chatbotEl.__x.$data.messages)) {
                 this.alpineReady = true;
                 return chatbotEl.__x.$data;
-            }
-            
+                    }
+                    
             if (retryCount < maxRetries) {
                 return new Promise(resolve => {
                     setTimeout(() => resolve(this.getChatbotInstance(retryCount + 1)), retryDelay);
@@ -903,9 +903,9 @@
                     role: 'assistant',
                     created_at: new Date().toISOString()
                 });
-                setTimeout(() => {
+            setTimeout(() => {
                     if (chatbot.scrollMessagesToBottom) chatbot.scrollMessagesToBottom();
-                }, 100);
+                    }, 100);
                 return;
             }
             
@@ -939,11 +939,11 @@
                             <div class="lqd-ext-chatbot-window-conversation-message-text">
                                 ${this.formatMessage(message)}
                             </div>
+                                </div>
                         </div>
                     </div>
-                </div>
-            `;
-            
+                `;
+                
             messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
             setTimeout(() => { messagesContainer.scrollTop = messagesContainer.scrollHeight; }, 100);
         },

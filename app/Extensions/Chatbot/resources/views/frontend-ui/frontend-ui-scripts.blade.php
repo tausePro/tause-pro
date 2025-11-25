@@ -1010,10 +1010,48 @@
                                         const contentWrap = lastMessageEl.querySelector('.lqd-ext-chatbot-window-conversation-message-content-wrap');
                                         
                                         if (contentWrap) {
-                                            // Usar el método del Sales Agent Component para renderizar con botones de compra
-                                            window.SalesAgent.enhanceMessageWithProducts(contentWrap, messageToReplace.message);
-                                            console.log('✅ Productos renderizados con flujo de compra integrado');
-                                            salesAgentHandled = true;
+                                            // Usar directamente los productos del backend (ya filtrados por el orquestador)
+                                            // NO volver a filtrar con findMentionedProducts
+                                            const backendProducts = salesAgent.data.products || [];
+                                            console.log('📦 Productos del backend para mostrar:', backendProducts.length);
+                                            console.log('📦 Primer producto:', backendProducts[0]);
+                                            
+                                            if (backendProducts.length > 0) {
+                                                // Renderizar cards directamente con los productos del backend
+                                                const cardsHTML = window.SalesAgent.createProductCardsHTML(backendProducts);
+                                                console.log('📦 HTML generado:', cardsHTML.substring(0, 200) + '...');
+                                                
+                                                const cardsContainer = document.createElement('div');
+                                                cardsContainer.className = 'enhanced-products-display';
+                                                cardsContainer.innerHTML = cardsHTML;
+                                                
+                                                console.log('📦 Cards container creado, agregando al DOM...');
+                                                contentWrap.appendChild(cardsContainer);
+                                                console.log('📦 Cards container agregado al DOM');
+                                                
+                                                // Verificar que se agregó correctamente
+                                                const addedCards = contentWrap.querySelector('.sales-agent-products-grid');
+                                                console.log('📦 Cards en DOM:', addedCards ? '✅ Encontradas' : '❌ NO encontradas');
+                                                
+                                                // Add event listeners
+                                                setTimeout(() => {
+                                                    const buyButtons = cardsContainer.querySelectorAll('.product-buy-btn');
+                                                    console.log('🔍 Botones de compra encontrados:', buyButtons.length);
+                                                    buyButtons.forEach(btn => {
+                                                        btn.addEventListener('click', (e) => {
+                                                            e.preventDefault();
+                                                            const productId = parseInt(btn.getAttribute('data-product-id'));
+                                                            console.log('🛒 Click en botón comprar, productId:', productId);
+                                                            window.SalesAgent.startPurchase(productId);
+                                                        });
+                                                    });
+                                                }, 100);
+                                                
+                                                console.log('✅ Productos renderizados con flujo de compra integrado');
+                                                salesAgentHandled = true;
+                                            } else {
+                                                console.log('⚠️ No hay productos del backend para mostrar');
+                                            }
                                             
                                             // Asegurar que los event listeners estén registrados
                                             setTimeout(() => {

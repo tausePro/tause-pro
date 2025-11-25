@@ -241,7 +241,7 @@ class ChatbotAgentController extends Controller
                             message: $request['message'],
                             mediaUrl: $mediaUrl,
                             mediaFile: $request->file('media')
-                        );
+                            );
                     }
 
                     if ($chatbotChannel?->channel === 'telegram') {
