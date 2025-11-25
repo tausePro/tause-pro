@@ -3,6 +3,7 @@
 namespace App\Extensions\Chatbot\System\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ChatbotCustomer extends Model
 {
@@ -42,4 +43,9 @@ class ChatbotCustomer extends Model
         'quote_payload' => 'array',
         'last_quote_sent_at' => 'datetime',
     ];
+
+    public function leadHistory(): HasMany
+    {
+        return $this->hasMany(ChatbotLeadHistory::class, 'customer_id')->orderByDesc('created_at');
+    }
 }

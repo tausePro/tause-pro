@@ -10,6 +10,7 @@ use App\Extensions\Chatbot\System\Models\ChatbotChannel;
 use App\Extensions\Chatbot\System\Models\ChatbotConversation;
 use App\Extensions\Chatbot\System\Models\ChatbotCustomer;
 use App\Extensions\Chatbot\System\Models\ChatbotHistory;
+use App\Extensions\Chatbot\System\Models\ChatbotLeadHistory;
 use App\Extensions\Chatbot\System\Services\ChatbotService;
 use App\Extensions\ChatbotAgent\System\Services\ChatbotForFrameEventAbly;
 use App\Extensions\ChatbotTelegram\System\Services\Telegram\TelegramService;
@@ -496,6 +497,92 @@ class ChatbotAgentController extends Controller
                 ], 403);
             }
 
+            // Track changes for history
+            $changes = [];
+
+            // Check lead_value change
+            if (isset($validated['lead_value']) && $validated['lead_value'] != $customer->lead_value) {
+                $changes[] = [
+                    'type'      => ChatbotLeadHistory::EVENT_VALUE_CHANGED,
+                    'field'     => 'lead_value',
+                    'old_value' => $customer->lead_value,
+                    'new_value' => $validated['lead_value'],
+                ];
+            }
+
+            // Check priority change
+            if (isset($validated['lead_priority']) && $validated['lead_priority'] != $customer->lead_priority) {
+                $priorityLabels = [0 => 'Not Set', 1 => 'Low', 2 => 'Medium', 3 => 'High', 4 => 'Urgent'];
+                $changes[] = [
+                    'type'        => ChatbotLeadHistory::EVENT_PRIORITY_CHANGED,
+                    'field'       => 'lead_priority',
+                    'old_value'   => $customer->lead_priority,
+                    'new_value'   => $validated['lead_priority'],
+                    'description' => sprintf(
+                        'Priority changed from %s to %s',
+                        $priorityLabels[$customer->lead_priority ?? 0] ?? 'Unknown',
+                        $priorityLabels[$validated['lead_priority']] ?? 'Unknown'
+                    ),
+                ];
+            }
+
+            // Check notes change
+            if (isset($validated['negotiation_notes']) && $validated['negotiation_notes'] != $customer->negotiation_notes) {
+                $changes[] = [
+                    'type'      => ChatbotLeadHistory::EVENT_NOTE_ADDED,
+                    'field'     => 'negotiation_notes',
+                    'old_value' => $customer->negotiation_notes,
+                    'new_value' => $validated['negotiation_notes'],
+                ];
+            }
+
+            // Check next_action_at change
+            if (isset($validated['next_action_at']) && $validated['next_action_at'] != $customer->next_action_at?->format('Y-m-d\TH:i')) {
+                $changes[] = [
+                    'type'      => ChatbotLeadHistory::EVENT_FOLLOW_UP_SCHEDULED,
+                    'field'     => 'next_action_at',
+                    'old_value' => $customer->next_action_at?->format('Y-m-d H:i'),
+                    'new_value' => $validated['next_action_at'],
+                ];
+            }
+
+            // Check tags changes
+            if (isset($validated['crm_tags'])) {
+                $oldTags = $customer->crm_tags ?? [];
+                $newTags = $validated['crm_tags'];
+                $addedTags = array_diff($newTags, $oldTags);
+                $removedTags = array_diff($oldTags, $newTags);
+
+                foreach ($addedTags as $tag) {
+                    $changes[] = [
+                        'type'      => ChatbotLeadHistory::EVENT_TAG_ADDED,
+                        'field'     => 'crm_tags',
+                        'new_value' => $tag,
+                    ];
+                }
+
+                foreach ($removedTags as $tag) {
+                    $changes[] = [
+                        'type'      => ChatbotLeadHistory::EVENT_TAG_REMOVED,
+                        'field'     => 'crm_tags',
+                        'old_value' => $tag,
+                    ];
+                }
+            }
+
+            // Save changes to history
+            foreach ($changes as $change) {
+                ChatbotLeadHistory::log(
+                    customerId: $customer->id,
+                    eventType: $change['type'],
+                    fieldName: $change['field'] ?? null,
+                    oldValue: $change['old_value'] ?? null,
+                    newValue: $change['new_value'] ?? null,
+                    description: $change['description'] ?? null
+                );
+            }
+
+            // Update customer
             $customer->update([
                 'lead_value'        => $validated['lead_value'] ?? $customer->lead_value,
                 'lead_priority'     => $validated['lead_priority'] ?? $customer->lead_priority,
@@ -513,6 +600,60 @@ class ChatbotAgentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error updating lead: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getLeadHistory(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|integer|exists:ext_chatbot_customers,id',
+        ]);
+
+        try {
+            $customer = ChatbotCustomer::findOrFail($validated['customer_id']);
+
+            // Verify ownership through chatbot
+            $chatbot = Chatbot::find($customer->chatbot_id);
+            if (! $chatbot || $chatbot->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            $history = $customer->leadHistory()
+                ->with('user:id,name,avatar')
+                ->limit(50)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id'          => $item->id,
+                        'event_type'  => $item->event_type,
+                        'event_label' => $item->getEventLabel(),
+                        'event_icon'  => $item->getEventIcon(),
+                        'event_color' => $item->getEventColor(),
+                        'field_name'  => $item->field_name,
+                        'old_value'   => $item->old_value,
+                        'new_value'   => $item->new_value,
+                        'description' => $item->description,
+                        'user'        => $item->user ? [
+                            'name'   => $item->user->name,
+                            'avatar' => $item->user->avatar,
+                        ] : null,
+                        'created_at'  => $item->created_at->diffForHumans(),
+                        'timestamp'   => $item->created_at->format('M d, Y H:i'),
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'history' => $history,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching lead history: ' . $e->getMessage(),
             ], 500);
         }
     }
