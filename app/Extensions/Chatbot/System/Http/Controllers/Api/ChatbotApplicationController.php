@@ -504,7 +504,7 @@ class ChatbotApplicationController extends Controller
                 $context = [
                     'conversation_id' => $chatbotConversation->id ?? null,
                     'customer_id' => $chatbotConversation?->getAttribute('customer')?->id ?? null,
-                    'is_first_message' => $chatbotConversation->messages()->count() === 1,
+                    'is_first_message' => $chatbotConversation->histories()->count() <= 2, // 2 = primer mensaje user + respuesta AI
                 ];
                 
                 $orchestration = $orchestrator->orchestrate(
